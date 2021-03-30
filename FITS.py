@@ -1,12 +1,15 @@
-from astropy.io import fits
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+import sys
+from astropy.io import fits
 from matplotlib.widgets import Slider
 
 fig, ax = plt.subplots()
 
 # 1. Open file & get data -> note the data is two dimensions, data[0][0] offers one image n*n
-hd = fits.open('test2.fits')
+#hd = fits.open('test2.fits')
+imageFits = str(sys.argv).split("/")[-1]
+hd = fits.open(str(sys.argv[1]))
 data = hd[0].data
 plt.subplots_adjust(left=0.25, bottom=0.25)
 
@@ -26,14 +29,14 @@ currentImage = plt.imshow(data[indexInitF][indexInitS], cmap=plt.cm.inferno) #cm
 axid3 = plt.axes([0.25, 0.1, 0.65, 0.03])
 axid4 = plt.axes([0.25, 0.15, 0.65, 0.03])
 
-slider = Slider(axid3, 'Dim3', 0, len(data[0])-1, valinit=indexInitS)
+slider = Slider(axid3, 'Dim3', 0, len(data[0])-1, valinit=indexInitS, valstep = 1)
 sliderBis = Slider(axid4, 'Dim4', 0, len(data)-1, valinit=indexInitF, valstep = 1)
 
 def update(val):
     indF = slider.val
     indS = sliderBis.val
     currentImage.set_data(data[int(indS)][int(indF)])
-    #fig.canvas.draw_idle()
+    fig.canvas.draw_idle()
 
 slider.on_changed(update)
 #plt.imshow(data[0][1], cmap=plt.cm.viridis)
