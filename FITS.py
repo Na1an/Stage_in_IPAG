@@ -25,12 +25,12 @@ print(len(data[1]))
 # 3. matplotlib display our image
 indexInitF = 0
 indexInitS = 0
-currentImage = plt.imshow(data[indexInitF][indexInitS], cmap=plt.cm.inferno) #cmap=plt.cm.viridis
-axid3 = plt.axes([0.25, 0.1, 0.65, 0.03])
-axid4 = plt.axes([0.25, 0.15, 0.65, 0.03])
+currentImage = plt.imshow(data[indexInitF][indexInitS], cmap=plt.cm.hot) #cmap=plt.cm.viridis
+axid3 = plt.axes([0.25, 0.15, 0.65, 0.03])
+axid4 = plt.axes([0.25, 0.1, 0.65, 0.03])
 
-slider = Slider(axid3, 'Dim3', 0, len(data[0])-1, valinit=indexInitS, valstep = 1)
-sliderBis = Slider(axid4, 'Dim4', 0, len(data)-1, valinit=indexInitF, valstep = 1)
+slider = Slider(axid3, 'Spectral Channel - 1', 0, len(data[0])-1, valinit=indexInitS, valstep = 1)
+sliderBis = Slider(axid4, 'Spectral Channel - 2', 0, len(data)-1, valinit=indexInitF, valstep = 1)
 
 def update(val):
     indF = slider.val
@@ -39,6 +39,7 @@ def update(val):
     fig.canvas.draw_idle()
 
 slider.on_changed(update)
+sliderBis.on_changed(update)
 #plt.imshow(data[0][1], cmap=plt.cm.viridis)
 #plt.colorbar()
 plt.show()
