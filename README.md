@@ -1,6 +1,8 @@
 # Stage_in_IPAG
 
-*Yuchen BAI*
+*Me : Yuchen BAI*
+
+*Advisor : Julien MILLI*
 
 ### 1. Installation
 
@@ -35,4 +37,27 @@ It is easy to run the program.
   * **arg1** : the path of science target
   * **arg2** : the path of SPHERE_DC_DATA
 
-  
+
+### 4. Sujet
+
+--------
+
+
+
+### 5. RDI
+
+-------
+
+
+
+### 6. 
+
+-------
+
+
+
+### 7. Contack
+
+--------
+
+*Yuchen BAI : yuchen.bai@univ-grenoble-alpes.fr* 
