@@ -46,13 +46,13 @@ def slice_frame(frames, size, center_scale):
     '''
     Args:
         frames : np.array, 3 dims. Contains all the frames on one wavelength in a cube
-        size : a int. Frames sizei, size = 1024 in case 1024*1024.
+        size : a int. Frames size, size = 1024 in case 1024*1024.
         center_scale : a float. The scale in center that we will process.
     Return:
         Sliced frames, np.array, 3 dims.
     '''
     tmp = (1-center_scale)*0.5
-    res = frames[:, int(size*tmp):int(size*(1-tmp)), size*tmp:size*(1-tmp)] 
+    res = frames[..., int(size*tmp):int(size*(1-tmp)), int(size*tmp):int(size*(1-tmp))] 
     return res
 
 # 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
@@ -84,7 +84,7 @@ def collect_data(files_path, scale=0.25):
         files_path : a list of string. files path contain keyword.
         scale : a float. The scale in center that we want process, is equal to 1/4 by default.
     Rrturn:
-        res : a list of float. Return ...
+        ref_frames : ndarray, 4 dimensions. Return (wavelengths, nb_frames, x, y)
     '''
     hd = fits.getdata(files_path[0])
     # frames in the first wavelength and second wavelength
@@ -93,20 +93,52 @@ def collect_data(files_path, scale=0.25):
     size = len(hd[0][0])
     start = int(size*tmp)
     end = int(size*(1-tmp))
-    
-    frames_fir_wl = hd[0][..., start:end, start:end]
-    frames_sec_wl = hd[1][..., start:end, start:end]
-
-    #print(">> len(first) = ", len(frames_fir_wl))
+   
+    ref_frames = hd[..., start:end, start:end]
+    #print("shape = ", ref_frames.shape) 
 
     for i in range(1,len(files_path)):
         #print(f)
         hd = fits.getdata(files_path[i])
-        frames_fir_wl = np.append(frames_fir_wl, hd[0][..., start:end, start:end], axis=0)
-        frames_sec_wl = np.append(frames_sec_wl, hd[1][..., start:end, start:end], axis=0)
-        #print(">> len(first) = ", len(frames_fir_wl))
+        ref_frames =np.append(ref_frames, hd[..., start:end, start:end], axis=1)
+
+    return ref_frames
+
+# 3. process the science frames, substract the starlight
+def process_RDI(science_frames, ref_frames):
+    '''
+    Args:
+        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        ref_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        Normally, the scale in 4 dimens is consistent for two args.
+    Return:
+        don't know yet.
+    '''
+    print(">> science_frame shap =", science_frames.shape) 
+    print(">> ref_frame shap =", ref_frames.shape)
+   
+    wave_length = len(science_frames)
+    sc_fr_nb = len(science_frames[0])
+    rf_fr_nb = len(ref_frames[0])
+    side_len = len(science_frames[0,0])
     
-    return frames_fir_wl, frames_sec_wl
+    res = np.zeros((wave_length, sc_fr_nb, side_len, side_len))
+    # for both wavelength
+    for wl in range(wave_length):
+        print(">> wavelength =", wl, "start process")
+        for i in range(sc_fr_nb):
+            tmp = -1
+            pearson_corr = -1
+            indice = 0 #most relevent indicfor j in range(ref_frames):
+            for j in range(rf_fr_nb):
+                pearson_corr = np.corrcoef(science_frames[wl, i], ref_frames[wl, j])[0,1]
+                if(pearson_corr>tmp):
+                    tmp = pearson_corr
+                    indice = j
+            res[wl, i] = science_frames[wl, i] - ref_frames[wl, indice]
+            print("---", i+1, "of", sc_fr_nb,"---")
+        print("<< wavelength = ", wl, "end process")
+    return res
 
 # main bloc
 if __name__ == "__main__":
@@ -115,7 +147,7 @@ if __name__ == "__main__":
         argv1 : the target/science object
         argv2 : the repository path
     '''
-   
+     
     '''
     data = read_file(str(sys.argv[1]))
     display_rotaion_angles(data)
@@ -125,21 +157,34 @@ if __name__ == "__main__":
     
     # argv1 : science object
     science_frames = read_file(str(sys.argv[1]))
-    print(">> Science frames type", type(science_frames),'\n')
-
+    #print(">> Science frames type", type(science_frames), " shape=", science_frames.shape,'\n')
+    
     # Step 1: get the list of files contain keyword
     all_files = get_reference_cubes(str(sys.argv[2]), "MASTER_CUBE-center")
    
     # Step 2: put the related data (all frames of the reference cubes) in np.array
-    ref_frames_wl1, ref_frames_wl2 = collect_data(all_files)
-    print(ref_frames_wl1.shape, "test value luminosity =", ref_frames_wl1[50][121][122])
-    print(ref_frames_wl2.shape, "test value luminosity =", ref_frames_wl2[50][121][122])
+    ref_frames = collect_data(all_files)
+    #print("type ref_frames", type(ref_frames))
+    #print(ref_frames[0].shape, "test value luminosity =", ref_frames[0, 50, 121, 122])
+    #print(ref_frames[1].shape, "test value luminosity =", ref_frames[1, 50, 121, 122])
     
+    # Step 3: process the science frames
+    sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
+    plt.subplot(1,2,1)
+    plt.imshow(sc_frames_procced[0][0], cmap=plt.cm.hot)
+    plt.subplot(1,2,2)
+    plt.imshow(sc_frames_procced[1][0], cmap=plt.cm.hot)
+    plt.show()
+
+
+    # Step 4: comparaison
+    '''
     #plt.style.use('seaborn-white')
     plt.subplot(1,2,1)
-    plt.imshow(ref_frames_wl1[50], cmap=plt.cm.hot)
+    plt.imshow(ref_frames[0][50], cmap=plt.cm.hot)
     plt.subplot(1,2,2)
-    plt.imshow(ref_frames_wl2[50], cmap=plt.cm.hot)
+    plt.imshow(ref_frames[1][50], cmap=plt.cm.hot)
     plt.show()
+    '''
     start_and_end(False)
 
