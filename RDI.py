@@ -15,21 +15,46 @@ def start_and_end(start):
     else:
         print("\n########## program end ############")
 
+# 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
+def get_reference_cubes(repository_path, keyword):
+    '''
+    Args:
+        repository_path : a string. The path of SPHERE DC
+        keyword : a string. What kind of files we want (ex. MASTER_CUBE)
+    Rrturn:
+        res : a list of string. Return the path of all related files.
+    '''
+    res = []
+    reps = os.listdir(repository_path)
+    
+    for rep in reps:
+        files_sub = os.path.join(repository_path, rep)
+        # print(files_sub)
+        if os.path.isdir(files_sub):
+            res = res + get_reference_cubes(files_sub, keyword)
+        if keyword in files_sub:
+            res = res + [files_sub]
+
+    return res
+
 # read one file and return its data
-def read_file(file_path):
+def read_file(file_path, keyword):
     '''
     Args:
         file_path : a string. The file path!
     Return:
         return the data of hd[0],hd type HDUList.
     '''
-    hd = fits.open(file_path)
+    
+    '''
+    hd = fits.open(get_reference_cubes(file_path, keyword)[0])
     # print("filename =", hd.fileinfo(0)["filename"].split("/")[-1])
     hd.info()
     print('\n')
     data = hd[0].data
     hd.close()
-    return data
+    '''
+    return fits.getdata(get_reference_cubes(file_path, keyword)[0])
 
 # display the list of rotation angles
 def display_rotaion_angles(data):
@@ -56,28 +81,6 @@ def slice_frame(frames, size, center_scale):
     '''
     tmp = (1-center_scale)*0.5
     res = frames[..., int(size*tmp):int(size*(1-tmp)), int(size*tmp):int(size*(1-tmp))] 
-    return res
-
-# 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
-def get_reference_cubes(repository_path, keyword):
-    '''
-    Args:
-        repository_path : a string. The path of SPHERE DC
-        keyword : a string. What kind of files we want (ex. MASTER_CUBE)
-    Rrturn:
-        res : a list of string. Return the path of all related files.
-    '''
-    res = []
-    reps = os.listdir(repository_path)
-    
-    for rep in reps:
-        files_sub = os.path.join(repository_path, rep)
-        # print(files_sub)
-        if os.path.isdir(files_sub):
-            res = res + get_reference_cubes(files_sub, keyword)
-        if keyword in files_sub:
-            res = res + [files_sub]
-
     return res
 
 # 2. Collect the data from SPHERE_DC_DATA
@@ -115,6 +118,8 @@ def process_ADI(science_frames, rotations):
     Return:
         res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
     '''
+    print("type=",type(science_frames),"shape=",science_frames.shape)
+    print("type=",type(rotations),"shape=",rotations.shape)
     return None 
 
 # 4. process the science frames, substract the starlight
@@ -208,7 +213,7 @@ if __name__ == "__main__":
     start_and_end(True)
     
     # argv1 : science object
-    science_frames = read_file(str(sys.argv[1]))
+    science_frames = read_file(str(sys.argv[1]), "MASTER_CUBE-center")
     #print(">> Science frames type", type(science_frames), " shape=", science_frames.shape,'\n')
     
     # Step 1: get the list of files contain keyword
@@ -218,18 +223,9 @@ if __name__ == "__main__":
     ref_frames = collect_data(all_files)
     
     # Step 3: process the science frames
-    sc_frames_procced = process_ADI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.125), "rotations_path")
-
+    sc_frames_procced = process_ADI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.125), read_file(str(sys.argv[1]),"ROTATION"))
     #sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
     
     # Step 4: comparaison
-    '''
-    #plt.style.use('seaborn-white')
-    plt.subplot(1,2,1)
-    plt.imshow(ref_frames[0][50], cmap=plt.cm.hot)
-    plt.subplot(1,2,2)
-    plt.imshow(ref_frames[1][50], cmap=plt.cm.hot)
-    plt.show()
-    '''
     start_and_end(False)
 
