@@ -107,8 +107,18 @@ def collect_data(files_path, scale=0.25):
 
     return ref_frames
 
-# 3. process the science frames, substract the starlight
-# wavelength to wavelength
+# 3. Classic ADI
+def process_ADI(science_frames, rotations):
+    '''
+    Args:
+        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+    Return:
+        res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
+    '''
+    return None 
+
+# 4. process the science frames, substract the starlight
+# we do care wavelength!
 def process_RDI(science_frames, ref_frames):
     '''
     Args:
@@ -116,7 +126,7 @@ def process_RDI(science_frames, ref_frames):
         ref_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
         Normally, the scale in 4 dimens is consistent for two args.
     Return:
-        don't know yet.
+        res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
     '''
     print(">> science_frame shap =", science_frames.shape) 
     print(">> ref_frame shap =", ref_frames.shape)
@@ -139,44 +149,6 @@ def process_RDI(science_frames, ref_frames):
                 if(pearson_corr>tmp):
                     tmp = pearson_corr
                     indice = j
-            res[wl, i] = science_frames[wl, i] - ref_frames[wl, indice]
-
-            print("---", i+1, "of", sc_fr_nb,"---")
-        print("<< wavelength = ", wl, "end process")
-    return res
-
-# frames to frames
-def process_RDI_bis(science_frames, ref_frames):
-    '''
-    Args:
-        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
-        ref_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
-        Normally, the scale in 4 dimens is consistent for two args.
-    Return:
-        don't know yet.
-    '''
-    print(">> science_frame shap =", science_frames.shape) 
-    print(">> ref_frame shap =", ref_frames.shape)
-   
-    wave_length = len(science_frames)
-    sc_fr_nb = len(science_frames[0])
-    rf_fr_nb = len(ref_frames[0])
-    side_len = len(science_frames[0,0])
-    
-    res = np.zeros((wave_length, sc_fr_nb, side_len, side_len))
-    # for both wavelength
-    for wl in range(wave_length):
-        print(">> wavelength =", wl, "start process")
-        for i in range(sc_fr_nb):
-            tmp = -1
-            pearson_corr = -1
-            indice = 0 #most relevent indicfor j in range(ref_frames):
-            for j in range(rf_fr_nb):
-                for wl2 in range(wave_length):
-                    pearson_corr = np.corrcoef(science_frames[wl, i], ref_frames[wl2, j])[0,1]
-                    if(pearson_corr>tmp):
-                        tmp = pearson_corr
-                        indice = j
             res[wl, i] = science_frames[wl, i] - ref_frames[wl, indice]
 
             print("---", i+1, "of", sc_fr_nb,"---")
@@ -244,26 +216,12 @@ if __name__ == "__main__":
    
     # Step 2: put the related data (all frames of the reference cubes) in np.array
     ref_frames = collect_data(all_files)
-    #print("type ref_frames", type(ref_frames))
-    #print(ref_frames[0].shape, "test value luminosity =", ref_frames[0, 50, 121, 122])
-    #print(ref_frames[1].shape, "test value luminosity =", ref_frames[1, 50, 121, 122])
     
     # Step 3: process the science frames
-    sc_frames_procced = process_RDI_ssim(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
-    plt.subplot(2,3,1)
-    plt.imshow(sc_frames_procced[0][0], cmap=plt.cm.hot)
-    plt.subplot(2,3,2)
-    plt.imshow(sc_frames_procced[0][1], cmap=plt.cm.hot)
-    plt.subplot(2,3,3)
-    plt.imshow(sc_frames_procced[0][2], cmap=plt.cm.hot)
-    plt.subplot(2,3,4)
-    plt.imshow(sc_frames_procced[1][0], cmap=plt.cm.hot)
-    plt.subplot(2,3,5)
-    plt.imshow(sc_frames_procced[1][1], cmap=plt.cm.hot)
-    plt.subplot(2,3,6)
-    plt.imshow(sc_frames_procced[1][2], cmap=plt.cm.hot)
-    plt.show()
+    sc_frames_procced = process_ADI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.125), "rotations_path")
 
+    #sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
+    
     # Step 4: comparaison
     '''
     #plt.style.use('seaborn-white')
