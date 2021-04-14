@@ -34,7 +34,7 @@ It is easy to run the program.
 
 * ```python3 FITS.py arg1 arg2```  
 
-  * **arg1** : the path of science target
+  * **arg1** : the path of repository contains the science target
   * **arg2** : the path of SPHERE_DC_DATA
 
 
