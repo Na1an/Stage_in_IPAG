@@ -1,4 +1,5 @@
 import os
+import cv2
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
@@ -93,6 +94,7 @@ def collect_data(files_path, scale=0.25):
         ref_frames : ndarray, 4 dimensions. Return (wavelengths, nb_frames, x, y)
     '''
     hd = fits.getdata(files_path[0])
+    
     # frames in the first wavelength and second wavelength
     # K1/K2, H2/H3, etc...
     tmp = (1-scale)*0.5
@@ -101,14 +103,34 @@ def collect_data(files_path, scale=0.25):
     end = int(size*(1-tmp))
    
     ref_frames = hd[..., start:end, start:end]
-    #print("shape = ", ref_frames.shape) 
 
     for i in range(1,len(files_path)):
-        #print(f)
         hd = fits.getdata(files_path[i])
         ref_frames =np.append(ref_frames, hd[..., start:end, start:end], axis=1)
 
     return ref_frames
+
+def rotate(image, angle, center=None, scale=1.0):
+    '''
+    Args:
+        image : a 2 dimension list, a image.    
+    Return:
+        rotated : a 2 dimension list, the image rotated.
+    '''
+    # grab the dimensions of the image
+    # should be 128 * 128
+    (h, w) = image.shape[:2]
+
+    # if the center is None, initialize it as the center of the image
+    if center is None:
+        center = (w // 2, h // 2)
+
+    # perform the rotation
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, scale)
+    rotated = cv2.warpAffine(image, rotation_matrix, (w, h))
+
+    # return the rotated image
+    return rotated
 
 # 3. Classic ADI
 def process_ADI(science_frames, rotations):
@@ -118,8 +140,23 @@ def process_ADI(science_frames, rotations):
     Return:
         res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
     '''
-    print("type=",type(science_frames),"shape=",science_frames.shape)
-    print("type=",type(rotations),"shape=",rotations.shape)
+    
+    wave_length, sc_fr_nb, w, h = science_frames.shape
+    f_median = np.zeros((wave_length, w, h))
+    
+    for wl in range(wave_length):
+        for i in range(w):
+            for j in range(h):
+                f_median[wl, i, j] = np.median(science_frames[wl, :, i, j])
+             
+    # display the median of frames
+    fig, axs = plt.subplots(1,2)
+    axs[0].imshow(f_median[0], cmap=plt.cm.hot)
+    axs[0].set_title("median 1")
+    axs[1].imshow(f_median[1], cmap=plt.cm.hot)
+    axs[1].set_title("median 2")
+    plt.show()
+    
     return None 
 
 # 4. process the science frames, substract the starlight
