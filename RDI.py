@@ -274,7 +274,7 @@ if __name__ == "__main__":
     
     start_and_end(True)
     
-    # argv1 : science object
+    # argv1 : the path of repository contains science object
     science_frames = read_file(str(sys.argv[1]), "MASTER_CUBE-center")
     #print(">> Science frames type", type(science_frames), " shape=", science_frames.shape,'\n')
     
