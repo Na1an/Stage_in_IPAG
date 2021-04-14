@@ -2,6 +2,7 @@ import os
 import cv2
 import sys
 import numpy as np
+import seaborn as sns
 import matplotlib.pyplot as plt
 from astropy.io import fits
 from matplotlib.widgets import Slider
@@ -143,18 +144,40 @@ def process_ADI(science_frames, rotations):
     
     wave_length, sc_fr_nb, w, h = science_frames.shape
     f_median = np.zeros((wave_length, w, h))
+    #f_residual = np.zeros((wave_length, sc_fr_nb, w, h))
+    res = np.zeros((wave_length, w, h))
     
     for wl in range(wave_length):
         for i in range(w):
             for j in range(h):
                 f_median[wl, i, j] = np.median(science_frames[wl, :, i, j])
              
+    for wl in range(wave_length):
+        for n in range(sc_fr_nb):
+            #f_residual[wl, n] = rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
+            res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
     # display the median of frames
-    fig, axs = plt.subplots(1,2)
-    axs[0].imshow(f_median[0], cmap=plt.cm.hot)
-    axs[0].set_title("median 1")
-    axs[1].imshow(f_median[1], cmap=plt.cm.hot)
-    axs[1].set_title("median 2")
+    fig, axs = plt.subplots(2,2)
+    '''
+    sns.heatmap(res[0], ax=axs[0])
+    sns.heatmap(res[1], ax=axs[1])
+    plt.show()
+    print("size axs=", len(axs))
+    '''
+    axs[0, 0].imshow(f_median[0], cmap=plt.cm.seismic)
+    axs[0, 0].set_title("median wave length 1")
+    axs[0, 1].imshow(f_median[1], cmap=plt.cm.seismic)
+    axs[0, 1].set_title("median wave length 2")
+    axs[1, 0].imshow(res[0], cmap=plt.cm.seismic)
+    axs[1, 0].set_title("res wave length 1")
+    im3 = axs[1, 1].imshow(res[1], cmap=plt.cm.seismic)
+    axs[1, 1].set_title("res wave length 2")
+    
+    fig.subplots_adjust(right=0.9)
+    position = fig.add_axes([0.92, 0.12, 0.015, .78 ])#位置[左,下,右,上]
+    cb = fig.colorbar(im3, cax=position)
+
+    #fig.colorbar(pcm1, ax=axs[0], fraction=0.046, pad=0.04)
     plt.show()
     
     return None 
@@ -175,8 +198,8 @@ def process_RDI(science_frames, ref_frames):
    
     wave_length = len(science_frames)
     sc_fr_nb = len(science_frames[0])
-    rf_fr_nb = len(ref_frames[0])
     side_len = len(science_frames[0,0])
+    rf_fr_nb = len(ref_frames[0])
     
     res = np.zeros((wave_length, sc_fr_nb, side_len, side_len))
     # for both wavelength
