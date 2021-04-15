@@ -164,13 +164,13 @@ def process_ADI(science_frames, rotations):
     plt.show()
     print("size axs=", len(axs))
     '''
-    axs[0, 0].imshow(f_median[0], cmap=plt.cm.seismic)
+    axs[0, 0].imshow(f_median[0], cmap=plt.cm.seismic,origin='lower')
     axs[0, 0].set_title("median wave length 1")
-    im2 = axs[0, 1].imshow(f_median[1], cmap=plt.cm.seismic)
+    im2 = axs[0, 1].imshow(f_median[1], cmap=plt.cm.seismic,origin='lower')
     axs[0, 1].set_title("median wave length 2")
-    axs[1, 0].imshow(res[0], cmap=plt.cm.seismic)
+    axs[1, 0].imshow(res[0], cmap=plt.cm.seismic,origin='lower')
     axs[1, 0].set_title("res wave length 1")
-    im4 = axs[1, 1].imshow(res[1], cmap=plt.cm.seismic)
+    im4 = axs[1, 1].imshow(res[1], cmap=plt.cm.seismic,origin='lower')
     axs[1, 1].set_title("res wave length 2")
     
     #fig.subplots_adjust(right=1.9)
