@@ -164,13 +164,13 @@ def process_ADI(science_frames, rotations):
     plt.show()
     print("size axs=", len(axs))
     '''
-    axs[0, 0].imshow(f_median[0], cmap=plt.cm.seismic,origin='lower')
+    axs[0, 0].imshow(f_median[0], cmap=plt.cm.seismic, origin='lower')
     axs[0, 0].set_title("median wave length 1")
-    im2 = axs[0, 1].imshow(f_median[1], cmap=plt.cm.seismic,origin='lower')
+    im2 = axs[0, 1].imshow(f_median[1], cmap=plt.cm.seismic, origin='lower')
     axs[0, 1].set_title("median wave length 2")
-    axs[1, 0].imshow(res[0], cmap=plt.cm.seismic,origin='lower')
+    axs[1, 0].imshow(res[0], cmap=plt.cm.seismic, origin='lower')
     axs[1, 0].set_title("res wave length 1")
-    im4 = axs[1, 1].imshow(res[1], cmap=plt.cm.seismic,origin='lower')
+    im4 = axs[1, 1].imshow(res[1], cmap=plt.cm.seismic, origin='lower')
     axs[1, 1].set_title("res wave length 2")
     
     #fig.subplots_adjust(right=1.9)
@@ -279,13 +279,13 @@ if __name__ == "__main__":
     #print(">> Science frames type", type(science_frames), " shape=", science_frames.shape,'\n')
     
     # Step 1: get the list of files contain keyword
-    all_files = get_reference_cubes(str(sys.argv[2]), "MASTER_CUBE-center")
+    #all_files = get_reference_cubes(str(sys.argv[2]), "MASTER_CUBE-center")
    
     # Step 2: put the related data (all frames of the reference cubes) in np.array
-    ref_frames = collect_data(all_files)
+    #ref_frames = collect_data(all_files)
     
     # Step 3: process the science frames
-    sc_frames_procced = process_ADI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.125), read_file(str(sys.argv[1]),"ROTATION"))
+    sc_frames_procced = process_ADI(slice_frame(science_frames, len(science_frames[0][0][0]), 1.0), read_file(str(sys.argv[1]),"ROTATION"))
     #sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
     
     # Step 4: comparaison
