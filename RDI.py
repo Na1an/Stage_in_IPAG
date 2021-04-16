@@ -156,14 +156,13 @@ def process_ADI(science_frames, rotations):
         for n in range(sc_fr_nb):
             #f_residual[wl, n] = rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
             res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
+    
+    hdu = fits.PrimaryHDU(res)
+    hdu.writeto("./res_tmp/res1.fits") 
+    '''
     # display the median of frames
     fig, axs = plt.subplots(2,2)
-    '''
-    sns.heatmap(res[0], ax=axs[0])
-    sns.heatmap(res[1], ax=axs[1])
-    plt.show()
-    print("size axs=", len(axs))
-    '''
+    
     axs[0, 0].imshow(f_median[0], cmap=plt.cm.seismic, origin='lower')
     axs[0, 0].set_title("median wave length 1")
     im2 = axs[0, 1].imshow(f_median[1], cmap=plt.cm.seismic, origin='lower')
@@ -181,7 +180,7 @@ def process_ADI(science_frames, rotations):
     cb = fig.colorbar(im4, ax=axs[1,1])
 
     plt.show()
-    
+    '''
     return None 
 
 # 4. process the science frames, substract the starlight
