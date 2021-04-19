@@ -2,7 +2,7 @@
 
 *Me : Yuchen BAI*
 
-*Advisor : Julien MILLI*
+*Supervisor : Julien MILLI*
 
 ### 1. Installation
 

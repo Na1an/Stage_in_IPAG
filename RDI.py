@@ -157,31 +157,12 @@ def process_ADI(science_frames, rotations):
             #f_residual[wl, n] = rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
             res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
     
-    hdu = fits.PrimaryHDU(res)
-    hdu.writeto("./res_tmp/res1.fits") 
-    '''
-    # display the median of frames
-    fig, axs = plt.subplots(2,2)
-    
-    axs[0, 0].imshow(f_median[0], cmap=plt.cm.seismic, origin='lower')
-    axs[0, 0].set_title("median wave length 1")
-    im2 = axs[0, 1].imshow(f_median[1], cmap=plt.cm.seismic, origin='lower')
-    axs[0, 1].set_title("median wave length 2")
-    axs[1, 0].imshow(res[0], cmap=plt.cm.seismic, origin='lower')
-    axs[1, 0].set_title("res wave length 1")
-    im4 = axs[1, 1].imshow(res[1], cmap=plt.cm.seismic, origin='lower')
-    axs[1, 1].set_title("res wave length 2")
-    
-    #fig.subplots_adjust(right=1.9)
-    #pos1 = fig.add_axes([0.92, 0.41, 0.015, 0.77])#位置[左,下,右,上]
-    cb = fig.colorbar(im2, ax=axs[0,1])
-    
-    #pos2 = fig.add_axes([0.92, 0.11, 0.015, 0.30])#位置[左,下,右,上]
-    cb = fig.colorbar(im4, ax=axs[1,1])
+    return res 
 
-    plt.show()
-    '''
-    return None 
+# 4. PCA - Principle Component Analysis
+def PCA():
+    print("nothing here for now")
+    return None
 
 # 4. process the science frames, substract the starlight
 # we do care wavelength!
@@ -257,7 +238,6 @@ def process_RDI_ssim(science_frames, ref_frames):
         print("<< wavelength = ", wl, "end process")
     return res
 
-
 # main bloc
 if __name__ == "__main__":
     '''
@@ -285,6 +265,9 @@ if __name__ == "__main__":
     
     # Step 3: process the science frames
     sc_frames_procced = process_ADI(slice_frame(science_frames, len(science_frames[0][0][0]), 1.0), read_file(str(sys.argv[1]),"ROTATION"))
+    hdu = fits.PrimaryHDU(sc_frames_procced)
+    hdu.writeto("./res_tmp/res01.fits") 
+    
     #sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
     
     # Step 4: comparaison
