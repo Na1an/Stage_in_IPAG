@@ -161,6 +161,7 @@ def process_ADI(science_frames, rotations):
 
 # 4. KLIP/PCA - Principle Component Analysis
 #   Be attention! The values of science_frames and ref_frames will change !!!
+#   copy/deepcopy may solve the probleme
 def PCA(science_frames, ref_frames):
     '''
     Args:
@@ -171,11 +172,19 @@ def PCA(science_frames, ref_frames):
         res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
     '''
     # 0 partition target T and refs R in the library 
-    
+
     # 1 zero both science_frales and ref_frames
     wave_length, sc_fr_nb, w, h = science_frames.shape
     rf_fr_nb = len(ref_frames[0])
+    print("shape = ", science_frames.shape)
+    print("shape = ", ref_frames.shape)
 
+    science_frames_pca = np.reshape(science_frames, (wave_length, sc_fr_nb, w*h))
+    ref_frames_pca = np.reshape(ref_frames, (wave_length, rf_fr_nb, w*h))
+    print("shape = ", science_frames_pca.shape)
+    print("shape = ", ref_frames_pca.shape)
+
+    '''
     for wl in range(wave_length):
         for f in range(sc_fr_nb):
             mean = np.mean(science_frames[wl, f])
@@ -185,6 +194,7 @@ def PCA(science_frames, ref_frames):
             mean_r = np.mean(ref_frames[wl, f_r])
             ref_frames[wl, f_r] = ref_frames[wl, f_r] - mean_r 
     
+    '''
     # 2 
 
     return None
@@ -275,7 +285,8 @@ if __name__ == "__main__":
     data = read_file(str(sys.argv[1]))
     display_rotaion_angles(data)
     '''
-    
+    scale = 0.125
+
     start_and_end(True)
     
     # argv1 : the path of repository contains science object
@@ -283,18 +294,20 @@ if __name__ == "__main__":
     #print(">> Science frames type", type(science_frames), " shape=", science_frames.shape,'\n')
     
     # Step 1: get the list of files contain keyword
-    #all_files = get_reference_cubes(str(sys.argv[2]), "MASTER_CUBE-center")
+    all_files = get_reference_cubes(str(sys.argv[2]), "MASTER_CUBE-center")
    
     # Step 2: put the related data (all frames of the reference cubes) in np.array
-    #ref_frames = collect_data(all_files)
+    ref_frames = collect_data(all_files, scale)
     
     # Step 3: process the science frames
+    '''
     sc_frames_procced = process_ADI(slice_frame(science_frames, len(science_frames[0][0][0]), 1.0), read_file(str(sys.argv[1]),"ROTATION"))
     hdu = fits.PrimaryHDU(sc_frames_procced)
     hdu.writeto("./res_tmp/res01.fits") 
-    
+    '''
     #sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
     
-    # Step 4: comparaison
+    # Step 4: PCA
+    PCA(slice_frame(science_frames, len(science_frames[0, 0, 0]), scale), ref_frames)
     start_and_end(False)
 
