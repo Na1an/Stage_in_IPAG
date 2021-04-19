@@ -159,9 +159,34 @@ def process_ADI(science_frames, rotations):
     
     return res 
 
-# 4. PCA - Principle Component Analysis
-def PCA():
-    print("nothing here for now")
+# 4. KLIP/PCA - Principle Component Analysis
+#   Be attention! The values of science_frames and ref_frames will change !!!
+def PCA(science_frames, ref_frames):
+    '''
+    Args:
+        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        ref_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        Normally, the scale in 4 dimens is consistent for two args.
+    Return:
+        res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
+    '''
+    # 0 partition target T and refs R in the library 
+    
+    # 1 zero both science_frales and ref_frames
+    wave_length, sc_fr_nb, w, h = science_frames.shape
+    rf_fr_nb = len(ref_frames[0])
+
+    for wl in range(wave_length):
+        for f in range(sc_fr_nb):
+            mean = np.mean(science_frames[wl, f])
+            science_frames[wl, f] = science_frames[wl, f] - mean
+
+        for f_r in range(rf_fr_nb):
+            mean_r = np.mean(ref_frames[wl, f_r])
+            ref_frames[wl, f_r] = ref_frames[wl, f_r] - mean_r 
+    
+    # 2 
+
     return None
 
 # 4. process the science frames, substract the starlight
