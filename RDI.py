@@ -167,61 +167,58 @@ def PCA(science_frames, ref_frames, K, wl=0):
     Args:
         science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
         ref_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
-        Normally, the scale in 4 dimens is consistent for two args.
+        K : a integer. K is K_klip here (K_klip <= rf_fr_nb).
+        wl : a interger. The wavelength.
     Return:
-        res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
+        res : a numpy.ndarray, 3 dimens. Ex. (24 frames, 256, 256).
     '''
-    # 0 partition target T and refs R in the library 
-    
-    # 1 zero both science_frales and ref_frames
+    # 0 reshape image to a vector : (nb of frames, 128, 128) -> (nb of frames, 128*128) 
     sc_fr_nb, w, h = science_frames[wl].shape
     rf_fr_nb = len(ref_frames[wl])
     
-    print("shape = ", science_frames.shape)
-    print("shape = ", ref_frames.shape)
+    science_frames_vector = np.reshape(science_frames[wl], (sc_fr_nb, w*h))
+    ref_frames_vector = np.reshape(ref_frames[wl], (rf_fr_nb, w*h))
 
-    science_frames_pca = np.reshape(science_frames[wl], (sc_fr_nb, w*h))
-    ref_frames_pca = np.reshape(ref_frames[wl], (rf_fr_nb, w*h))
-    print("shape = ", science_frames_pca.shape)
-    print("shape = ", ref_frames_pca.shape)
-
+    # 1 zero both science_frales and ref_frames, partition target T and refs R in the library 
     for f in range(sc_fr_nb):
-        mean = np.mean(science_frames_pca[f])
-        science_frames_pca[f] = science_frames_pca[f] - mean
+        mean = np.mean(science_frames_vector[f])
+        science_frames_vector[f] = science_frames_vector[f] - mean
 
     for f_r in range(rf_fr_nb):
-        mean_r = np.mean(ref_frames_pca[f_r])
-        ref_frames_pca[f_r] = ref_frames_pca[f_r] - mean_r 
+        mean_r = np.mean(ref_frames_vector[f_r])
+        ref_frames_vector[f_r] = ref_frames_vector[f_r] - mean_r 
     
     # 2 compute the Karhunen-Loève transform of the set of reference PSFs Rk(N)? 
     # inner product for each frame of target and each frame of references
-    cov_matrix_ref = np.cov(ref_frames_pca) * (w*h-1)
-    #plt.imshow(cov_matrix_ref, origin='lower')
-    #plt.show()
-    lambda_k, C_k = np.linalg.eigh(cov_matrix_ref)
-    lambda_k_reverse = np.flip(lambda_k)
-    C_k_reverse = np.flip(C_k, axis=1)
+    # K = rf_fr_nb
     
+    # cov(bias=false), so it is divided by N-1 not N
+    # ERR Covariance matrix
     N = w*h
-    Z_KL_k = np.zeros((N, rf_fr_nb)) 
-    for k in range(rf_fr_nb):
-        for p in range(rf_fr_nb):
-            Z_KL_k[:,k] = Z_KL_k[:,k] + (1/np.sqrt(lambda_k_reverse[k]))*(C_k_reverse[p, k] * ref_frames_pca[p]) 
+    ERR = np.cov(ref_frames_vector) * (N-1)
+    # lambda_k - eigenvalue (increase), C_k - eigenvector
+    lambda_k, C_k = np.linalg.eigh(ERR)
     
-    #Z_KL_images = Z_KL_k.T.reshape((rf_fr_nb, w, h))
+    # Z_KL_k.shape = (N, K) , N because c_k*ref[p], k in K
+    Z_KL_k = np.zeros((N, rf_fr_nb)) 
+    for k in range(rf_fr_nb-1, -1, -1): # put the biggest eigenvalue at first
+        for p in range(rf_fr_nb):
+            Z_KL_k[:,k] = Z_KL_k[:,k] + (1/np.sqrt(lambda_k[k]))*(C_k[p, k] * ref_frames_vector[p]) 
     
     # 3 choose a number of modes K = 30
     Z_KL_chosen = Z_KL_k[:,:K]
+    
     # 4 compute the best estimate
     # 5 substact the I[i] from science_frames[i]
-    I = np.zeros((sc_fr_nb, N))
+    res = np.zeros((sc_fr_nb, N))
     for f in range(sc_fr_nb):
         for k in range(K):
-            inner_product = np.dot(Z_KL_chosen[:,k], science_frames_pca[f])
-            I[f] = I[f] + inner_product*(Z_KL_chosen[:,k])
-        I[f] = science_frames_pca[f] - I[f] 
+            inner_product = np.dot(Z_KL_chosen[:,k], science_frames_vector[f])
+            # res[f] stock the PSF image
+            res[f] = res[f] + inner_product*(Z_KL_chosen[:,k])
+        res[f] = science_frames_vector[f] - res[f] 
 
-    return I.reshape((sc_fr_nb, w, h))
+    return res.reshape((sc_fr_nb, w, h))
 
 # 4. process the science frames, substract the starlight
 # we do care wavelength!
@@ -305,11 +302,6 @@ if __name__ == "__main__":
         argv1 : the target/science object
         argv2 : the repository path
     '''
-     
-    '''
-    data = read_file(str(sys.argv[1]))
-    display_rotaion_angles(data)
-    '''
     scale = 0.125
 
     start_and_end(True)
@@ -333,17 +325,13 @@ if __name__ == "__main__":
     #sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
     
     # Step 4: PCA
-    res = PCA(slice_frame(science_frames, len(science_frames[0, 0, 0]), scale), ref_frames, 30)
-    #hdu = fits.PrimaryHDU(slice_frame(science_frames, len(science_frames[0, 0, 0]), scale)[0])
-    #hdu = fits.PrimaryHDU(res)
-    #hdu.writeto("./res_tmp/target.fits") 
+    res = PCA(slice_frame(science_frames, len(science_frames[0, 0, 0]), scale), ref_frames, 50, 1)
     tmp = np.zeros((128, 128))
     rotations_tmp = read_file(str(sys.argv[1]),"ROTATION") 
     for i in range(len(res)):
         tmp = tmp + rotate(res[i] , rotations_tmp[i])
     hdu = fits.PrimaryHDU(tmp)
-    hdu.writeto("./res_tmp/res_after_pca.fits") 
+    hdu.writeto("./res_tmp/res_after_pca_wl_k2.fits") 
 
-    #hdul.close()
     start_and_end(False)
 
