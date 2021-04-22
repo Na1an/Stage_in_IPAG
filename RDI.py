@@ -13,9 +13,9 @@ from skimage.metrics import structural_similarity as ssim
 # program start and program end 
 def start_and_end(start):
     if(start):
-        print("######### program start ###########\n")
+        print("######### program start ###########")
     else:
-        print("\n########## program end ############")
+        print("########## program end ############")
 
 # 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
 def get_reference_cubes(repository_path, keyword):
@@ -138,13 +138,13 @@ def process_ADI(science_frames, rotations):
     '''
     Args:
         science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        rotations : a numpy.ndarry. The angles of ratations    
     Return:
         res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
     '''
     
     wave_length, sc_fr_nb, w, h = science_frames.shape
     f_median = np.zeros((wave_length, w, h))
-    #f_residual = np.zeros((wave_length, sc_fr_nb, w, h))
     res = np.zeros((wave_length, w, h))
     
     for wl in range(wave_length):
@@ -154,7 +154,6 @@ def process_ADI(science_frames, rotations):
              
     for wl in range(wave_length):
         for n in range(sc_fr_nb):
-            #f_residual[wl, n] = rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
             res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
     
     return res 
@@ -162,6 +161,7 @@ def process_ADI(science_frames, rotations):
 # 4. KLIP/PCA - Principle Component Analysis
 #   Be attention! The values of science_frames and ref_frames will change !!!
 #   copy/deepcopy may solve the probleme
+#   For corelation, we may multiple standard variance in the end.
 def PCA(science_frames, ref_frames, K, wl=0):
     '''
     Args:
@@ -299,39 +299,72 @@ def process_RDI_ssim(science_frames, ref_frames):
 if __name__ == "__main__":
     '''
     Args:
-        argv1 : the target/science object
-        argv2 : the repository path
+        argv1 : the algo mode cADI/PCA/RDI
+        argv2 : the path of target/science object repository
+        *argv3 : the path of reference objects repository. (for cADI, argv3 is the scale)
+        last argv : the scale
     '''
+    # the interesting ares of the image
     scale = 0.125
-
     start_and_end(True)
     
-    # argv1 : the path of repository contains science object
-    science_frames = read_file(str(sys.argv[1]), "MASTER_CUBE-center")
-    #print(">> Science frames type", type(science_frames), " shape=", science_frames.shape,'\n')
+    # algo option
+    opt = str(sys.argv[1]).upper()
+    if opt == "CADI":
+        # cADI - ok!
+        print(">> Algo cADI is working! ")
+        
+        # 1. get the target frames from Master cube
+        target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
+        
+        # 2. argv[3] may give us the scale
+        if(sys.argv[3] is not None):
+            scale = float(sys.argv[3])
+        
+        # 3. result of cADI
+        res_cADI = process_ADI(slice_frame(target_frames, len(target_frames[0, 0, 0]), scale), read_file(str(sys.argv[2]),"ROTATION"))
+        hdu = fits.PrimaryHDU(res_cADI)
+        hdu.writeto("./res_tmp/GJ_667C_cADI_0.5.fits") 
+
+    elif opt == "PCA":
+        # PCA - ok!
+        print(">> Algo PCA is working! ")
+        
+        # 1. get target frames 
+        target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
     
-    # Step 1: get the list of files contain keyword
-    all_files = get_reference_cubes(str(sys.argv[2]), "MASTER_CUBE-center")
+        # 2. get the list of files contain keyword
+        ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
    
-    # Step 2: put the related data (all frames of the reference cubes) in np.array
-    ref_frames = collect_data(all_files, scale)
-    
-    # Step 3: process the science frames
-    '''
-    sc_frames_procced = process_ADI(slice_frame(science_frames, len(science_frames[0][0][0]), 1.0), read_file(str(sys.argv[1]),"ROTATION"))
-    hdu = fits.PrimaryHDU(sc_frames_procced)
-    hdu.writeto("./res_tmp/res01.fits") 
-    '''
-    #sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
-    
-    # Step 4: PCA
-    res = PCA(slice_frame(science_frames, len(science_frames[0, 0, 0]), scale), ref_frames, 50, 1)
-    tmp = np.zeros((128, 128))
-    rotations_tmp = read_file(str(sys.argv[1]),"ROTATION") 
-    for i in range(len(res)):
-        tmp = tmp + rotate(res[i] , rotations_tmp[i])
-    hdu = fits.PrimaryHDU(tmp)
-    hdu.writeto("./res_tmp/res_after_pca_wl_k2.fits") 
+        # 3. put the related data (all frames of the reference cubes) in np.array
+        ref_frames = collect_data(ref_files, scale)
+            
+        # 4. PCA
+        side_len = len(science_frames[0, 0, 0])
+        res = PCA(slice_frame(target_frames, side_len, scale), ref_frames, 50, 1)
+        tmp = np.zeros((side_len*scale, side_len*scale))
+        rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
+        for i in range(len(res)):
+            tmp = tmp + rotate(res[i] , rotations_tmp[i])
+        hdu = fits.PrimaryHDU(tmp)
+        hdu.writeto("./res_tmp/res_after_pca_wl_k2.fits") 
+
+    elif opt == "RDI":
+        # RDI - wroking on
+        # argv1 : the path of repository contains science object
+        science_frames = read_file(str(sys.argv[1]), "MASTER_CUBE-center")
+
+        # Step 1: get the list of files contain keyword
+        all_files = get_reference_cubes(str(sys.argv[2]), "MASTER_CUBE-center")
+       
+        # Step 2: put the related data (all frames of the reference cubes) in np.array
+        ref_frames = collect_data(all_files, scale)
+        
+        # Step 3: process the science frames
+        sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
+           
+    else:
+        print("Option is available for now.")
 
     start_and_end(False)
 
