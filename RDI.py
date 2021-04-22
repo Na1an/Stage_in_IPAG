@@ -197,11 +197,12 @@ def PCA(science_frames, ref_frames, K, wl=0):
     N = w*h
     ERR = np.cov(ref_frames_vector) * (N-1)
     # lambda_k - eigenvalue (increase), C_k - eigenvector
-    lambda_k, C_k = np.linalg.eigh(ERR)
-    
+    lambda_incre, C_incre = np.linalg.eigh(ERR)
+    lambda_k = np.flip(lambda_incre)
+    C_k = np.flip(C_incre, axis=1)
     # Z_KL_k.shape = (N, K) , N because c_k*ref[p], k in K
     Z_KL_k = np.zeros((N, rf_fr_nb)) 
-    for k in range(rf_fr_nb-1, -1, -1): # put the biggest eigenvalue at first
+    for k in range(rf_fr_nb): # put the biggest eigenvalue at first
         for p in range(rf_fr_nb):
             Z_KL_k[:,k] = Z_KL_k[:,k] + (1/np.sqrt(lambda_k[k]))*(C_k[p, k] * ref_frames_vector[p]) 
     
@@ -330,25 +331,34 @@ if __name__ == "__main__":
         # PCA - ok!
         print(">> Algo PCA is working! ")
         
+        if(sys.argv[4] is not None):
+            scale = float(sys.argv[4])
+        
         # 1. get target frames 
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
     
         # 2. get the list of files contain keyword
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
-   
+        
+        for s in ref_files:
+            if s.split('/')[-2]==str(sys.argv[2]).split('/')[-1]:
+                ref_files.remove(s)
+                #print("finded")
+        print(ref_files)
         # 3. put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(ref_files, scale)
             
         # 4. PCA
-        side_len = len(science_frames[0, 0, 0])
-        res = PCA(slice_frame(target_frames, side_len, scale), ref_frames, 50, 1)
-        tmp = np.zeros((side_len*scale, side_len*scale))
+        side_len = len(target_frames[0, 0, 0])
+        res = PCA(slice_frame(target_frames, side_len, scale), ref_frames, 5)
+        tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
+        
         rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
         for i in range(len(res)):
             tmp = tmp + rotate(res[i] , rotations_tmp[i])
         hdu = fits.PrimaryHDU(tmp)
-        hdu.writeto("./res_tmp/res_after_pca_wl_k2.fits") 
-
+        hdu.writeto("./res_tmp/PCA_RDI.fits") 
+    
     elif opt == "RDI":
         # RDI - wroking on
         # argv1 : the path of repository contains science object
@@ -356,7 +366,7 @@ if __name__ == "__main__":
 
         # Step 1: get the list of files contain keyword
         all_files = get_reference_cubes(str(sys.argv[2]), "MASTER_CUBE-center")
-       
+        
         # Step 2: put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(all_files, scale)
         

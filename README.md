@@ -30,12 +30,30 @@ Nothing special, the project should work in all Linux OS. Python3 is needed.
 
 --------
 
-It is easy to run the program.
+It is easy to run the program. We have ```cADI```, ```PCA``` and ```RDI``` three modes for now.
 
-* ```python3 FITS.py arg1 arg2```  
+* mode **cADI**
 
-  * **arg1** : the path of repository contains the science target
-  * **arg2** : the path of SPHERE_DC_DATA
+  ```
+  python3 RDI.py cADI ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368 0.5
+  ```
+
+  * **arg1** : algo mode. 
+  * **arg2** : path of target object repository
+  * **arg3**: scale, default = 0.125
+
+* mode **PCA** 
+
+  ```
+  python3 RDI.py PCA ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368 ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368 0.25
+  ```
+
+  * **arg1** : algo mode. 
+  * **arg2** : path of target object repository
+  * **arg3** : reference object repository
+  * **arg4**: scale, default = 0.125
+
+  
 
 
 ### 4. Sujet
