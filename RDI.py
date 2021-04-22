@@ -350,7 +350,8 @@ if __name__ == "__main__":
             
         # 4. PCA
         side_len = len(target_frames[0, 0, 0])
-        res = PCA(slice_frame(target_frames, side_len, scale), ref_frames, 5)
+        # last arg is the K_klip
+        res = PCA(slice_frame(target_frames, side_len, scale), ref_frames, 20) #K_klip
         tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
         
         rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
