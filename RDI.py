@@ -183,11 +183,13 @@ def PCA(science_frames, ref_frames, K, wl=0):
     for f in range(sc_fr_nb):
         mean = np.mean(science_frames_vector[f])
         science_frames_vector[f] = science_frames_vector[f] - mean
+        print("---", f+1, "of", sc_fr_nb,"--- substract mean from science_frames")
 
     for f_r in range(rf_fr_nb):
         mean_r = np.mean(ref_frames_vector[f_r])
         ref_frames_vector[f_r] = ref_frames_vector[f_r] - mean_r 
-    
+        print("---", f_r+1, "of", rf_fr_nb,"--- substract mean from rf_frames")
+
     # 2 compute the Karhunen-Loève transform of the set of reference PSFs Rk(N)? 
     # inner product for each frame of target and each frame of references
     # K = rf_fr_nb
@@ -205,6 +207,7 @@ def PCA(science_frames, ref_frames, K, wl=0):
     for k in range(rf_fr_nb): # put the biggest eigenvalue at first
         for p in range(rf_fr_nb):
             Z_KL_k[:,k] = Z_KL_k[:,k] + (1/np.sqrt(lambda_k[k]))*(C_k[p, k] * ref_frames_vector[p]) 
+        print("---", k+1, "of", rf_fr_nb,"--- eigenvalue")
     
     # 3 choose a number of modes K = 30
     Z_KL_chosen = Z_KL_k[:,:K]
@@ -218,6 +221,7 @@ def PCA(science_frames, ref_frames, K, wl=0):
             # res[f] stock the PSF image
             res[f] = res[f] + inner_product*(Z_KL_chosen[:,k])
         res[f] = science_frames_vector[f] - res[f] 
+        print("---", f+1, "of", sc_fr_nb,"--- substracut res from science_frames")
 
     return res.reshape((sc_fr_nb, w, h))
 
@@ -339,27 +343,31 @@ if __name__ == "__main__":
     
         # 2. get the list of files contain keyword
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
-        
+        ''' 
         for s in ref_files:
             if s.split('/')[-2]==str(sys.argv[2]).split('/')[-1]:
                 ref_files.remove(s)
                 #print("finded")
         print(ref_files)
+        '''
         # 3. put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(ref_files, scale)
             
         # 4. PCA
         side_len = len(target_frames[0, 0, 0])
         # last arg is the K_klip
-        res = PCA(slice_frame(target_frames, side_len, scale), ref_frames, 20) #K_klip
-        tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
-        
-        rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
-        for i in range(len(res)):
-            tmp = tmp + rotate(res[i] , rotations_tmp[i])
-        hdu = fits.PrimaryHDU(tmp)
-        hdu.writeto("./res_tmp/PCA_RDI.fits") 
-    
+        for n in range(1,21):
+            res = PCA(slice_frame(target_frames, side_len, scale), ref_frames, n) #K_klip
+            tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
+            
+            rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
+            for i in range(len(res)):
+                tmp = tmp + rotate(res[i] , rotations_tmp[i])
+            hdu = fits.PrimaryHDU(tmp)
+            path = "./K_kilp_ADI_RDI/PCA_RDI_4_ref_" + str(n) + ".fits"
+            hdu.writeto(path) 
+            print(">>===", i, "of", 20,"=== fits writed ===")
+         
     elif opt == "RDI":
         # RDI - wroking on
         # argv1 : the path of repository contains science object
