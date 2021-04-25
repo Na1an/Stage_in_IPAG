@@ -182,12 +182,12 @@ def PCA(science_frames, ref_frames, K, wl=0):
     # 1 zero both science_frales and ref_frames, partition target T and refs R in the library 
     for f in range(sc_fr_nb):
         mean = np.mean(science_frames_vector[f])
-        science_frames_vector[f] = science_frames_vector[f] - mean
+        science_frames_vector[f] = (science_frames_vector[f] - mean)/np.std(science_frames_vector[f])
         print("---", f+1, "of", sc_fr_nb,"--- substract mean from science_frames")
 
     for f_r in range(rf_fr_nb):
         mean_r = np.mean(ref_frames_vector[f_r])
-        ref_frames_vector[f_r] = ref_frames_vector[f_r] - mean_r 
+        ref_frames_vector[f_r] = (ref_frames_vector[f_r] - mean_r)/np.std(ref_frames_vector[f_r]) 
         print("---", f_r+1, "of", rf_fr_nb,"--- substract mean from rf_frames")
 
     # 2 compute the Karhunen-Loève transform of the set of reference PSFs Rk(N)? 
@@ -364,7 +364,7 @@ if __name__ == "__main__":
             for i in range(len(res)):
                 tmp = tmp + rotate(res[i] , rotations_tmp[i])
             hdu = fits.PrimaryHDU(tmp)
-            path = "./K_kilp_ADI_RDI/PCA_RDI_4_ref_" + str(n) + ".fits"
+            path = "./K_kilp_ADI_RDI/PCA_RDI_5_ref_cor" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", i, "of", 20,"=== fits writed ===")
          
