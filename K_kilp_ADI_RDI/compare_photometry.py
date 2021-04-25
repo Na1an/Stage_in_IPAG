@@ -24,7 +24,7 @@ ADI_res = get_photometry("./ADI")
 print(ADI_res)
 
 # RDI data 1 target 2 ref stars
-RDI_res_2_ref = get_photometry("./RDI_ref_2_star")
+RDI_res_2_ref = get_photometry("./RDI_ref_4_star_corre")
 print(RDI_res_2_ref)
 
 # RDI data 1 target 4 ref stars
@@ -39,7 +39,7 @@ for i in range(len(ADI_res)):
     data[i][1] = RDI_res_2_ref[i]
     data[i][2] = RDI_res_4_ref[i]
 
-data_total = pd.DataFrame(data, columns=['ADI','RDI_2_ref','RDI_5_ref'])
+data_total = pd.DataFrame(data, columns=['ADI','RDI_5_ref_corr','RDI_5_ref'])
 data_total.index = data_total.index + 1
 print(data_total)
 #data_total.plot(kind='line', style='--o', title='comparation')
