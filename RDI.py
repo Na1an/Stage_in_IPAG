@@ -133,6 +133,34 @@ def rotate(image, angle, center=None, scale=1.0):
     # return the rotated image
     return rotated
 
+# store the median of the cube
+def median_of_cube(science_frames, rotations, scale):
+    '''
+    Args:
+        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        rotations : a numpy.ndarry. The angles of ratations
+        scale : a float. The scale of study area in the center of frames.
+    Return:
+        res : a numpy.ndarray, 3 dimensions. Ex. (2 wavelengths, 256, 256).
+    '''
+    wave_length, sc_fr_nb, w, h = science_frames.shape
+    f_median = np.zeros((wave_length, w, h))
+    res = np.zeros((wave_length, int(w*scale), int(h*scale)))
+    
+    sc_frames_rotated = np.zeros((wave_length, sc_fr_nb, w, h))
+    # rotate first
+    for wl in range(wave_length):
+        for n in range(sc_fr_nb):
+            sc_frames_rotated[wl, n] = rotate(science_frames[wl, n], rotations[n])
+        
+    for wl in range(wave_length):
+        for i in range(w):
+            for j in range(h):
+                f_median[wl, i, j] = np.median(science_frames[wl, :, i, j])
+        res[wl] = slice_frame(f_median[wl], w, scale)
+
+    return f_median
+
 # 3. Classic ADI
 def process_ADI(science_frames, rotations):
     '''
@@ -381,7 +409,14 @@ if __name__ == "__main__":
         
         # Step 3: process the science frames
         sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
-           
+    
+    elif opt== "TEST":
+        target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
+        rotations = read_file(str(sys.argv[2]), "ROTATION") 
+        res = median_of_cube(target_frames, rotations, 0.25)
+        hdu = fits.PrimaryHDU(res)
+        hdu.writeto("./res_tmp/target_rotated_median.fits") 
+
     else:
         print("Option is available for now.")
 
