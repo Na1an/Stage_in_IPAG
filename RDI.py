@@ -133,7 +133,7 @@ def rotate(image, angle, center=None, scale=1.0):
     # return the rotated image
     return rotated
 
-# store the median of the cube
+# store the median of the cube -- Not work
 def median_of_cube(science_frames, rotations, scale):
     '''
     Args:
@@ -147,19 +147,16 @@ def median_of_cube(science_frames, rotations, scale):
     f_median = np.zeros((wave_length, w, h))
     res = np.zeros((wave_length, int(w*scale), int(h*scale)))
     
-    sc_frames_rotated = np.zeros((wave_length, sc_fr_nb, w, h))
-    # rotate first
-    for wl in range(wave_length):
-        for n in range(sc_fr_nb):
-            sc_frames_rotated[wl, n] = rotate(science_frames[wl, n], rotations[n])
-        
     for wl in range(wave_length):
         for i in range(w):
             for j in range(h):
                 f_median[wl, i, j] = np.median(science_frames[wl, :, i, j])
-        res[wl] = slice_frame(f_median[wl], w, scale)
+             
+    for wl in range(wave_length):
+        for n in range(sc_fr_nb):
+            res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
 
-    return f_median
+    return None
 
 # 3. Classic ADI
 def process_ADI(science_frames, rotations):
