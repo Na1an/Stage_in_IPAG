@@ -5,22 +5,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from astropy.io import fits
-from photutils.aperture import CircularAperture, aperture_photometry
+from photutils.aperture import CircularAperture, aperture_photometry, CircularAnnulus
 
-positions = [(127. ,250.)]
+positions = [(125.99284, 249.92338)]
 aperture = CircularAperture(positions, r=2.)
+annulus = CircularAnnulus(positions, r_in=4., r_out=6.)
 
 def get_photometry(path):
     files = os.listdir(path)
     res = np.zeros((len(files)))
     for i in range(len(res)):
-        flux_companion = aperture_photometry(fits.getdata(path+'/'+files[i]), aperture)
-        flux_companion['aperture_sum'].info.format = '%.8g'
-        res[i] = flux_companion['aperture_sum']
+        flux_companion = aperture_photometry(fits.getdata(path+'/'+files[i]), [aperture, annulus])
+        flux_companion['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
+        bkg_mean = flux_companion['aperture_sum_1']/annulus.area
+        bkg_sum_in_companion = bkg_mean * aperture.area 
+        res[i] = flux_companion['aperture_sum_0'] - bkg_sum_in_companion
     return res 
 
 # ADI data
-ADI_res = get_photometry("./ADI")
+aperture_sum_1ADI_res = get_photometry("./ADI")
 print(ADI_res)
 
 # RDI data 1 target 2 ref stars
