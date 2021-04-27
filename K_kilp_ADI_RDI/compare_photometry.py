@@ -2,7 +2,7 @@ import os
 import sys
 import numpy as np
 import pandas as pd
-arcsinhimport matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import seaborn as sns
 from astropy.io import fits
 from photutils.aperture import CircularAperture, aperture_photometry, CircularAnnulus
