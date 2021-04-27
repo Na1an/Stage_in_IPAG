@@ -16,6 +16,8 @@ def get_stdev(data):
     pixels = []
     for i in range(256):
         for j in range(256):
+            if int((125.99284-i)**2+(248.92338-j)**2)**0.5) < 2:
+                continue
             if ((128-i)**2+(128-j)**2) < (radius+1) :
                 pixels.append(data[i][j])
     return np.std(pixels)
