@@ -36,8 +36,15 @@ def get_reference_cubes(repository_path, keyword):
             res = res + get_reference_cubes(files_sub, keyword)
         if keyword in files_sub:
             res = res + [files_sub]
-
     return res
+
+def remove_target(target,refs):
+    #res = refs
+    for s in refs:
+        if s.split('/')[-2] == target.split('/')[-1]:
+            refs.remove(s)
+            break
+    return refs
 
 # read one file and return its data
 def read_file(file_path, keyword):
@@ -360,24 +367,23 @@ if __name__ == "__main__":
         # PCA - ok!
         print(">> Algo PCA is working! ")
         
-        if(sys.argv[4] is not None):
+        if(len(sys.argv) >4):
             scale = float(sys.argv[4])
         
         # 1. get target frames 
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
     
-        # 2. get the list of files contain keyword
+        # 2. get the list of files contain keyword and remove the target
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
-        ''' 
+        remove_target(str(sys.argv[2]),ref_files)
+        
         for s in ref_files:
-            if s.split('/')[-2]==str(sys.argv[2]).split('/')[-1]:
-                ref_files.remove(s)
-                #print("finded")
-        print(ref_files)
-        '''
+            print(s)
+        
         # 3. put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(ref_files, scale)
-            
+        
+        '''
         # 4. PCA
         side_len = len(target_frames[0, 0, 0])
         # last arg is the K_klip
@@ -392,7 +398,7 @@ if __name__ == "__main__":
             path = "./K_kilp_ADI_RDI/PCA_RDI_5_ref_cor" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", i, "of", 20,"=== fits writed ===")
-         
+        '''
     elif opt == "RDI":
         # RDI - wroking on
         # argv1 : the path of repository contains science object
