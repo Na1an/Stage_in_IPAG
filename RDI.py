@@ -245,6 +245,40 @@ def process_ADI(science_frames, rotations):
     
     return res 
 
+# distance between two points
+def distance(x1, y1, x2, y2):
+    '''
+    Args:
+        x1 : an integer. object 1 - coordinate X
+        y1 : an integer. object 1 - coordinate Y
+        x2 : an integer. object 2 - coordinate X
+        y2 : an integer. object 2 - coordinate Y
+    Return:
+        res : an integer. The distance between two points. 
+    '''
+    
+    return ((x1-x2)**2+(y1-y2)**2)**0.5
+
+# A mask, cover the center of image
+def mask(w, h, radius):
+    '''
+    Args:
+        w : an integer. The weight of image.
+        h : an integer. The height of image.
+        radius : an integer. The radius of mask.
+    Return:
+        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
+    '''
+    res = np.full((w,h),True)
+    x = w//2
+    y = y//2
+    for i in range(w):
+        for j in range(h):
+            if distance(i, j, x, y) < radius:
+                res[i,j] = False
+    
+    return res
+
 # 4. KLIP/PCA - Principle Component Analysis
 #   Be attention! The values of science_frames and ref_frames will change !!!
 #   copy/deepcopy may solve the probleme
