@@ -210,10 +210,13 @@ def selection(nb_best, target, refs, scale, wave_length=0):
         res[refs[i]] = coef_corr[0,1]
     tmp = sorted(res.items(),key = lambda r:(r[1],r[0]), reverse=True)
     #print(tmp)
+    print(">> There are", len(tmp), "reference stars in the library")
+    print(">> we will chose", nb_best, "correlated cube to do PCA on RDI")
     res_bis = []
     for k in range(nb_best):
         (x,y) = tmp[k]
         res_bis.append(x)
+        print(k,"- corrcoef value =", y)
 
     return res_bis 
 
@@ -426,22 +429,24 @@ if __name__ == "__main__":
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
         side_len = len(target_frames[0, 0, 0])
         target_frames = slice_frame(target_frames, side_len, scale) 
-        print("Scale = ", scale, "target_frames shape = ", target_frames.shape)
+        print("Scale = ", scale, "\ntarget_frames shape =", target_frames.shape)
         # 2. get the list of files contain keyword and remove the target
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
         
         # now, the target is not in the references frames
-        remove_target(str(sys.argv[2]),ref_files)
-        #for s in ref_files:
-        #    print(s)
+        ref_files = remove_target(str(sys.argv[2]),ref_files)
+        print(">> what we have in ref_res")
+        for s in ref_files:
+            print(s)
         
         # select the best correlated targets
-        ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
-        print(ref_files) 
+        ref_files = selection(5, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        #print(ref_files) 
+        
         # 3. put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(ref_files, scale)
+        print("ref_frames shape =", ref_frames.shape)
         
-        '''
         # 4. PCA
         # last arg is the K_klip
         for n in range(1,21):
@@ -452,10 +457,10 @@ if __name__ == "__main__":
             for i in range(len(res)):
                 tmp = tmp + rotate(res[i] , rotations_tmp[i])
             hdu = fits.PrimaryHDU(tmp)
-            path = "./K_kilp_ADI_RDI/PCA_RDI_5_ref_cor" + str(n) + ".fits"
+            path = "./K_kilp_ADI_RDI/RDI_After" + str(n) + ".fits"
             hdu.writeto(path) 
-            print(">>===", i, "of", 20,"=== fits writed ===")
-        '''
+            print(">>===", n, "of", 20,"=== fits writed ===")
+    
     elif opt == "RDI":
         # RDI - wroking on
         # argv1 : the path of repository contains science object

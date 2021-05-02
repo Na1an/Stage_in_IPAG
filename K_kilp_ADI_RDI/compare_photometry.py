@@ -42,29 +42,38 @@ ADI_res, ADI_SN = get_photometry("./ADI")
 print(ADI_res)
 
 # RDI data 1 target 2 ref stars
-RDI_res_2_ref, RDI_2_SN = get_photometry("./RDI_ref_2_star")
-print(RDI_res_2_ref)
+#RDI_res_2_ref, RDI_2_SN = get_photometry("./RDI_ref_2_star")
+#print(RDI_res_2_ref)
 
 # RDI data 1 target 4 ref stars
-RDI_res_4_ref, RDI_4_SN = get_photometry("./RDI_ref_4_star")
-print(RDI_res_4_ref)
+#RDI_res_4_ref, RDI_4_SN = get_photometry("./RDI_ref_4_star")
+#print(RDI_res_4_ref)
+
+#
+RDI_flux_3_best, RDI_SN_3_best = get_photometry("./RDI_After_3_best")
+RDI_flux_5_best, RDI_SN_5_best = get_photometry("./RDI_After_5_best")
 
 sns.set(style="darkgrid")
 
-data = np.zeros((len(ADI_res),3))
+# nb of data
+nb_data = 3
+data = np.zeros((len(ADI_res), nb_data))
 for i in range(len(ADI_res)):
     data[i][0] = ADI_res[i]
-    data[i][1] = RDI_res_2_ref[i]
-    data[i][2] = RDI_res_4_ref[i]
-    
-data_SN = np.zeros((len(ADI_res),3))
+    #data[i][1] = RDI_res_2_ref[i]
+    #data[i][2] = RDI_res_4_ref[i]
+    data[i][1] = RDI_flux_3_best[i]
+    data[i][2] = RDI_flux_5_best[i]
+
+data_SN = np.zeros((len(ADI_res), nb_data))
 for i in range(len(ADI_res)):
     data_SN[i][0] = ADI_SN[i]
-    data_SN[i][1] = RDI_2_SN[i]
-    data_SN[i][2] = RDI_4_SN[i]
+    #data_SN[i][1] = RDI_2_SN[i]
+    #data_SN[i][2] = RDI_4_SN[i]
+    data_SN[i][1] = RDI_SN_3_best[i]
+    data_SN[i][2] = RDI_SN_5_best[i]
 
-
-data_total = pd.DataFrame(data, columns=['ADI','RDI_2_ref','RDI_5_ref'])
+data_total = pd.DataFrame(data[:,1:], columns=['RDI_3_best','RDI_5_best'])
 data_total.index = data_total.index + 1
 print("######### Flux of companion #######")
 print(data_total)
@@ -72,10 +81,10 @@ print(data_total)
 sns.relplot(kind='line',data=data_total)
 plt.title("Target:GJ667c Ref: CJ3998/CJ442/61Vir/CJ674/GJ682")
 plt.xlabel("K_kilp")
-plt.ylabel("Flux of the companion - diameter 4 px")
+plt.ylabel("Flux of the companion absolute - diameter 4 px")
 plt.show()
 
-data_total_SN = pd.DataFrame(data_SN[:,1:], columns=['RDI_2_ref_S/N','RDI_5_ref_S/N'])
+data_total_SN = pd.DataFrame(data_SN[:,1:], columns=['RDI_SN_3_best','RDI_SN_5_best'])
 data_total_SN.index = data_total_SN.index + 1
 print("######### S/N ########")
 print(data_total_SN)
