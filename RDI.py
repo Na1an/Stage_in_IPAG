@@ -1,6 +1,7 @@
 import os
 import cv2
 import sys
+import heapq
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -140,8 +141,8 @@ def rotate(image, angle, center=None, scale=1.0):
     # return the rotated image
     return rotated
 
-# store the median of the cube -- Not work
-def median_of_cube(science_frames, rotations, scale):
+# store the median of the cube and rotate -- Not work
+def median_of_cube_test(science_frames, rotations, scale):
     '''
     Args:
         science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
@@ -164,6 +165,57 @@ def median_of_cube(science_frames, rotations, scale):
             res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
 
     return None
+
+# median of cube
+def median_of_cube(cube, wl=0):
+    '''
+    Args:
+        cube : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        wl : a integer. Wave length of cube.
+    Return:
+        res : a numpy.ndarray, 2 dimensions. Ex. (256, 256).
+    '''
+    wave_length, sc_fr_nb, w, h = cube.shape
+    res = np.zeros((w,h))
+    for i in range(w):
+        for j in range(h):
+            res[i,j] = np.median(cube[wl,:,i,j])
+    return res
+
+# chose the best correlated reference stars, not all
+def selection(nb_best, target, refs, scale, wave_length=0):
+    '''
+    Args:
+        nb_best : a integer. How many best ref stars we want.
+        target : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        refs : a list of string. All stars data we have.
+        wave_length : a integer. Wave length of the cube.
+    Rrturn:
+        res : a list of string. The int(nb_best) best chosen ref stars.
+    '''
+    res = {}
+    # target_median is 2 dims. (256, 256)
+    target_median = median_of_cube(target, wave_length)
+    w, h = target_median.shape
+    target_median_vector = np.reshape(target_median,(w*h)) 
+
+    for i in range(len(refs)):
+        # hd is 4 dims: (wl, nb frmes, x, y)
+        hd = fits.getdata(refs[i])
+        # ref_median is 2 dims. (256, 256)
+        ref_meidan = median_of_cube(slice_frame(hd,len(hd[wave_length,i,0]),scale), wave_length)
+        ref_meidan_vector = np.reshape(ref_meidan, (w*h)) 
+        coef_corr = np.corrcoef(target_median_vector, ref_meidan_vector)
+        #print(refs[i],"=",coef_corr[0,1])
+        res[refs[i]] = coef_corr[0,1]
+    tmp = sorted(res.items(),key = lambda r:(r[1],r[0]), reverse=True)
+    #print(tmp)
+    res_bis = []
+    for k in range(nb_best):
+        (x,y) = tmp[k]
+        res_bis.append(x)
+
+    return res_bis 
 
 # 3. Classic ADI
 def process_ADI(science_frames, rotations):
@@ -342,7 +394,7 @@ if __name__ == "__main__":
         last argv : the scale
     '''
     # the interesting ares of the image
-    scale = 0.125
+    scale = 0.25
     start_and_end(True)
     
     # algo option
@@ -372,23 +424,28 @@ if __name__ == "__main__":
         
         # 1. get target frames 
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
-    
+        side_len = len(target_frames[0, 0, 0])
+        target_frames = slice_frame(target_frames, side_len, scale) 
+        print("Scale = ", scale, "target_frames shape = ", target_frames.shape)
         # 2. get the list of files contain keyword and remove the target
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
+        
+        # now, the target is not in the references frames
         remove_target(str(sys.argv[2]),ref_files)
+        #for s in ref_files:
+        #    print(s)
         
-        for s in ref_files:
-            print(s)
-        
+        # select the best correlated targets
+        ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        print(ref_files) 
         # 3. put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(ref_files, scale)
         
         '''
         # 4. PCA
-        side_len = len(target_frames[0, 0, 0])
         # last arg is the K_klip
         for n in range(1,21):
-            res = PCA(slice_frame(target_frames, side_len, scale), ref_frames, n) #K_klip
+            res = PCA(target_frames, ref_frames, n) #K_klip
             tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
             
             rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
@@ -416,7 +473,7 @@ if __name__ == "__main__":
     elif opt== "TEST":
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
         rotations = read_file(str(sys.argv[2]), "ROTATION") 
-        res = median_of_cube(target_frames, rotations, 0.25)
+        res = median_of_cube_test(target_frames, rotations, 0.25)
         hdu = fits.PrimaryHDU(res)
         hdu.writeto("./res_tmp/target_rotated_median.fits") 
 
