@@ -53,7 +53,7 @@ def read_file(file_path, keyword):
     Args:
         file_path : a string. The file path!
     Return:
-        return the data of hd[0],hd type HDUList.
+        return the data of hd[0],hd type HDUList. Should be type nparray, 4 dimensions (wave_length, sc_fr_nb, x, y).
     '''
     
     '''
@@ -205,13 +205,17 @@ def selection(nb_best, target, refs, scale, wave_length=0):
         # ref_median is 2 dims. (256, 256)
         ref_meidan = median_of_cube(slice_frame(hd,len(hd[wave_length,i,0]),scale), wave_length)
         ref_meidan_vector = np.reshape(ref_meidan, (w*h)) 
+        
+        # maby should try cosine similarity, structural simimarity(SSIM)
         coef_corr = np.corrcoef(target_median_vector, ref_meidan_vector)
         #print(refs[i],"=",coef_corr[0,1])
         res[refs[i]] = coef_corr[0,1]
+    
     tmp = sorted(res.items(),key = lambda r:(r[1],r[0]), reverse=True)
-    #print(tmp)
+    
     print(">> There are", len(tmp), "reference stars in the library")
     print(">> we will chose", nb_best, "correlated cube to do PCA on RDI")
+    
     res_bis = []
     for k in range(nb_best):
         (x,y) = tmp[k]
