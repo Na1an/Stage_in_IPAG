@@ -38,7 +38,7 @@ def get_photometry(path):
     return res, SN 
 
 # ADI data
-ADI_res, ADI_SN = get_photometry("./ADI_WITH_MASK")
+ADI_res, ADI_SN = get_photometry("./ADI_WITH_MASK_32")
 print(ADI_res)
 
 # RDI data 1 target 2 ref stars
@@ -50,8 +50,8 @@ print(ADI_res)
 #print(RDI_res_4_ref)
 
 #
-RDI_flux_3_best, RDI_SN_3_best = get_photometry("./RDI_WITH_MASK_3_best")
-RDI_flux_5_best, RDI_SN_5_best = get_photometry("./RDI_WITH_MASK_5_best")
+RDI_flux_3_best, RDI_SN_3_best = get_photometry("./RDI_WITH_MASK_3_best_32")
+RDI_flux_5_best, RDI_SN_5_best = get_photometry("./RDI_WITH_MASK_5_best_32")
 
 sns.set(style="darkgrid")
 
@@ -73,7 +73,7 @@ for i in range(len(ADI_res)):
     data_SN[i][1] = RDI_SN_3_best[i]
     data_SN[i][2] = RDI_SN_5_best[i]
 
-data_total = pd.DataFrame(data[:,:], columns=['ADI_with_mask','RDI_3_best_with_mask','RDI_5_best_with_mask'])
+data_total = pd.DataFrame(data[:,:], columns=['ADI_with_mask_32pxs','RDI_3_best_with_mask_32pxs','RDI_5_best_with_mask_32pxs'])
 data_total.index = data_total.index + 1
 print("######### Flux of companion #######")
 print(data_total)
@@ -84,7 +84,7 @@ plt.xlabel("K_kilp")
 plt.ylabel("Flux of the companion absolute - diameter 4 px")
 plt.show()
 
-data_total_SN = pd.DataFrame(data_SN[:,:], columns=['ADI_SN_with_mask','RDI_SN_3_best_with_mask','RDI_SN_5_best_with_mask'])
+data_total_SN = pd.DataFrame(data_SN[:,:], columns=['ADI_SN_with_mask_32pxs','RDI_SN_3_best_with_mask_32pxs','RDI_SN_5_best_with_mask_32pxs'])
 data_total_SN.index = data_total_SN.index + 1
 print("######### S/N ########")
 print(data_total_SN)

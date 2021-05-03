@@ -12,7 +12,7 @@ from scipy import stats
 from skimage.metrics import structural_similarity as ssim
 
 # Global variable
-MASK_RADIUS = 16
+MASK_RADIUS = 32
 
 # program start and program end 
 def start_and_end(start):
@@ -484,13 +484,13 @@ if __name__ == "__main__":
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
         
         # now, the target is not in the references frames
-        #ref_files = remove_target(str(sys.argv[2]),ref_files)
+        ref_files = remove_target(str(sys.argv[2]),ref_files)
         print(">> what we have in ref_res")
         for s in ref_files:
             print(s)
         
         # select the best correlated targets
-        #ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
         #print(ref_files) 
         
         # 3. put the related data (all frames of the reference cubes) in np.array
@@ -507,7 +507,7 @@ if __name__ == "__main__":
             for i in range(len(res)):
                 tmp = tmp + rotate(res[i] , rotations_tmp[i])
             hdu = fits.PrimaryHDU(tmp)
-            path = "./K_kilp_ADI_RDI/ADI_WITH_MASK/ADI_Masked" + str(n) + ".fits"
+            path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", n, "of", 20,"=== fits writed ===")
     
