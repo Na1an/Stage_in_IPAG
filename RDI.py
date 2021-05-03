@@ -11,6 +11,9 @@ from sklearn.metrics import log_loss
 from scipy import stats
 from skimage.metrics import structural_similarity as ssim
 
+# Global variable
+MASK_RADIUS = 16
+
 # program start and program end 
 def start_and_end(start):
     if(start):
@@ -166,6 +169,41 @@ def median_of_cube_test(science_frames, rotations, scale):
 
     return None
 
+# distance between two points
+def distance(x1, y1, x2, y2):
+    '''
+    Args:
+        x1 : an integer. object 1 - coordinate X
+        y1 : an integer. object 1 - coordinate Y
+        x2 : an integer. object 2 - coordinate X
+        y2 : an integer. object 2 - coordinate Y
+    Return:
+        res : an integer. The distance between two points. 
+    '''
+    
+    return ((x1-x2)**2+(y1-y2)**2)**0.5
+
+# A mask, cover the center of image
+def create_mask(w, h, radius=MASK_RADIUS):
+    '''
+    Args:
+        w : an integer. The weight of image.
+        h : an integer. The height of image.
+        radius : an integer. The radius of mask.
+    Return:
+        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
+    '''
+    count = 0
+    res = np.full((w,h),True)
+    x = w//2
+    y = h//2
+    for i in range(w):
+        for j in range(h):
+            if distance(i, j, x, y) <= radius:
+                res[i,j] = False
+                count = count + 1
+    return res, count
+
 # median of cube
 def median_of_cube(cube, wl=0):
     '''
@@ -197,14 +235,16 @@ def selection(nb_best, target, refs, scale, wave_length=0):
     # target_median is 2 dims. (256, 256)
     target_median = median_of_cube(target, wave_length)
     w, h = target_median.shape
-    target_median_vector = np.reshape(target_median,(w*h)) 
+    # create mask
+    m, pxs_center = create_mask(w,h,MASK_RADIUS)
+    target_median_vector = np.reshape(target_median*m,(w*h)) 
 
     for i in range(len(refs)):
         # hd is 4 dims: (wl, nb frmes, x, y)
         hd = fits.getdata(refs[i])
         # ref_median is 2 dims. (256, 256)
         ref_meidan = median_of_cube(slice_frame(hd,len(hd[wave_length,i,0]),scale), wave_length)
-        ref_meidan_vector = np.reshape(ref_meidan, (w*h)) 
+        ref_meidan_vector = np.reshape(ref_meidan*m, (w*h)) 
         
         # maby should try cosine similarity, structural simimarity(SSIM)
         coef_corr = np.corrcoef(target_median_vector, ref_meidan_vector)
@@ -249,44 +289,11 @@ def process_ADI(science_frames, rotations):
     
     return res 
 
-# distance between two points
-def distance(x1, y1, x2, y2):
-    '''
-    Args:
-        x1 : an integer. object 1 - coordinate X
-        y1 : an integer. object 1 - coordinate Y
-        x2 : an integer. object 2 - coordinate X
-        y2 : an integer. object 2 - coordinate Y
-    Return:
-        res : an integer. The distance between two points. 
-    '''
-    
-    return ((x1-x2)**2+(y1-y2)**2)**0.5
-
-# A mask, cover the center of image
-def mask(w, h, radius):
-    '''
-    Args:
-        w : an integer. The weight of image.
-        h : an integer. The height of image.
-        radius : an integer. The radius of mask.
-    Return:
-        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
-    '''
-    res = np.full((w,h),True)
-    x = w//2
-    y = y//2
-    for i in range(w):
-        for j in range(h):
-            if distance(i, j, x, y) < radius:
-                res[i,j] = False
-    
-    return res
-
 # 4. KLIP/PCA - Principle Component Analysis
 #   Be attention! The values of science_frames and ref_frames will change !!!
 #   copy/deepcopy may solve the probleme
 #   For corelation, we may multiple standard variance in the end.
+#   mask added, let's see what will happen
 def PCA(science_frames, ref_frames, K, wl=0):
     '''
     Args:
@@ -300,19 +307,23 @@ def PCA(science_frames, ref_frames, K, wl=0):
     # 0 reshape image to a vector : (nb of frames, 128, 128) -> (nb of frames, 128*128) 
     sc_fr_nb, w, h = science_frames[wl].shape
     rf_fr_nb = len(ref_frames[wl])
+    N = w*h
     
-    science_frames_vector = np.reshape(science_frames[wl], (sc_fr_nb, w*h))
-    ref_frames_vector = np.reshape(ref_frames[wl], (rf_fr_nb, w*h))
-
+    # create mask, and the MASK_RADIUS is a global variable
+    m, pxs_center = create_mask(w, h, MASK_RADIUS)
+    m_reshape = np.reshape(m, N)
+    science_frames_vector = np.reshape(science_frames[wl], (sc_fr_nb, N))
+    ref_frames_vector = np.reshape(ref_frames[wl], (rf_fr_nb, N))
+    
     # 1 zero both science_frales and ref_frames, partition target T and refs R in the library 
     for f in range(sc_fr_nb):
-        mean = np.mean(science_frames_vector[f])
-        science_frames_vector[f] = (science_frames_vector[f] - mean)/np.std(science_frames_vector[f])
+        mean = np.mean(science_frames_vector[f]*m_reshape) * (N/(N - pxs_center))
+        science_frames_vector[f] = (science_frames_vector[f] - mean)*m_reshape/np.std(science_frames_vector[f])
         print("---", f+1, "of", sc_fr_nb,"--- substract mean from science_frames")
 
     for f_r in range(rf_fr_nb):
-        mean_r = np.mean(ref_frames_vector[f_r])
-        ref_frames_vector[f_r] = (ref_frames_vector[f_r] - mean_r)/np.std(ref_frames_vector[f_r]) 
+        mean_r = np.mean(ref_frames_vector[f_r]*m_reshape) * (N/(N - pxs_center))
+        ref_frames_vector[f_r] = (ref_frames_vector[f_r] - mean_r)*m_reshape/np.std(ref_frames_vector[f_r]) 
         print("---", f_r+1, "of", rf_fr_nb,"--- substract mean from rf_frames")
 
     # 2 compute the Karhunen-Loève transform of the set of reference PSFs Rk(N)? 
@@ -321,12 +332,13 @@ def PCA(science_frames, ref_frames, K, wl=0):
     
     # cov(bias=false), so it is divided by N-1 not N
     # ERR Covariance matrix
-    N = w*h
     ERR = np.cov(ref_frames_vector) * (N-1)
+    
     # lambda_k - eigenvalue (increase), C_k - eigenvector
     lambda_incre, C_incre = np.linalg.eigh(ERR)
     lambda_k = np.flip(lambda_incre)
     C_k = np.flip(C_incre, axis=1)
+    
     # Z_KL_k.shape = (N, K) , N because c_k*ref[p], k in K
     Z_KL_k = np.zeros((N, rf_fr_nb)) 
     for k in range(rf_fr_nb): # put the biggest eigenvalue at first
@@ -472,13 +484,13 @@ if __name__ == "__main__":
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
         
         # now, the target is not in the references frames
-        ref_files = remove_target(str(sys.argv[2]),ref_files)
+        #ref_files = remove_target(str(sys.argv[2]),ref_files)
         print(">> what we have in ref_res")
         for s in ref_files:
             print(s)
         
         # select the best correlated targets
-        ref_files = selection(5, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        #ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
         #print(ref_files) 
         
         # 3. put the related data (all frames of the reference cubes) in np.array
@@ -495,7 +507,7 @@ if __name__ == "__main__":
             for i in range(len(res)):
                 tmp = tmp + rotate(res[i] , rotations_tmp[i])
             hdu = fits.PrimaryHDU(tmp)
-            path = "./K_kilp_ADI_RDI/RDI_After" + str(n) + ".fits"
+            path = "./K_kilp_ADI_RDI/ADI_WITH_MASK/ADI_Masked" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", n, "of", 20,"=== fits writed ===")
     
@@ -514,12 +526,16 @@ if __name__ == "__main__":
         sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
     
     elif opt== "TEST":
+        '''
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
         rotations = read_file(str(sys.argv[2]), "ROTATION") 
         res = median_of_cube_test(target_frames, rotations, 0.25)
         hdu = fits.PrimaryHDU(res)
         hdu.writeto("./res_tmp/target_rotated_median.fits") 
-
+        '''
+        m = create_mask(15,15,6)
+        print(m)
+        print(type(m))
     else:
         print("Option is available for now.")
 
