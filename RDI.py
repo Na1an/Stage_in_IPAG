@@ -507,6 +507,8 @@ if __name__ == "__main__":
             for i in range(len(res)):
                 tmp = tmp + rotate(res[i] , rotations_tmp[i])
             hdu = fits.PrimaryHDU(tmp)
+            if n<10:
+                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked0" + str(n) + ".fits"
             path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", n, "of", 20,"=== fits writed ===")
