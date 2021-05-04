@@ -319,13 +319,13 @@ def PCA(science_frames, ref_frames, K, wl=0):
     for f in range(sc_fr_nb):
         mean = np.mean(science_frames_vector[f]*m_reshape) * (N/(N - pxs_center))
         science_frames_vector[f] = (science_frames_vector[f] - mean)*m_reshape/np.std(science_frames_vector[f])
-        print("---", f+1, "of", sc_fr_nb,"--- substract mean from science_frames")
+        #print("---", f+1, "of", sc_fr_nb,"--- substract mean from science_frames")
 
     for f_r in range(rf_fr_nb):
         mean_r = np.mean(ref_frames_vector[f_r]*m_reshape) * (N/(N - pxs_center))
         ref_frames_vector[f_r] = (ref_frames_vector[f_r] - mean_r)*m_reshape/np.std(ref_frames_vector[f_r]) 
-        print("---", f_r+1, "of", rf_fr_nb,"--- substract mean from rf_frames")
-
+        #print("---", f_r+1, "of", rf_fr_nb,"--- substract mean from rf_frames")
+    print("------ substract mean done ------")
     # 2 compute the Karhunen-Loève transform of the set of reference PSFs Rk(N)? 
     # inner product for each frame of target and each frame of references
     # K = rf_fr_nb
@@ -344,7 +344,7 @@ def PCA(science_frames, ref_frames, K, wl=0):
     for k in range(rf_fr_nb): # put the biggest eigenvalue at first
         for p in range(rf_fr_nb):
             Z_KL_k[:,k] = Z_KL_k[:,k] + (1/np.sqrt(lambda_k[k]))*(C_k[p, k] * ref_frames_vector[p]) 
-        print("---", k+1, "of", rf_fr_nb,"--- eigenvalue")
+    print("------ eigenvalue done -------")
     
     # 3 choose a number of modes K = 30
     Z_KL_chosen = Z_KL_k[:,:K]
@@ -358,7 +358,7 @@ def PCA(science_frames, ref_frames, K, wl=0):
             # res[f] stock the PSF image
             res[f] = res[f] + inner_product*(Z_KL_chosen[:,k])
         res[f] = science_frames_vector[f] - res[f] 
-        print("---", f+1, "of", sc_fr_nb,"--- substracut res from science_frames")
+    print("------ substracut res from science_frames done ------")
 
     return res.reshape((sc_fr_nb, w, h))
 
@@ -490,7 +490,7 @@ if __name__ == "__main__":
             print(s)
         
         # select the best correlated targets
-        ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        ref_files = selection(7, target_frames, ref_files, scale, 0) # 0 is the default wave length
         #print(ref_files) 
         
         # 3. put the related data (all frames of the reference cubes) in np.array
@@ -507,9 +507,11 @@ if __name__ == "__main__":
             for i in range(len(res)):
                 tmp = tmp + rotate(res[i] , rotations_tmp[i])
             hdu = fits.PrimaryHDU(tmp)
+            path = " "
             if n<10:
-                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked0" + str(n) + ".fits"
-            path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked" + str(n) + ".fits"
+                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_7_best_32/RDI_Masked0" + str(n) + ".fits"
+            else:
+                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_7_best_32/RDI_Masked" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", n, "of", 20,"=== fits writed ===")
     
