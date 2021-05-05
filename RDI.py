@@ -10,6 +10,8 @@ from matplotlib.widgets import Slider
 from sklearn.metrics import log_loss
 from scipy import stats
 from skimage.metrics import structural_similarity as ssim
+from astropy.visualization import simple_norm
+from photutils.aperture import CircularAperture, aperture_photometry, CircularAnnulus
 
 # Global variable
 MASK_RADIUS = 32
@@ -286,8 +288,30 @@ def process_ADI(science_frames, rotations):
     for wl in range(wave_length):
         for n in range(sc_fr_nb):
             res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
-    
+            #res[wl] = res[wl] + rotate(science_frames[wl, n], rotations[n])
     return res 
+
+def origin_flux_companion(science_frames, rotations):
+    '''
+    Args:
+        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        rotations : a numpy.ndarry. The angles of ratations    
+    Return:
+        res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
+    '''
+    
+    wave_length, sc_fr_nb, w, h = science_frames.shape
+    f_median = np.zeros((wave_length, w, h))
+    res = np.zeros((wave_length, w, h))
+    N = w*h 
+    mask, pxs_center = create_mask(w, h, MASK_RADIUS)
+    
+    for wl in range(wave_length):
+        for n in range(sc_fr_nb):
+            #mean = np.mean(science_frames[wl,n]*mask) * (N/(N - pxs_center))
+            res[wl] = res[wl] + rotate((science_frames[wl, n])*mask, rotations[n])
+    
+    return res/sc_fr_nb 
 
 # 4. KLIP/PCA - Principle Component Analysis
 #   Be attention! The values of science_frames and ref_frames will change !!!
@@ -466,7 +490,7 @@ if __name__ == "__main__":
         # 3. result of cADI
         res_cADI = process_ADI(slice_frame(target_frames, len(target_frames[0, 0, 0]), scale), read_file(str(sys.argv[2]),"ROTATION"))
         hdu = fits.PrimaryHDU(res_cADI)
-        hdu.writeto("./res_tmp/GJ_667C_cADI_0.5.fits") 
+        hdu.writeto("./GJ_667C_cADI.fits") 
 
     elif opt == "PCA":
         # PCA - ok!
@@ -536,10 +560,44 @@ if __name__ == "__main__":
         res = median_of_cube_test(target_frames, rotations, 0.25)
         hdu = fits.PrimaryHDU(res)
         hdu.writeto("./res_tmp/target_rotated_median.fits") 
-        '''
         m = create_mask(15,15,6)
         print(m)
         print(type(m))
+        '''
+        # 1. get the target frames from Master cube
+        target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
+        
+        # 2. argv[3] may give us the scale
+        if(sys.argv[3] is not None):
+            scale = float(sys.argv[3])
+        
+        # 3. result of cADI
+        data = origin_flux_companion(slice_frame(target_frames, len(target_frames[0, 0, 0]), scale), read_file(str(sys.argv[2]),"ROTATION"))
+        #hdu = fits.PrimaryHDU(res_cADI)
+        #hdu.writeto("./GJ_667C_origin_rotated.fits") 
+        positions = [(126.05284, 249.11)]
+        aperture = CircularAperture(positions, r=2)
+        annulus = CircularAnnulus(positions, r_in=4, r_out=6)
+
+        flux_companion = aperture_photometry(data[0], [aperture,annulus])
+        bkg_mean = flux_companion['aperture_sum_1']/annulus.area
+        bkg_sum_in_companion = bkg_mean * aperture.area 
+
+        print(flux_companion)
+        print("bkg_sum_in_companion", bkg_sum_in_companion)
+        print("flux companion origin =", flux_companion['aperture_sum_0'] - bkg_sum_in_companion)
+        norm = simple_norm(data, 'sqrt', percent=99)
+        plt.imshow(data[0], norm=norm, interpolation='nearest')
+        ap_patches = aperture.plot(color='white', lw=2, label='Photometry aperture '+str(flux_companion))
+        ann_patches = annulus.plot(color='red', lw=2, label='Background annulus bkg_sum_in_companion '+ str(bkg_sum_in_companion)) 
+        handles=(ap_patches[0],ann_patches[0])
+        plt.legend(loc=(0.17, 0.05), facecolor='#458989', labelcolor='white', handles=handles, prop={'weight':'bold', 'size':11})
+        plt.xlim(100,170)
+        plt.ylim(200,256)
+        #plt.savefig('./Origin_Companion_Flux.png')
+        plt.show() 
+        hdu = fits.PrimaryHDU(data)
+        hdu.writeto("./GJ_667C_origin_rotated.fits")
     else:
         print("Option is available for now.")
 
