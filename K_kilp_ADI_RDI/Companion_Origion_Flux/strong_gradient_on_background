@@ -1,0 +1,12 @@
+ 
+ id  xcenter  ycenter   aperture_sum_0    aperture_sum_1  
+       pix      pix                                       
+--- --------- ------- ----------------- ------------------
+  1 126.05284  249.11 65.20625576328908 181.17188395719282
+
+bkg_mean = 2.883440088105849 
+aperture.area = 12.566370614359172 
+annulus.area = 62.83185307179586
+bkg_sum_in_companion = 36.234376791438564
+flux companion origin = 28.971878971850515
+

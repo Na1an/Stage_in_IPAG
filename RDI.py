@@ -582,22 +582,25 @@ if __name__ == "__main__":
         flux_companion = aperture_photometry(data[0], [aperture,annulus])
         bkg_mean = flux_companion['aperture_sum_1']/annulus.area
         bkg_sum_in_companion = bkg_mean * aperture.area 
-
+        
         print(flux_companion)
-        print("bkg_sum_in_companion", bkg_sum_in_companion)
-        print("flux companion origin =", flux_companion['aperture_sum_0'] - bkg_sum_in_companion)
+        print("bkg_mean =", bkg_mean[0], "\naperture.area =", aperture.area, "\nannulus.area =", annulus.area)
+        print("bkg_sum_in_companion =", bkg_sum_in_companion[0])
+        flux_companion_origin = flux_companion['aperture_sum_0'] - bkg_sum_in_companion
+        print("flux companion origin =", flux_companion_origin[0])
+        
         norm = simple_norm(data, 'sqrt', percent=99)
         plt.imshow(data[0], norm=norm, interpolation='nearest')
-        ap_patches = aperture.plot(color='white', lw=2, label='Photometry aperture '+str(flux_companion))
-        ann_patches = annulus.plot(color='red', lw=2, label='Background annulus bkg_sum_in_companion '+ str(bkg_sum_in_companion)) 
+        ap_patches = aperture.plot(color='white', lw=2, label='Photometry aperture')
+        ann_patches = annulus.plot(color='red', lw=2, label='Background annulus') 
         handles=(ap_patches[0],ann_patches[0])
         plt.legend(loc=(0.17, 0.05), facecolor='#458989', labelcolor='white', handles=handles, prop={'weight':'bold', 'size':11})
         plt.xlim(100,170)
         plt.ylim(200,256)
         #plt.savefig('./Origin_Companion_Flux.png')
         plt.show() 
-        hdu = fits.PrimaryHDU(data)
-        hdu.writeto("./GJ_667C_origin_rotated.fits")
+        #hdu = fits.PrimaryHDU(data)
+        #hdu.writeto("./GJ_667C_origin_rotated.fits")
     else:
         print("Option is available for now.")
 

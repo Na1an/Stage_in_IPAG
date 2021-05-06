@@ -39,14 +39,14 @@ def get_photometry(path):
         bkg_mean = flux_companion['aperture_sum_1']/annulus.area
         bkg_sum_in_companion = bkg_mean * aperture.area 
         annulus_stdev = get_stdev(data)
-        #res[i] = flux_companion['aperture_sum_0'] - bkg_sum_in_companion
-        res[i] = flux_companion['aperture_sum_0']
+        res[i] = flux_companion['aperture_sum_0'] - bkg_sum_in_companion
+        #res[i] = flux_companion['aperture_sum_0']
         SN[i] = res[i] / annulus_stdev 
         if i==1 and SHOW_POSITION:
             norm = simple_norm(data, 'sqrt', percent=99)
             plt.imshow(data, norm=norm, interpolation='nearest')
-            ap_patches = aperture.plot(color='white', lw=2, label='Photometry aperture '+str(res[i]))
-            ann_patches = annulus.plot(color='red', lw=2, label='Background annulus bkg_sum_in_companion '+ str(bkg_sum_in_companion))
+            ap_patches = aperture.plot(color='white', lw=2, label='Photometry aperture')
+            ann_patches = annulus.plot(color='red', lw=2, label='Background annulus')
             handles = (ap_patches[0],ann_patches[0])
             plt.legend(loc=(0.17, 0.05), facecolor='#458989', labelcolor='white', handles=handles, prop={'weight':'bold', 'size':11})
             plt.xlim(100,170)
@@ -85,7 +85,7 @@ sns.set(style="darkgrid")
 nb_data = 7
 data = np.zeros((len(RDI_flux_3_best_32), nb_data))
 for i in range(len(RDI_flux_3_best_32)):
-    data[i][0] = 28.971878971850515 
+    data[i][0] = 65.20625576328908 
     data[i][1] = RDI_flux_3_best[i]
     data[i][2] = RDI_flux_5_best[i]
     data[i][3] = ADI_res[i]
@@ -122,10 +122,10 @@ sns.relplot(kind='line',data=data_total)
 plt.title("Target:GJ667c Ref: 9 others stars")
 plt.xlabel("K_kilp")
 plt.ylabel("Flux of the companion absolute - diameter 4 px")
-plt.ylim(0,100)
+plt.ylim(0,70)
 plt.show()
 
-data_total_SN = pd.DataFrame(data_SN[:,:], columns=['RDI_7_best_with_mask','RDI_3_best_with_mask','RDI_5_best_with_mask','RDI_7_best_with_mask','RDI_3_best_with_mask','RDI_5_best_with_mask',' ii'])
+data_total_SN = pd.DataFrame(data_SN[:,:6], columns=['ADI_mask_16','RDI_SN_3_best_mask_16','RDI_SN_5_best_mask_16','ADI_SN_mask_32','RDI_SN_3_best_mask_32','RDI_SN_5_mask_32'])
 data_total_SN.index = data_total_SN.index + 1
 print("######### S/N ########")
 print(data_total_SN)
