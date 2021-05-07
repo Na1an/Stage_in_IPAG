@@ -57,8 +57,8 @@ def get_photometry(path):
     return res, SN 
 
 # ADI data
-#ADI_res, ADI_SN = get_photometry("./ADI")
-ADI_res, ADI_SN = get_photometry("./ADI_WITH_MASK")
+ADI_res, ADI_SN = get_photometry("./ADI")
+#ADI_res, ADI_SN = get_photometry("./ADI_WITH_MASK")
 ADI_res_32, ADI_SN_32 = get_photometry("./ADI_WITH_MASK_32")
 #print(ADI_res_32)
 
@@ -71,20 +71,21 @@ ADI_res_32, ADI_SN_32 = get_photometry("./ADI_WITH_MASK_32")
 #print(RDI_res_4_ref)
 
 #
-RDI_flux_3_best, RDI_SN_3_best = get_photometry("./RDI_WITH_MASK_3_best")
-RDI_flux_5_best, RDI_SN_5_best = get_photometry("./RDI_WITH_MASK_5_best")
+RDI_flux_3_best, RDI_SN_3_best = get_photometry("./RDI_After_3_best")
+#RDI_flux_5_best, RDI_SN_5_best = get_photometry("./RDI_WITH_MASK_5_best")
 
 RDI_flux_3_best_32, RDI_SN_3_best_32 = get_photometry("./RDI_WITH_MASK_3_best_32")
-RDI_flux_5_best_32, RDI_SN_5_best_32 = get_photometry("./RDI_WITH_MASK_5_best_32")
+#RDI_flux_5_best_32, RDI_SN_5_best_32 = get_photometry("./RDI_WITH_MASK_5_best_32")
 #RDI_flux_7_best, RDI_SN_7_best = get_photometry("./RDI_WITH_MASK_7_best_32")
 
 
 sns.set(style="darkgrid")
 
 # nb of data
-nb_data = 7
+nb_data = 4
 data = np.zeros((len(RDI_flux_3_best_32), nb_data))
 for i in range(len(RDI_flux_3_best_32)):
+    '''
     data[i][0] = 65.20625576328908 
     data[i][1] = RDI_flux_3_best[i]
     data[i][2] = RDI_flux_5_best[i]
@@ -92,13 +93,18 @@ for i in range(len(RDI_flux_3_best_32)):
     data[i][4] = RDI_flux_3_best_32[i]
     data[i][5] = RDI_flux_5_best_32[i]
     data[i][6] = ADI_res_32[i] 
-    '''
     data[i][0] = RDI_flux_7_best[i]
     data[i][1] = RDI_flux_3_best_32[i]
     data[i][2] = RDI_flux_5_best_32[i]
     '''
+    data[i][0] = ADI_res[i]
+    data[i][1] = ADI_res_32[i] 
+    data[i][2] = RDI_flux_3_best[i]
+    data[i][3] = RDI_flux_3_best_32[i]
+
 data_SN = np.zeros((len(RDI_SN_3_best_32), nb_data))
 for i in range(len(RDI_SN_3_best_32)):
+    '''
     data_SN[i][0] = ADI_SN[i]
     data_SN[i][1] = RDI_SN_3_best[i]
     data_SN[i][2] = RDI_SN_5_best[i]
@@ -106,33 +112,37 @@ for i in range(len(RDI_SN_3_best_32)):
     data_SN[i][4] = RDI_SN_3_best_32[i]
     data_SN[i][5] = RDI_SN_5_best_32[i]
     data_SN[i][6] = 0
-    '''
     data_SN[i][0] = RDI_SN_7_best[i]
     data_SN[i][1] = RDI_SN_3_best_32[i]
     data_SN[i][2] = RDI_SN_5_best_32[i]
 
     '''
-data_total = pd.DataFrame(data[:,:], columns=['Origin_flux','RDI_flux_3_best','RDI_flux_5_best','ADI','RDI_flux_3_best_32','RDI_flux_5_best_32','ADI_32'])
+    data_SN[i][0] = ADI_SN[i]
+    data_SN[i][1] = ADI_SN_32[i] 
+    data_SN[i][2] = RDI_SN_3_best[i]
+    data_SN[i][3] = RDI_SN_3_best_32[i]
+data_total = pd.DataFrame(data[:,:], columns=['ADI_Full_Frame_3_best','ADI_Outer_Region_3_best','RDI_Full_Frame_3_best','RDI_Outer_Region_3_best'])
+
 data_total.index = data_total.index + 1
 print("######### Flux of companion #######")
 print(data_total)
 data_total.to_csv("Flux_of_companion.csv")
 #data_total.plot(kind='line', style='--o', title='comparation')
 sns.relplot(kind='line',data=data_total)
-plt.title("Target:GJ667c Ref: 9 others stars")
+#plt.title("Target:GJ667c Ref: 9 others stars")
 plt.xlabel("K_kilp")
 plt.ylabel("Flux of the companion absolute - diameter 4 px")
-plt.ylim(0,70)
+#plt.ylim(0,70)
 plt.show()
 
-data_total_SN = pd.DataFrame(data_SN[:,:6], columns=['ADI_mask_16','RDI_SN_3_best_mask_16','RDI_SN_5_best_mask_16','ADI_SN_mask_32','RDI_SN_3_best_mask_32','RDI_SN_5_mask_32'])
+data_total_SN = pd.DataFrame(data_SN[:,:], columns=['S/N_ADI_Full_Frame_3_best','S/N_ADI_Outer_Region_3_best','S/N_RDI_Full_Frame_3_best','S/N_RDI_Outer_Region_3_best'])
 data_total_SN.index = data_total_SN.index + 1
 print("######### S/N ########")
 print(data_total_SN)
 data_total_SN.to_csv("SN_companions.csv")
 #data_total.plot(kind='line', style='--o', title='comparation')
 sns.relplot(kind='line',data=data_total_SN)
-plt.title("Target:GJ667c Ref: 9 other stars")
+#plt.title("Target:GJ667c Ref: 9 other stars")
 plt.xlabel("K_kilp")
 plt.ylabel("S/N - diameter 4 px")
 plt.show()

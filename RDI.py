@@ -266,6 +266,50 @@ def selection(nb_best, target, refs, scale, wave_length=0):
 
     return res_bis 
 
+# chose the best correlated reference stars, not all
+def selection_all(nb_best, target, refs, scale, wave_length=0):
+    '''
+    Args:
+        nb_best : a integer. How many best ref stars we want.
+        target : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        refs : a list of string. All stars data we have.
+        wave_length : a integer. Wave length of the cube.
+    Rrturn:
+        res : a list of string. The int(nb_best) best chosen ref stars.
+    '''
+    res = {}
+    # target_median is 2 dims. (256, 256)
+    target_median = median_of_cube(target, wave_length)
+    w, h = target_median.shape
+    # create mask
+    m, pxs_center = create_mask(w,h,MASK_RADIUS)
+    target_median_vector = np.reshape(target_median*m,(w*h)) 
+
+    for i in range(len(refs)):
+        # hd is 4 dims: (wl, nb frmes, x, y)
+        hd = fits.getdata(refs[i])
+        # ref_median is 2 dims. (256, 256)
+        ref_meidan = median_of_cube(slice_frame(hd,len(hd[wave_length,i,0]),scale), wave_length)
+        ref_meidan_vector = np.reshape(ref_meidan*m, (w*h)) 
+        
+        # maby should try cosine similarity, structural simimarity(SSIM)
+        coef_corr = np.corrcoef(target_median_vector, ref_meidan_vector)
+        #print(refs[i],"=",coef_corr[0,1])
+        res[refs[i]] = coef_corr[0,1]
+    
+    tmp = sorted(res.items(),key = lambda r:(r[1],r[0]), reverse=True)
+    
+    print(">> There are", len(tmp), "reference stars in the library")
+    print(">> we will chose", nb_best, "correlated cube to do PCA on RDI")
+   
+    res_bis = {}
+    for k in range(nb_best):
+        (x,y) = tmp[k]
+        hdul = fits.open(x)
+        res_bis[hdul[0].header['OBJECT']] = y
+
+    return res_bis
+
 # 3. Classic ADI
 def process_ADI(science_frames, rotations):
     '''
@@ -601,6 +645,29 @@ if __name__ == "__main__":
         plt.show() 
         #hdu = fits.PrimaryHDU(data)
         #hdu.writeto("./GJ_667C_origin_rotated.fits")
+    elif opt == "SELECTION":
+        # 1. get target frames 
+        target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
+        side_len = len(target_frames[0, 0, 0])
+        target_frames = slice_frame(target_frames, side_len, scale) 
+        print("Scale = ", scale, "\ntarget_frames shape =", target_frames.shape)
+        # 2. get the list of files contain keyword and remove the target
+        ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
+        
+        # now, the target is not in the references frames
+        ref_files = remove_target(str(sys.argv[2]),ref_files)
+        print(">> what we have in ref_res")
+        for s in ref_files:
+            print(s)
+        
+        # select the best correlated targets
+        res_all = selection_all(10, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        print(res_all)
+        plt.bar(res_all.keys(), res_all.values())
+        plt.xticks(rotation=45)
+        plt.xlabel("Reference stars")
+        plt.ylabel("Pearson correlation coefficient")
+        plt.show()
     else:
         print("Option is available for now.")
 
