@@ -664,9 +664,10 @@ if __name__ == "__main__":
         res_all = selection_all(10, target_frames, ref_files, scale, 0) # 0 is the default wave length
         print(res_all)
         plt.bar(res_all.keys(), res_all.values())
+        plt.ylim(0.6,1)
         plt.xticks(rotation=45)
-        plt.xlabel("Reference stars")
-        plt.ylabel("Pearson correlation coefficient")
+        #plt.xlabel("Reference stars", fontsize = "14")
+        plt.ylabel("Pearson correlation coefficient", fontsize= "16")
         plt.show()
     else:
         print("Option is available for now.")
