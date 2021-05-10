@@ -1,0 +1,426 @@
+######### program start ###########
+>> Algo PCA is working! 
+Scale =  0.25 
+target_frames shape = (2, 30, 256, 256)
+>> what we have in ref_res
+../SPHERE_DC_DATA/HD 285968_DB_H23_2018-10-08_ird_convert_recenter_dc5_PUBLIC_207162/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/HIP 64924_DB_H23_2017-06-28_ird_convert_recenter_dc5_PUBLIC_210239/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/HIP 55848_DB_H23_2018-02-03_ird_convert_recenter_dc5_PUBLIC_211164/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/HIP 55042_DB_H23_2018-01-28_ird_convert_recenter_dc5_PUBLIC_209733/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/BD+11 3149c_DB_H23_2017-05-14_ird_convert_recenter_dc5_PUBLIC_176255/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/HIP 85523_DB_H23_2017-07-14_ird_convert_recenter_dc5_PUBLIC_210792/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/CD-31 9113c_DB_H23_2018-02-02_ird_convert_recenter_dc5_PUBLIC_211548/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/HIP 86214_DB_H23_2017-06-23_ird_convert_recenter_dc5_PUBLIC_208373/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/HIP 40693_DB_H23_2018-12-18_ird_convert_recenter_dc5_PUBLIC_207613/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+../SPHERE_DC_DATA/CD-31 9113c_DB_K12_2019-06-08_ird_convert_recenter_dc5_PUBLIC_207618/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits
+>> There are 10 reference stars in the library
+>> we will chose 5 correlated cube to do PCA on RDI
+0 - corrcoef value = 0.9698059177933798
+1 - corrcoef value = 0.9473114176931788
+2 - corrcoef value = 0.9089053390292339
+3 - corrcoef value = 0.8868353867712137
+4 - corrcoef value = 0.8847545628079465
+ref_frames shape = (2, 214, 256, 256)
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 21 of 100 === fits writed ===
+K_klip = 21  take 0:00:55.643772
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 22 of 100 === fits writed ===
+K_klip = 22  take 0:00:55.488288
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 23 of 100 === fits writed ===
+K_klip = 23  take 0:00:55.802793
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 24 of 100 === fits writed ===
+K_klip = 24  take 0:00:53.885929
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 25 of 100 === fits writed ===
+K_klip = 25  take 0:00:53.631478
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 26 of 100 === fits writed ===
+K_klip = 26  take 0:00:54.108777
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 27 of 100 === fits writed ===
+K_klip = 27  take 0:00:55.031642
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 28 of 100 === fits writed ===
+K_klip = 28  take 0:00:54.095400
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 29 of 100 === fits writed ===
+K_klip = 29  take 0:00:55.515900
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 30 of 100 === fits writed ===
+K_klip = 30  take 0:00:54.334134
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 31 of 100 === fits writed ===
+K_klip = 31  take 0:00:54.061460
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 32 of 100 === fits writed ===
+K_klip = 32  take 0:00:54.949375
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 33 of 100 === fits writed ===
+K_klip = 33  take 0:00:54.182276
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 34 of 100 === fits writed ===
+K_klip = 34  take 0:00:54.124316
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 35 of 100 === fits writed ===
+K_klip = 35  take 0:00:54.136176
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 36 of 100 === fits writed ===
+K_klip = 36  take 0:00:55.189711
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 37 of 100 === fits writed ===
+K_klip = 37  take 0:00:54.829499
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 38 of 100 === fits writed ===
+K_klip = 38  take 0:00:55.128351
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 39 of 100 === fits writed ===
+K_klip = 39  take 0:00:54.486397
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 40 of 100 === fits writed ===
+K_klip = 40  take 0:00:53.871577
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 41 of 100 === fits writed ===
+K_klip = 41  take 0:00:53.882272
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 42 of 100 === fits writed ===
+K_klip = 42  take 0:00:53.826431
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 43 of 100 === fits writed ===
+K_klip = 43  take 0:00:54.739399
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 44 of 100 === fits writed ===
+K_klip = 44  take 0:00:54.348117
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 45 of 100 === fits writed ===
+K_klip = 45  take 0:00:54.972844
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 46 of 100 === fits writed ===
+K_klip = 46  take 0:00:53.741789
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 47 of 100 === fits writed ===
+K_klip = 47  take 0:00:54.001432
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 48 of 100 === fits writed ===
+K_klip = 48  take 0:00:54.941797
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 49 of 100 === fits writed ===
+K_klip = 49  take 0:00:54.008605
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 50 of 100 === fits writed ===
+K_klip = 50  take 0:00:53.519067
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 51 of 100 === fits writed ===
+K_klip = 51  take 0:00:54.981836
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 52 of 100 === fits writed ===
+K_klip = 52  take 0:00:53.991946
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 53 of 100 === fits writed ===
+K_klip = 53  take 0:00:54.161748
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 54 of 100 === fits writed ===
+K_klip = 54  take 0:00:54.606428
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 55 of 100 === fits writed ===
+K_klip = 55  take 0:00:54.730930
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 56 of 100 === fits writed ===
+K_klip = 56  take 0:00:54.556348
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 57 of 100 === fits writed ===
+K_klip = 57  take 0:00:54.028365
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 58 of 100 === fits writed ===
+K_klip = 58  take 0:00:54.620652
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 59 of 100 === fits writed ===
+K_klip = 59  take 0:00:53.990134
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 60 of 100 === fits writed ===
+K_klip = 60  take 0:00:55.146586
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 61 of 100 === fits writed ===
+K_klip = 61  take 0:00:54.459464
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 62 of 100 === fits writed ===
+K_klip = 62  take 0:00:54.497469
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 63 of 100 === fits writed ===
+K_klip = 63  take 0:00:55.099741
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 64 of 100 === fits writed ===
+K_klip = 64  take 0:00:55.272310
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 65 of 100 === fits writed ===
+K_klip = 65  take 0:00:55.451577
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 66 of 100 === fits writed ===
+K_klip = 66  take 0:00:54.763551
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 67 of 100 === fits writed ===
+K_klip = 67  take 0:00:55.674722
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 68 of 100 === fits writed ===
+K_klip = 68  take 0:00:55.605584
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 69 of 100 === fits writed ===
+K_klip = 69  take 0:00:55.214310
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 70 of 100 === fits writed ===
+K_klip = 70  take 0:00:55.462943
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 71 of 100 === fits writed ===
+K_klip = 71  take 0:00:55.315615
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 72 of 100 === fits writed ===
+K_klip = 72  take 0:00:54.927726
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 73 of 100 === fits writed ===
+K_klip = 73  take 0:00:54.966942
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 74 of 100 === fits writed ===
+K_klip = 74  take 0:00:55.178978
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 75 of 100 === fits writed ===
+K_klip = 75  take 0:00:54.339780
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 76 of 100 === fits writed ===
+K_klip = 76  take 0:00:55.811954
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 77 of 100 === fits writed ===
+K_klip = 77  take 0:00:54.788745
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 78 of 100 === fits writed ===
+K_klip = 78  take 0:00:56.268260
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 79 of 100 === fits writed ===
+K_klip = 79  take 0:00:55.272659
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 80 of 100 === fits writed ===
+K_klip = 80  take 0:00:55.375034
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 81 of 100 === fits writed ===
+K_klip = 81  take 0:00:55.269447
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 82 of 100 === fits writed ===
+K_klip = 82  take 0:00:55.128721
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 83 of 100 === fits writed ===
+K_klip = 83  take 0:00:55.476667
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 84 of 100 === fits writed ===
+K_klip = 84  take 0:00:55.482603
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 85 of 100 === fits writed ===
+K_klip = 85  take 0:00:55.042657
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 86 of 100 === fits writed ===
+K_klip = 86  take 0:00:55.831443
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 87 of 100 === fits writed ===
+K_klip = 87  take 0:00:54.510879
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 88 of 100 === fits writed ===
+K_klip = 88  take 0:00:55.086572
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 89 of 100 === fits writed ===
+K_klip = 89  take 0:00:55.593931
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 90 of 100 === fits writed ===
+K_klip = 90  take 0:00:55.842802
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 91 of 100 === fits writed ===
+K_klip = 91  take 0:00:55.094849
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 92 of 100 === fits writed ===
+K_klip = 92  take 0:00:55.817373
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 93 of 100 === fits writed ===
+K_klip = 93  take 0:00:55.117818
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 94 of 100 === fits writed ===
+K_klip = 94  take 0:00:55.716715
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 95 of 100 === fits writed ===
+K_klip = 95  take 0:00:55.918647
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 96 of 100 === fits writed ===
+K_klip = 96  take 0:00:54.895933
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 97 of 100 === fits writed ===
+K_klip = 97  take 0:00:54.595453
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 98 of 100 === fits writed ===
+K_klip = 98  take 0:00:55.684994
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 99 of 100 === fits writed ===
+K_klip = 99  take 0:00:55.718419
+------ substract mean done ------
+------ eigenvalue done -------
+------ substracut res from science_frames done ------
+>>=== 100 of 100 === fits writed ===
+K_klip = 100  take 0:00:56.676789
+PCA on RDI from 21 to 75 take 1:13:40.162177
+########## program end ############
+

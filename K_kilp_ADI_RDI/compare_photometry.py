@@ -1,5 +1,6 @@
 import os
 import sys
+import datetime
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,6 +9,7 @@ from astropy.io import fits
 from astropy.visualization import simple_norm
 from photutils.aperture import CircularAperture, aperture_photometry, CircularAnnulus
 
+start_time = datetime.datetime.now() 
 SHOW_POSITION = False
 
 positions = [(126.05284, 249.11)]
@@ -41,7 +43,7 @@ def get_photometry(path):
         annulus_stdev = get_stdev(data)
         res[i] = flux_companion['aperture_sum_0'] - bkg_sum_in_companion
         #res[i] = flux_companion['aperture_sum_0']
-        SN[i] = res[i] / annulus_stdev 
+        SN[i] = res[i] / (annulus_stdev * aperture.area)
         if i==1 and SHOW_POSITION:
             norm = simple_norm(data, 'sqrt', percent=99)
             plt.imshow(data, norm=norm, interpolation='nearest')
@@ -57,9 +59,9 @@ def get_photometry(path):
     return res, SN 
 
 # ADI data
-ADI_res, ADI_SN = get_photometry("./ADI")
+#ADI_res, ADI_SN = get_photometry("./ADI")
 #ADI_res, ADI_SN = get_photometry("./ADI_WITH_MASK")
-ADI_res_32, ADI_SN_32 = get_photometry("./ADI_WITH_MASK_32")
+#ADI_res_32, ADI_SN_32 = get_photometry("./ADI_WITH_MASK_32")
 #print(ADI_res_32)
 
 # RDI data 1 target 2 ref stars
@@ -71,7 +73,7 @@ ADI_res_32, ADI_SN_32 = get_photometry("./ADI_WITH_MASK_32")
 #print(RDI_res_4_ref)
 
 #
-RDI_flux_3_best, RDI_SN_3_best = get_photometry("./RDI_After_3_best")
+#RDI_flux_3_best, RDI_SN_3_best = get_photometry("./RDI_After_3_best")
 #RDI_flux_5_best, RDI_SN_5_best = get_photometry("./RDI_WITH_MASK_5_best")
 
 RDI_flux_3_best_32, RDI_SN_3_best_32 = get_photometry("./RDI_WITH_MASK_3_best_32")
@@ -152,3 +154,5 @@ plt.legend(fontsize = '16')
 plt.xlabel("K_kilp", fontsize= "16")
 plt.ylabel("S/N - diameter 4 px", fontsize = "16")
 plt.show()
+end_time = datetime.datetime.now() 
+print("cost :", end_time - start_time)

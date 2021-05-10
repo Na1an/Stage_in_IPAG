@@ -2,6 +2,7 @@ import os
 import cv2
 import sys
 import heapq
+import datetime
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -539,7 +540,7 @@ if __name__ == "__main__":
     elif opt == "PCA":
         # PCA - ok!
         print(">> Algo PCA is working! ")
-        
+        start_time = datetime.datetime.now() 
         if(len(sys.argv) >4):
             scale = float(sys.argv[4])
         
@@ -568,6 +569,7 @@ if __name__ == "__main__":
         # 4. PCA
         # last arg is the K_klip
         for n in range(1,21):
+            tmp_time_start = datetime.datetime.now()
             res = PCA(target_frames, ref_frames, n) #K_klip
             tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
             
@@ -581,8 +583,12 @@ if __name__ == "__main__":
             else:
                 path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_7_best_32/RDI_Masked" + str(n) + ".fits"
             hdu.writeto(path) 
-            print(">>===", n, "of", 20,"=== fits writed ===")
-    
+            print(">>===", n, "of", 100,"=== fits writed ===")
+            tmp_time_end = datetime.datetime.now()
+            print("K_klip =",n," take",tmp_time_end - tmp_time_start)
+
+        end_time = datetime.datetime.now()
+        print("PCA on RDI from 21 to 75 take", end_time - start_time)
     elif opt == "RDI":
         # RDI - wroking on
         # argv1 : the path of repository contains science object
@@ -645,6 +651,7 @@ if __name__ == "__main__":
         plt.show() 
         #hdu = fits.PrimaryHDU(data)
         #hdu.writeto("./GJ_667C_origin_rotated.fits")
+    
     elif opt == "SELECTION":
         # 1. get target frames 
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
