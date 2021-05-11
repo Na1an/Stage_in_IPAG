@@ -4,6 +4,40 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+# Global variable
+MASK_RADIUS = 32
+
+# just the affichage for program start and program end
+def start_and_end(start):
+    '''
+    Args:
+       start : a boolean. If it is the start of the program 
+    Return:
+        None
+    '''
+    if(start):
+        print("######### program start ###########")
+    else:
+        print("########## program end ############")
+
+
+# slice frame, we only take the interesting area
+# for exemple, 1/4 in the center of each frame
+def slice_frame(frames, size, center_scale):
+    '''
+    Args:
+        frames : np.array, 4 dims. Contains all the frames on all wavelength in a cube
+        size : a int. Frames size, size = 1024 in case 1024*1024.
+        center_scale : a float. The scale in center that we will process.
+    Return:
+        Sliced frames, np.array, 3 dims.
+    '''
+
+    tmp = (1-center_scale)*0.5
+    res = frames[..., int(size*tmp):int(size*(1-tmp)), int(size*tmp):int(size*(1-tmp))]
+
+    return res
+
 # print the plot of the best n reference stars' pearson coefs 
 def print_best_ref_stars_pearson_coef(res_coef):
     '''
@@ -18,13 +52,6 @@ def print_best_ref_stars_pearson_coef(res_coef):
     plt.xticks(rotation=45)
     plt.ylabel("Pearson correlation coefficient", fontsize= "16")
     plt.show()
-
-# program start and program end 
-def start_and_end(start):
-    if(start):
-        print("######### program start ###########")
-    else:
-        print("########## program end ############")
 
 # remvove the target from the reference list
 def remove_target(target, refs):

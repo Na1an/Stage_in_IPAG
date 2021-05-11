@@ -18,7 +18,7 @@ from photutils.aperture import CircularAperture, aperture_photometry, CircularAn
 from utility import *
 
 # Global variable
-MASK_RADIUS = 32
+#MASK_RADIUS = 32
 
 # 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
 def get_reference_cubes(repository_path, keyword):
@@ -50,22 +50,6 @@ def read_file(file_path, keyword):
         return the data of hd[0],hd type HDUList. Should be type nparray, 4 dimensions (wave_length, sc_fr_nb, x, y).
     '''
     return fits.getdata(get_reference_cubes(file_path, keyword)[0])
-
-
-# slice frame, we only take the interesting area
-# for exemple, 1/4 in the center of each frame
-def slice_frame(frames, size, center_scale):
-    '''
-    Args:
-        frames : np.array, 4 dims. Contains all the frames on all wavelength in a cube
-        size : a int. Frames size, size = 1024 in case 1024*1024.
-        center_scale : a float. The scale in center that we will process.
-    Return:
-        Sliced frames, np.array, 3 dims.
-    '''
-    tmp = (1-center_scale)*0.5
-    res = frames[..., int(size*tmp):int(size*(1-tmp)), int(size*tmp):int(size*(1-tmp))] 
-    return res
 
 # 2. Collect the data from SPHERE_DC_DATA
 def collect_data(files_path, scale=0.25):
@@ -227,6 +211,26 @@ def selection_all(nb_best, target, refs, scale, wave_length=0):
         res_bis[hdul[0].header['OBJECT']] = y
 
     return res_bis
+
+# fake planet injection 
+def inject_planet(target_sliced, psf_sliced, rotations, x_inject, y_inject, attenuate):
+    '''
+    Args:
+        target_sliced : a numpy.ndarray. (wavelengths, nb_frames, x, y), target frames attenuated.
+        psf : a numpy.ndarray. (wavelengths, nb_frames, x, y), psf sliced used to inject.
+        rotations : a numpy.ndarry. The angles of ratations.
+        x_inject : a integer. The coordinate of initial position x.
+        y_inject : a integer. The coordinate of initial position y.
+        attenuate : a float. The ratio of attenuation.
+
+    Return:
+        res : a numpy.ndarray, 4 dimesi. (2 wavelengths, 24 frames, 256, 256). the new target with the injection of planet.
+    '''
+    wave_length, sc_fr_nb, w, h = target_sliced
+    res = np.zeros((wave_length, sc_fr_nb, w, h))
+    
+
+    return res
 
 # 3. Classic ADI
 def process_ADI(science_frames, rotations):
@@ -476,7 +480,7 @@ if __name__ == "__main__":
             print(s)
         
         # select the best correlated targets
-        ref_files = selection(7, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
         #print(ref_files) 
         
         # 3. put the related data (all frames of the reference cubes) in np.array
@@ -485,7 +489,7 @@ if __name__ == "__main__":
         
         # 4. PCA
         # last arg is the K_klip
-        for n in range(1,21):
+        for n in range(100,210):
             tmp_time_start = datetime.datetime.now()
             res = PCA(target_frames, ref_frames, n) #K_klip
             tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
@@ -496,9 +500,9 @@ if __name__ == "__main__":
             hdu = fits.PrimaryHDU(tmp)
             path = " "
             if n<10:
-                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_7_best_32/RDI_Masked0" + str(n) + ".fits"
+                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked0" + str(n) + ".fits"
             else:
-                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_7_best_32/RDI_Masked" + str(n) + ".fits"
+                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", n, "of", 100,"=== fits writed ===")
             tmp_time_end = datetime.datetime.now()
