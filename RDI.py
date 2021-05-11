@@ -14,15 +14,11 @@ from skimage.metrics import structural_similarity as ssim
 from astropy.visualization import simple_norm
 from photutils.aperture import CircularAperture, aperture_photometry, CircularAnnulus
 
+# private module
+from utility import *
+
 # Global variable
 MASK_RADIUS = 32
-
-# program start and program end 
-def start_and_end(start):
-    if(start):
-        print("######### program start ###########")
-    else:
-        print("########## program end ############")
 
 # 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
 def get_reference_cubes(repository_path, keyword):
@@ -45,14 +41,6 @@ def get_reference_cubes(repository_path, keyword):
             res = res + [files_sub]
     return res
 
-def remove_target(target,refs):
-    #res = refs
-    for s in refs:
-        if s.split('/')[-2] == target.split('/')[-1]:
-            refs.remove(s)
-            break
-    return refs
-
 # read one file and return its data
 def read_file(file_path, keyword):
     '''
@@ -61,28 +49,8 @@ def read_file(file_path, keyword):
     Return:
         return the data of hd[0],hd type HDUList. Should be type nparray, 4 dimensions (wave_length, sc_fr_nb, x, y).
     '''
-    
-    '''
-    hd = fits.open(get_reference_cubes(file_path, keyword)[0])
-    # print("filename =", hd.fileinfo(0)["filename"].split("/")[-1])
-    hd.info()
-    print('\n')
-    data = hd[0].data
-    hd.close()
-    '''
     return fits.getdata(get_reference_cubes(file_path, keyword)[0])
 
-# display the list of rotation angles
-def display_rotaion_angles(data):
-    '''
-    Args:
-        data : a string. A list of pixels/value of derotation for the frame.
-    Return:
-        No return.
-    '''
-    print("frame numbers = ",len(data))
-    for i in range(len(data)):
-        print(str(i)+"th rotation =", data[i])
 
 # slice frame, we only take the interesting area
 # for exemple, 1/4 in the center of each frame
@@ -171,57 +139,6 @@ def median_of_cube_test(science_frames, rotations, scale):
             res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
 
     return None
-
-# distance between two points
-def distance(x1, y1, x2, y2):
-    '''
-    Args:
-        x1 : an integer. object 1 - coordinate X
-        y1 : an integer. object 1 - coordinate Y
-        x2 : an integer. object 2 - coordinate X
-        y2 : an integer. object 2 - coordinate Y
-    Return:
-        res : an integer. The distance between two points. 
-    '''
-    
-    return ((x1-x2)**2+(y1-y2)**2)**0.5
-
-# A mask, cover the center of image
-def create_mask(w, h, radius=MASK_RADIUS):
-    '''
-    Args:
-        w : an integer. The weight of image.
-        h : an integer. The height of image.
-        radius : an integer. The radius of mask.
-    Return:
-        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
-    '''
-    count = 0
-    res = np.full((w,h),True)
-    x = w//2
-    y = h//2
-    for i in range(w):
-        for j in range(h):
-            if distance(i, j, x, y) <= radius:
-                res[i,j] = False
-                count = count + 1
-    return res, count
-
-# median of cube
-def median_of_cube(cube, wl=0):
-    '''
-    Args:
-        cube : a numpy.ndarray. (wavelengths, nb_frames, x, y)
-        wl : a integer. Wave length of cube.
-    Return:
-        res : a numpy.ndarray, 2 dimensions. Ex. (256, 256).
-    '''
-    wave_length, sc_fr_nb, w, h = cube.shape
-    res = np.zeros((w,h))
-    for i in range(w):
-        for j in range(h):
-            res[i,j] = np.median(cube[wl,:,i,j])
-    return res
 
 # chose the best correlated reference stars, not all
 def selection(nb_best, target, refs, scale, wave_length=0):
@@ -588,7 +505,8 @@ if __name__ == "__main__":
             print("K_klip =",n," take",tmp_time_end - tmp_time_start)
 
         end_time = datetime.datetime.now()
-        print("PCA on RDI from 21 to 75 take", end_time - start_time)
+        print("PCA on RDI from 21 to 100 take", end_time - start_time)
+    
     elif opt == "RDI":
         # RDI - wroking on
         # argv1 : the path of repository contains science object
@@ -604,16 +522,6 @@ if __name__ == "__main__":
         sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
     
     elif opt== "TEST":
-        '''
-        target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
-        rotations = read_file(str(sys.argv[2]), "ROTATION") 
-        res = median_of_cube_test(target_frames, rotations, 0.25)
-        hdu = fits.PrimaryHDU(res)
-        hdu.writeto("./res_tmp/target_rotated_median.fits") 
-        m = create_mask(15,15,6)
-        print(m)
-        print(type(m))
-        '''
         # 1. get the target frames from Master cube
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
         
@@ -653,7 +561,7 @@ if __name__ == "__main__":
         #hdu.writeto("./GJ_667C_origin_rotated.fits")
     
     elif opt == "SELECTION":
-        # 1. get target frames 
+        # 1. get target frames
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
         side_len = len(target_frames[0, 0, 0])
         target_frames = slice_frame(target_frames, side_len, scale) 
@@ -669,13 +577,8 @@ if __name__ == "__main__":
         
         # select the best correlated targets
         res_all = selection_all(10, target_frames, ref_files, scale, 0) # 0 is the default wave length
-        print(res_all)
-        plt.bar(res_all.keys(), res_all.values())
-        plt.ylim(0.6,1)
-        plt.xticks(rotation=45)
-        #plt.xlabel("Reference stars", fontsize = "14")
-        plt.ylabel("Pearson correlation coefficient", fontsize= "16")
-        plt.show()
+        print_best_ref_stars_pearson_coef(res_all)
+                
     else:
         print("Option is available for now.")
 
