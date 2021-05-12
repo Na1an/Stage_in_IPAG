@@ -217,7 +217,7 @@ def inject_planet(target_sliced, psf_sliced, rotations, x_inject, y_inject, atte
     '''
     Args:
         target_sliced : a numpy.ndarray. (wavelengths, nb_frames, x, y), target frames attenuated.
-        psf : a numpy.ndarray. (wavelengths, nb_frames, x, y), psf sliced used to inject.
+        psf : a numpy.ndarray. (wavelengths, x, y), psf sliced used to inject.
         rotations : a numpy.ndarry. The angles of ratations.
         x_inject : a integer. The coordinate of initial position x.
         y_inject : a integer. The coordinate of initial position y.
@@ -226,9 +226,20 @@ def inject_planet(target_sliced, psf_sliced, rotations, x_inject, y_inject, atte
     Return:
         res : a numpy.ndarray, 4 dimesi. (2 wavelengths, 24 frames, 256, 256). the new target with the injection of planet.
     '''
-    wave_length, sc_fr_nb, w, h = target_sliced
+    wave_length, sc_fr_nb, w, h = target_sliced.shape
     res = np.zeros((wave_length, sc_fr_nb, w, h))
+    init = np.zeros((wave_length, w, h))
     
+    size_psf = len(psf_sliced[0])
+    # make a mask
+    for w in range(len(psf_sliced)):
+        for i in range(size_psf):
+            for j in range(size_psf):
+                init[w ,x_inject+i, y_inject+j] = psf_sliced[w, i ,j]
+   
+    for w2 in range(wave_length):
+        for n in range(sc_fr_nb):
+            res[w2, n] = rotate(init[w2]*attenuate, -rotations[n])
 
     return res
 
@@ -486,7 +497,9 @@ if __name__ == "__main__":
         # 3. put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(ref_files, scale)
         print("ref_frames shape =", ref_frames.shape)
+       
         
+        rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
         # 4. PCA
         # last arg is the K_klip
         for n in range(100,210):
@@ -494,10 +507,10 @@ if __name__ == "__main__":
             res = PCA(target_frames, ref_frames, n) #K_klip
             tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
             
-            rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
             for i in range(len(res)):
                 tmp = tmp + rotate(res[i] , rotations_tmp[i])
             hdu = fits.PrimaryHDU(tmp)
+            
             path = " "
             if n<10:
                 path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked0" + str(n) + ".fits"
@@ -582,7 +595,69 @@ if __name__ == "__main__":
         # select the best correlated targets
         res_all = selection_all(10, target_frames, ref_files, scale, 0) # 0 is the default wave length
         print_best_ref_stars_pearson_coef(res_all)
-                
+    
+    elif opt == "INJECTION":
+        print(">> Algo PCA is working! ")
+        start_time = datetime.datetime.now() 
+        if(len(sys.argv) >4):
+            scale = float(sys.argv[4])
+        
+        # 1. get target frames 
+        target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
+        side_len = len(target_frames[0, 0, 0])
+        target_frames = slice_frame(target_frames, side_len, scale) 
+        print("Scale = ", scale, "\ntarget_frames shape =", target_frames.shape)
+        
+        # 2. get the list of files contain keyword and remove the target
+        ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
+        
+        # now, the target is not in the references frames
+        ref_files = remove_target(str(sys.argv[2]),ref_files)
+        print(">> what we have in ref_res")
+        for s in ref_files:
+            print(s)
+        
+        # select the best correlated targets
+        ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        
+        # 3. put the related data (all frames of the reference cubes) in np.array
+        ref_frames = collect_data(ref_files, scale)
+        print("ref_frames shape =", ref_frames.shape)
+
+        # 4. Injection
+        psf = read_file(str(sys.argv[2]), "PSF_MASTER")
+        psf_sliced = slice_frame(psf, len(psf[0]), scale)
+        rotations_tmp = read_file(str(sys.argv[2]),"ROTATION")
+        
+        fake_companion = inject_planet(target_frames, psf_sliced, rotations_tmp, 146, 178, 0.00005) 
+        target_frames = target_frames + fake_companion
+    
+        hdu = fits.PrimaryHDU(fake_companion)
+        hdu.writeto("./K_kilp_ADI_RDI/RDI_fake_companion_near_star/fake_companion.fits")
+        
+        hdu = fits.PrimaryHDU(target_frames + fake_companion)
+        hdu.writeto("./K_kilp_ADI_RDI/RDI_fake_companion_near_star/fake_companion_added_to_target.fits")
+        # 4. PCA
+        # last arg is the K_klip
+        for n in range(1,11):
+            tmp_time_start = datetime.datetime.now()
+            res = PCA(target_frames, ref_frames, n) #K_klip
+            tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
+            
+            for i in range(len(res)):
+                tmp = tmp + rotate(res[i] , rotations_tmp[i])
+            hdu = fits.PrimaryHDU(tmp)
+            
+            path = " "
+            if n<10:
+                path = "./K_kilp_ADI_RDI/RDI_fake_companion_near_star/RDI_Masked0" + str(n) + ".fits"
+            else:
+                path = "./K_kilp_ADI_RDI/RDI_fake_companion_near_star/RDI_Masked" + str(n) + ".fits"
+            hdu.writeto(path) 
+            print(">>===", n, "of", 100,"=== fits writed ===")
+            tmp_time_end = datetime.datetime.now()
+            print("K_klip =",n," take",tmp_time_end - tmp_time_start)
+
     else:
         print("Option is available for now.")
 
