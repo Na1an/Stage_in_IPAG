@@ -7,12 +7,13 @@ Created on Mon Apr 17 10:35:48 2017
 """
 
 from astropy.io import fits
-import radial_data as rd
+#import radial_data as rd
 import sys,os
 import numpy as np
 import matplotlib.pyplot as plt
 import vip_hci as vip
 from pathlib import Path
+
 ds9 = vip.vip_ds9()
 
 path_root=Path('/Users/jmilli/Documents/RDI/')
