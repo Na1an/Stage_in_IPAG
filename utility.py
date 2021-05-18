@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 from hciplot import plot_frames, plot_cubes
 
+# start or end of the program
 def start_and_end_program(start):
     '''
     Args:
@@ -15,14 +16,11 @@ def start_and_end_program(start):
     Return:
         None
     '''
-
     localtime = time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(time.time()))
-
     if(start):
         print("######### program start :", localtime,"###########")
     else:
         print("########## program end :", localtime, "############")
-
 # get one fwhm of a frame
 def get_fwhm_from_psf(psf):
     '''
@@ -73,39 +71,35 @@ def crop_frame(science_target, size, center_scale):
     res = science_target[..., int(size*tmp):int(size*(1-tmp)), int(size*tmp):int(size*(1-tmp))]
     return res
 
-if __name__ == "__main__":
-    start_and_end_program(True)
-    print("vip.version :", vip.__version__)
-    
-    # read data
-    science_target = vip.fits.open_fits("../SPHERE_DC_DATA/HD 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits")
-    psf = vip.fits.open_fits("../SPHERE_DC_DATA/HD 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368/ird_convert_recenter_dc5-IRD_SCIENCE_PSF_MASTER_CUBE-median_unsat.fits")
-    angles = vip.fits.open_fits("../SPHERE_DC_DATA/HD 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368/ird_convert_recenter_dc5-IRD_SCIENCE_PARA_ROTATION_CUBE-rotnth.fits")
-    print("science_target type =", type(science_target))
+# remvove the target from the reference list
+def remove_target(target, refs):
+    '''
+    Args:
+        target : a string.
+        refs : a list of string
+    Return:
+        refs : a list of string. Target string removed.
+    '''
+    #res = refs
+    for s in refs:
+        if s.split('/')[-2] == target.split('/')[-1]:
+            refs.remove(s)
+            break
+    return refs
 
-    # fwhm
-    fwhm_df = vip.var.fit_2dgaussian(psf[0], crop=True, cropsize=9, debug=False)
-    fwhm = get_fwhm_from_psf(psf[0])  
-    print("one fwhm =", fwhm)
+# median of cube
+def median_of_cube(cube, wl=0):
+    '''
+    Args:
+        cube : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        wl : a integer. Wave length of cube.
+    Return:
+        res : a numpy.ndarray, 2 dimensions. Ex. (256, 256).
+    '''
+    wave_length, sc_fr_nb, w, h = cube.shape
+    res = np.zeros((w,h))
+    for i in range(w):
+        for j in range(h):
+            res[i,j] = np.median(cube[wl,:,i,j])
+    return res
 
-    #psfn = vip.metrics.normalize_psf(psf[0], fwhm=fwhm, size=None) 
-    #plot_frames(psfn, grid=True, size_factor=4)
-    #print_info("../SPHERE_DC_DATA/HD 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits")
-    
-    #
-    try_1 = vip.fits.open_fits("../K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked06.fits")
-    #science_target_croped = crop_frame(try_1,len(science_target[0,0,0]),0.25)
-    
-    print(len(science_target[0,0,0]))
-    #vip.pca.pca(science_target_croped, angles, ncomp=20, verbose=False)
-    sn = vip.metrics.snr(try_1, source_xy=(126.22,249.025), fwhm=fwhm, plot=True)
-    print("sn = ", sn)
-    # display
-    #ds9 = vip.Ds9Window()
-    
-    # take info of the file *.fits
-    # vip.fits.info_fits("../SPHERE_DC_DATA/HD 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits")
-
-    #ds9.display()
-
-    start_and_end_program(False)

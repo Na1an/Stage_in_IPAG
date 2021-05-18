@@ -485,7 +485,7 @@ if __name__ == "__main__":
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
         
         # now, the target is not in the references frames
-        #ref_files = remove_target(str(sys.argv[2]),ref_files)
+        ref_files = remove_target(str(sys.argv[2]),ref_files)
         print(">> what we have in ref_res")
         for s in ref_files:
             print(s)
