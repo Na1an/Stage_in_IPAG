@@ -23,7 +23,7 @@ def get_fwhm_from_psf(psf):
     Return:
         res : a float. The one fwhm of the psf.
     '''
-    fwhm = vip.var.fit_2dgaussian(psf, crop=True, cropsize=15, debug=False)
+    fwhm = vip.var.fit_2dgaussian(psf, crop=True, cropsize=17, debug=False)
 
     return np.mean([fwhm.loc[0,'fwhm_y'], fwhm.loc[0,'fwhm_x']])
 
@@ -62,6 +62,8 @@ if __name__ == "__main__":
     best_3 = get_SN("./RDI_res_3", positions, fwhm)
     best_4 = get_SN("./RDI_res_4", positions, fwhm)
     best_5 = get_SN("./RDI_res_5", positions, fwhm)    
+    
+    print("len 3_best =", len(best_3), " len 4_best =", len(best_4), " len 5_best =", len(best_5))
 
     nb_data = 3
     data = np.zeros((200, nb_data))
