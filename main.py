@@ -277,15 +277,27 @@ if __name__ == "__main__":
             print(s)
 
         # Select the best correlated targets
-        # select the best correlated targets
-        ref_files = selection(3, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+        # count is the number of we want to chose
+        count = 3
+        ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
         # 3. put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(ref_files, scale)
         print("ref_frames shape =", ref_frames.shape)
         angles = read_file(str(sys.argv[2]), "ROTATION")
         
+        wl_ref, nb_fr_ref, w, h = ref_frames.shape
+        wl = 0
+        n = nb_fr_ref
+        for i in range(1,n+1):
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp=i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
+            path = "./K_kilp_ADI_RDI/RDI_res_"+str(count)+"/RDI_Masked" + "{0:05d}".format(i) + ".fits"
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>===", i, "of", n,"=== fits writed ===")
 
+        end_time = datetime.datetime.now()
+        print("PCA on RDI ", n," take", end_time - start_time)
 
     else:
         print("No such option")

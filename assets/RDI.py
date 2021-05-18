@@ -15,7 +15,7 @@ from astropy.visualization import simple_norm
 from photutils.aperture import CircularAperture, aperture_photometry, CircularAnnulus
 
 # private module
-from utility import *
+from utility_RDI import *
 
 # Global variable
 #MASK_RADIUS = 32
@@ -208,7 +208,7 @@ def selection_all(nb_best, target, refs, scale, wave_length=0):
     for k in range(nb_best):
         (x,y) = tmp[k]
         hdul = fits.open(x)
-        res_bis[hdul[0].header['OBJECT']] = y
+        res_bis[hdul[0].header['OBJECT']+'-'+str(k)] = y
 
     return res_bis
 
@@ -502,7 +502,7 @@ if __name__ == "__main__":
         rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
         # 4. PCA
         # last arg is the K_klip
-        for n in range(10,11):
+        for n in range(1,11):
             tmp_time_start = datetime.datetime.now()
             res = PCA(target_frames, ref_frames, n) #K_klip
             tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
@@ -593,7 +593,7 @@ if __name__ == "__main__":
             print(s)
         
         # select the best correlated targets
-        res_all = selection_all(10, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        res_all = selection_all(20, target_frames, ref_files, scale, 0) # 0 is the default wave length
         print_best_ref_stars_pearson_coef(res_all)
     
     elif opt == "INJECTION":
@@ -641,7 +641,7 @@ if __name__ == "__main__":
         # last arg is the K_klip
         for n in range(1,11):
             tmp_time_start = datetime.datetime.now()
-            res = PCA(target_frames, ref_frames, n) #K_klip
+            res = PCA(target_frames, ref_frames, n, 0) #K_klip
             tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
             
             for i in range(len(res)):
