@@ -58,13 +58,18 @@ if __name__ == "__main__":
 
     psf = vip.fits.open_fits(str(sys.argv[1]))
     fwhm = get_fwhm_from_psf(psf[0])
+
+    print("fwhm =", fwhm)
     
-    best_3 = get_SN("./RDI_res_3", positions, fwhm)
-    best_4 = get_SN("./RDI_res_4", positions, fwhm)
-    best_5 = get_SN("./RDI_res_5", positions, fwhm)    
-    best_6 = get_SN("./RDI_res_6", positions, fwhm)
-    best_7 = get_SN("./RDI_res_7", positions, fwhm)
-    adi = get_SN("./ADI_res_1", positions, fwhm) 
+    # 4 is 4 pxls
+    fwhm_for_snr = 4
+    
+    best_3 = get_SN("./RDI_res_3", positions, fwhm_for_snr)
+    best_4 = get_SN("./RDI_res_4", positions, fwhm_for_snr)
+    best_5 = get_SN("./RDI_res_5", positions, fwhm_for_snr)    
+    best_6 = get_SN("./RDI_res_6", positions, fwhm_for_snr)
+    best_7 = get_SN("./RDI_res_7", positions, fwhm_for_snr)
+    adi = get_SN("./ADI_res_1", positions, fwhm_for_snr) 
     
     print("len 3_best =", len(best_3), " len 4_best =", len(best_4), " len 5_best =", len(best_5), "len 6_best", len(best_6), "len 7_best", len(best_7))
     
