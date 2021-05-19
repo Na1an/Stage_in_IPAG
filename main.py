@@ -290,7 +290,8 @@ if __name__ == "__main__":
         wl = 0
         n = nb_fr_ref
         for i in range(1,n+1):
-            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
+            #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
+            res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
             path = "./K_kilp_ADI_RDI/RDI_res_"+str(count)+"/RDI_Masked" + "{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
@@ -298,7 +299,35 @@ if __name__ == "__main__":
 
         end_time = datetime.datetime.now()
         print("PCA on RDI ", n," take", end_time - start_time)
+    
+    elif opt == "ADI":
+        # product the processed images    
+        print(">> Algo PCA ADI is working! ")
+        start_time = datetime.datetime.now()
+        if(len(sys.argv) >4):
+            scale = float(sys.argv[4])
 
+        # 1. get target
+        target_path = str(sys.argv[2])
+        science_target = read_file(target_path, "MASTER_CUBE-center")
+        science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+        print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+        
+        angles = read_file(str(sys.argv[2]), "ROTATION")
+        
+        wl_ref, nb_fr_ref, w, h = science_target_croped.shape
+        wl = 0
+        n = nb_fr_ref
+        for i in range(1,n+1):
+            #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
+            res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
+            path = "./K_kilp_ADI_RDI/ADI_res_1/RDI_Masked" + "{0:05d}".format(i) + ".fits"
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>===", i, "of", n,"=== fits writed ===")
+
+        end_time = datetime.datetime.now()
+        print("PCA on ADI ", n," take", end_time - start_time)
     else:
         print("No such option")
 
