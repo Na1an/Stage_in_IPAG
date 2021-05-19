@@ -62,13 +62,17 @@ if __name__ == "__main__":
     best_3 = get_SN("./RDI_res_3", positions, fwhm)
     best_4 = get_SN("./RDI_res_4", positions, fwhm)
     best_5 = get_SN("./RDI_res_5", positions, fwhm)    
+    best_6 = get_SN("./RDI_res_6", positions, fwhm)
+    best_7 = get_SN("./RDI_res_7", positions, fwhm)
+    adi = get_SN("./ADI_res_1", positions, fwhm) 
     
-    print("len 3_best =", len(best_3), " len 4_best =", len(best_4), " len 5_best =", len(best_5))
+    print("len 3_best =", len(best_3), " len 4_best =", len(best_4), " len 5_best =", len(best_5), "len 6_best", len(best_6), "len 7_best", len(best_7))
+    
+    nb_data = 6
+    l_max = len(best_7)
+    data = np.zeros((l_max, nb_data))
 
-    nb_data = 3
-    data = np.zeros((200, nb_data))
-
-    for i in range(200):
+    for i in range(l_max):
         if(i>=len(best_3)):
             data[i][0] = best_3[-1]
         else:
@@ -83,9 +87,23 @@ if __name__ == "__main__":
             data[i][2] = best_5[-1]
         else:
             data[i][2] = best_5[i]
-
-    data_total_SN = pd.DataFrame(data[:,:], columns=['RDI_3_best','RDI_4_best','RDI_5_best'])
-    #data_total_SN = pd.DataFrame(data_SN[:,:], columns=['S/N_ADI_Outer_Region_3_best','S/N_RDI_Outer_Region_3_best'])
+        
+        if(i>=len(best_6)):
+            data[i][3] = best_6[-1]
+        else:
+            data[i][3] = best_6[i]
+        
+        if(i>=len(best_7)):
+            data[i][4] = best_7[-1]
+        else:
+            data[i][4] = best_7[i]
+        
+        if(i>=len(adi)):
+            data[i][5] = adi[-1]
+        else:
+            data[i][5] = adi[i]
+    
+    data_total_SN = pd.DataFrame(data[:,:], columns=['RDI_3_best','RDI_4_best','RDI_5_best','RDI_6_best','RDI_7_best', 'ADI'])
     data_total_SN.index = data_total_SN.index + 1
     print("######### S/N ########")
     print(data_total_SN)

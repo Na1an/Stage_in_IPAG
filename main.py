@@ -278,7 +278,7 @@ if __name__ == "__main__":
 
         # Select the best correlated targets
         # count is the number of we want to chose
-        count = 3
+        count = 7
         ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
         # 3. put the related data (all frames of the reference cubes) in np.array
@@ -290,7 +290,7 @@ if __name__ == "__main__":
         wl = 0
         n = nb_fr_ref
         for i in range(1,n+1):
-            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, scaling='temp-mean')
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
             path = "./K_kilp_ADI_RDI/RDI_res_"+str(count)+"/RDI_Masked" + "{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
