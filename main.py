@@ -131,8 +131,8 @@ def distance(x1, y1, x2, y2):
 
     return ((x1-x2)**2+(y1-y2)**2)**0.5
 
-# A mask, cover the center of image
-def create_mask(w, h, radius=MASK_RADIUS):
+# A mask, cover the center of image, inner mask
+def create_inner_mask(w, h, radius=MASK_RADIUS):
     '''
     Args:
         w : an integer. The weight of image.
@@ -148,6 +148,27 @@ def create_mask(w, h, radius=MASK_RADIUS):
     for i in range(w):
         for j in range(h):
             if distance(i, j, x, y) <= radius:
+                res[i,j] = False
+                count = count + 1
+    return res, count
+
+# A mask, cover the center of image, outer mask
+def create_outer_mask(w, h, radius):
+    '''
+    Args:
+        w : an integer. The weight of image.
+        h : an integer. The height of image.
+        radius : an integer. The radius of mask.
+    Return:
+        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
+    '''
+    count = 0
+    res = np.full((w,h),True)
+    x = w//2
+    y = h//2
+    for i in range(w):
+        for j in range(h):
+            if distance(i, j, x, y) >= radius:
                 res[i,j] = False
                 count = count + 1
     return res, count
@@ -216,7 +237,7 @@ def selection(nb_best, target, refs, scale, wave_length=0):
     target_median = median_of_cube(target, wave_length)
     w, h = target_median.shape
     # create mask
-    m, pxs_center = create_mask(w,h,MASK_RADIUS)
+    m, pxs_center = create_inner_mask(w,h,MASK_RADIUS)
     target_median_vector = np.reshape(target_median*m,(w*h))
 
     for i in range(len(refs)):
@@ -283,21 +304,31 @@ if __name__ == "__main__":
 
         # Select the best correlated targets
         # count is the number of we want to chose
-        count = 7
+        count = int(sys.argv[5])
         ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
         # 3. put the related data (all frames of the reference cubes) in np.array
         ref_frames = collect_data(ref_files, scale)
         print("ref_frames shape =", ref_frames.shape)
+        
+        # get angles
         angles = read_file(str(sys.argv[2]), "ROTATION")
         
+        # get ref shape
         wl_ref, nb_fr_ref, w, h = ref_frames.shape
         wl = 0
         n = nb_fr_ref
-        for i in range(1,n+1):
-            #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
-            res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
-            path = "./K_kilp_ADI_RDI/RDI_res_"+str(count)+"/RDI_Masked" + "{0:05d}".format(i) + ".fits"
+        
+        # create outer mask
+        r_in = 118
+        r_out = 125
+        outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+        science_target_croped[wl] = science_target_croped[wl]*outer_mask
+        
+        for i in range(1,51):
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl], scaling='temp-mean')
+            #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
+            path = "./K_kilp_ADI_RDI/Test_RDI_res_"+str(count)+"/RDI_Masked" + "{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed ===")
@@ -318,18 +349,27 @@ if __name__ == "__main__":
         science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
         print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
         
+        # get angles
         angles = read_file(str(sys.argv[2]), "ROTATION")
         
+        # get science target shape
         wl_ref, nb_fr_ref, w, h = science_target_croped.shape
         wl = 0
         n = nb_fr_ref
+        
+        # create outer mask
+        r_in = 118
+        r_out = 125
+        outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+        science_target_croped[wl] = science_target_croped[wl]*outer_mask
+
         for i in range(1,n+1):
             #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
             #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, radius_int=118, asize=7, ncomp=i)
-            res_tmp = vip.pca.pca_annular(science_target_croped[wl], -angles, cube_ref=science_target_croped[wl],radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
-            #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=115, scaling='temp-mean')
+            #res_tmp = vip.pca.pca_annular(science_target_croped[wl], -angles, cube_ref=science_target_croped[wl],radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, scaling='temp-mean')
 
-            path = "./K_kilp_ADI_RDI/ADI_res_1/ADI_Masked" + "{0:05d}".format(i) + ".fits"
+            path = "./K_kilp_ADI_RDI/Test_ADI/ADI_Masked" + "{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed ===")
@@ -337,6 +377,11 @@ if __name__ == "__main__":
         end_time = datetime.datetime.now()
         
         print("PCA on ADI ", n," take", end_time - start_time)
+    
+    elif opt == "INJECTION":
+        # inject a fake planet
+        print(">> Inject a fake planet")
+
     else:
         print("No such option")
 
