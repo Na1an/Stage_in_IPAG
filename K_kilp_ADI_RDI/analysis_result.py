@@ -71,7 +71,7 @@ if __name__ == "__main__":
     best_7 = get_SN("./RDI_res_7", positions, fwhm_for_snr)
     adi = get_SN("./ADI_res_1", positions, fwhm_for_snr) 
     
-    print("len 3_best =", len(best_3), " len 4_best =", len(best_4), " len 5_best =", len(best_5), "len 6_best", len(best_6), "len 7_best", len(best_7))
+    print("len 3_best =", len(best_3), " len 4_best =", len(best_4), " len 5_best =", len(best_5), "len 6_best", len(best_6), "len 7_best", len(best_7), "len ADI", len(adi))
     
     nb_data = 6
     l_max = len(best_7)

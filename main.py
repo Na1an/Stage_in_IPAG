@@ -152,6 +152,7 @@ def create_mask(w, h, radius=MASK_RADIUS):
                 count = count + 1
     return res, count
 
+# rotate the frames in a cube
 def rotate(image, angle, center=None, scale=1.0):
     '''
     Args:
@@ -243,6 +244,10 @@ def selection(nb_best, target, refs, scale, wave_length=0):
 
     return res_bis
 
+# detection
+def rdi_detection():
+    return None
+
 if __name__ == "__main__":
     start_and_end_program(True)
     print("vip.version :", vip.__version__)
@@ -320,13 +325,17 @@ if __name__ == "__main__":
         n = nb_fr_ref
         for i in range(1,n+1):
             #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
-            res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
-            path = "./K_kilp_ADI_RDI/ADI_res_1/RDI_Masked" + "{0:05d}".format(i) + ".fits"
+            #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, radius_int=118, asize=7, ncomp=i)
+            res_tmp = vip.pca.pca_annular(science_target_croped[wl], -angles, cube_ref=science_target_croped[wl],radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
+            #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=115, scaling='temp-mean')
+
+            path = "./K_kilp_ADI_RDI/ADI_res_1/ADI_Masked" + "{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed ===")
 
         end_time = datetime.datetime.now()
+        
         print("PCA on ADI ", n," take", end_time - start_time)
     else:
         print("No such option")
