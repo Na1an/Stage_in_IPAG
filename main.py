@@ -381,6 +381,40 @@ if __name__ == "__main__":
     elif opt == "INJECTION":
         # inject a fake planet
         print(">> Inject a fake planet")
+        
+        # 1. get target
+        target_path = str(sys.argv[2])
+        science_target = read_file(target_path, "MASTER_CUBE-center")
+        science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+        print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+        
+        # 2. prepare these parameters
+        # get angles
+        angles = read_file(target_path, "ROTATION")
+        psf = read_file(target_path, "PSF_MASTER_CUBE") 
+        
+        # get science target shape
+        wl_ref, nb_fr_ref, w, h = science_target_croped.shape
+        wl = 0
+        
+        # fwhm psfn
+        fwhm = get_fwhm_from_psf(psf[wl])
+        psfn = vip.metrics.normalize_psf(psf[wl], fwhm, size=17)
+        
+        # pxscale of IRDIS
+        pxscale = get_pxscale()
+
+        # make fake companion
+        fake_comp = vip.metrics.cube_inject_companions(science_target_croped[wl], psf_template=psfn, angle_list=angles, flevel=100, plsc=pxscale, rad_dists=[33], theta=70, n_branches = 1)
+        print("fake companion shape = ", fake_comp.shape)
+        
+        # display
+        #ds9 = vip.Ds9Window()
+        #ds9.display(fake_comp[0])
+
+        path_fake_comp = "./fake_planet/fake_comp01.fits"
+        hdu = fits.PrimaryHDU(fake_comp)
+        hdu.writeto(path_fake_comp)
 
     else:
         print("No such option")
