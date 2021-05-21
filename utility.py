@@ -52,7 +52,7 @@ def get_pxscale():
         res : a float. Return the pxscale of the IRDIS.
     '''
     res = vip.conf.VLT_SPHERE_IRDIS['plsc']
-    print("In SPHERE IRDIS : pxscale =", res, "arcsec/px")
+    #print("In SPHERE IRDIS : pxscale =", res, "arcsec/px")
     return res 
 
 # slice frame, we only take the interesting area
