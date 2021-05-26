@@ -418,7 +418,7 @@ if __name__ == "__main__":
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
         path_fake_comp = "./fake_planet/fake_comp04.fits"
-        
+
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp)
 
