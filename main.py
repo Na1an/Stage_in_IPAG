@@ -289,7 +289,7 @@ if __name__ == "__main__":
 
         # 1. get target
         target_path = str(sys.argv[2])
-        science_target = read_file(target_path, "MASTER_CUBE-center")
+        science_target = read_file(target_path, "fake_comp")
         science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
         print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
         
@@ -320,15 +320,16 @@ if __name__ == "__main__":
         n = nb_fr_ref
         
         # create outer mask
-        r_in = 118
-        r_out = 125
+        r_in = 16
+        r_out = 50
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
         science_target_croped[wl] = science_target_croped[wl]*outer_mask
         
         for i in range(1,51):
-            #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl], scaling='temp-mean')
-            res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
-            path = "./K_kilp_ADI_RDI/RDI_res_"+str(count)+"/RDI_Masked" + "{0:05d}".format(i) + ".fits"
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl], scaling='temp-mean')
+            #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
+            #path = "./K_kilp_ADI_RDI/RDI_res_"+str(count)+"/RDI_Masked" + "{0:05d}".format(i) + ".fits"
+            path = "./K_kilp_ADI_RDI/fake_res/RDI_Masked" + "{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed ===")
@@ -369,7 +370,8 @@ if __name__ == "__main__":
             #res_tmp = vip.pca.pca_annular(science_target_croped[wl], -angles, cube_ref=science_target_croped[wl],radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
             res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, scaling='temp-mean')
 
-            path = "./K_kilp_ADI_RDI/Test_ADI/ADI_Masked" + "{0:05d}".format(i) + ".fits"
+            #path = "./K_kilp_ADI_RDI/Test_ADI/ADI_Masked" + "{0:05d}".format(i) + ".fits"
+            path = "./K_kilp_ADI_RDI/fake_res_adi/ADI_Masked" + "{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed ===")
@@ -385,8 +387,8 @@ if __name__ == "__main__":
         # 1. get target
         target_path = str(sys.argv[2])
         science_target = read_file(target_path, "MASTER_CUBE-center")
-        science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
-        print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+        #science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+        print("Scale =", scale, "\n science target shape =", science_target.shape)
         
         # 2. prepare these parameters
         # get angles
@@ -394,7 +396,7 @@ if __name__ == "__main__":
         psf = read_file(target_path, "PSF_MASTER_CUBE") 
         
         # get science target shape
-        wl_ref, nb_fr_ref, w, h = science_target_croped.shape
+        wl_ref, nb_fr_ref, w, h = science_target.shape
         wl = 0
         
         # fwhm psfn
@@ -405,14 +407,18 @@ if __name__ == "__main__":
         pxscale = get_pxscale()
 
         # make fake companion
-        fake_comp = vip.metrics.cube_inject_companions(science_target_croped[wl], psf_template=psfn, angle_list=angles, flevel=100, plsc=pxscale, rad_dists=[33], theta=70, n_branches = 1)
-        print("fake companion shape = ", fake_comp.shape)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=100, plsc=pxscale, rad_dists=[33], theta=70, n_branches = 1)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel=1000, plsc=pxscale, rad_dists=[33], theta=70, n_branches = 1)
+        print("fake companion 0 shape = ", fake_comp_0.shape)
         
         # display
         #ds9 = vip.Ds9Window()
         #ds9.display(fake_comp[0])
-
-        path_fake_comp = "./fake_planet/fake_comp01.fits"
+        fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
+        fake_comp[0] = fake_comp_0
+        fake_comp[1] = fake_comp_1
+        path_fake_comp = "./fake_planet/fake_comp04.fits"
+        
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp)
 
