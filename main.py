@@ -421,7 +421,46 @@ if __name__ == "__main__":
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp)
+    elif opt == "SCAL":
+        
+        scalings = ["temp-mean", "spat-mean", "temp-standard","spat-standard"]
+        # product the processed images    
+        print(">> Analysis scalings effect! ")
+        start_time = datetime.datetime.now()
+        if(len(sys.argv) >4):
+            scale = float(sys.argv[4])
 
+        # 1. get target
+        target_path = str(sys.argv[2])
+        science_target = read_file(target_path, "MASTER_CUBE-center")
+        science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+        print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+        
+        # get angles
+        angles = read_file(str(sys.argv[2]), "ROTATION")
+        
+        # get science target shape
+        wl_ref, nb_fr_ref, w, h = science_target_croped.shape
+        wl = 0
+        n = nb_fr_ref       
+        
+        # create outer mask
+        r_in = 32
+        r_out = (w/2)
+        outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+        science_target_croped[wl] = science_target_croped[wl]*outer_mask
+        
+        for s in scalings:
+            for i in range(1,n+1):
+                res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, scaling=s)
+                path = "./K_kilp_ADI_RDI/ADI/" +s+"/{0:05d}".format(i) + ".fits"
+                hdu = fits.PrimaryHDU(res_tmp)
+                hdu.writeto(path)
+                print(">>===", i, "of", n,"=== fits writed ===")
+
+        end_time = datetime.datetime.now()
+        
+        print("PCA on ADI ", n," take", end_time - start_time)
     else:
         print("No such option")
 
