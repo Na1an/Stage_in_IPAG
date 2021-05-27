@@ -18,7 +18,7 @@ from photutils.aperture import CircularAperture, aperture_photometry, CircularAn
 from utility_RDI import *
 
 # Global variable
-#MASK_RADIUS = 32
+MASK_RADIUS = 32
 
 # 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
 def get_reference_cubes(repository_path, keyword):
@@ -242,6 +242,27 @@ def inject_planet(target_sliced, psf_sliced, rotations, x_inject, y_inject, atte
             res[w2, n] = rotate(init[w2]*attenuate, -rotations[n])
 
     return res
+
+# A mask, cover the center of image, outer mask
+def create_outer_mask(w, h, radius):
+    '''
+    Args:
+        w : an integer. The weight of image.
+        h : an integer. The height of image.
+        radius : an integer. The radius of mask.
+    Return:
+        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
+    '''
+    count = 0
+    res = np.full((w,h),True)
+    x = w//2
+    y = h//2
+    for i in range(w):
+        for j in range(h):
+            if distance(i, j, x, y) >= radius:
+                res[i,j] = False
+                count = count + 1
+    return res, count
 
 # 3. Classic ADI
 def process_ADI(science_frames, rotations):
@@ -491,20 +512,29 @@ if __name__ == "__main__":
             print(s)
         
         # select the best correlated targets
-        ref_files = selection(4, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        #ref_files = selection(1, target_frames, ref_files, scale, 0) # 0 is the default wave length
         #print(ref_files) 
         
         # 3. put the related data (all frames of the reference cubes) in np.array
-        ref_frames = collect_data(ref_files, scale)
+        #ref_frames = collect_data(ref_files, scale)
+        ref_frames = target_frames
         print("ref_frames shape =", ref_frames.shape)
-       
         
+        wl_ref, nb_fr_ref, w, h = ref_frames.shape
+        wl = 0
+        n = nb_fr_ref
+        
+        # create outer mask
+        r_in = 32
+        r_out = (w/2)
+        outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+        print("outer_mask :", outer_mask[128])
         rotations_tmp = read_file(str(sys.argv[2]),"ROTATION") 
         # 4. PCA
         # last arg is the K_klip
-        for n in range(1,11):
+        for n in range(1,31):
             tmp_time_start = datetime.datetime.now()
-            res = PCA(target_frames, ref_frames, n) #K_klip
+            res = PCA(target_frames*outer_mask, ref_frames*outer_mask, n) #K_klip
             tmp = np.zeros((int(side_len*scale), int(side_len*scale))) 
             
             for i in range(len(res)):
@@ -513,9 +543,9 @@ if __name__ == "__main__":
             
             path = " "
             if n<10:
-                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked11" + str(n) + ".fits"
+                path = "../K_kilp_ADI_RDI/ADI/mycode/mycode_adi0" + str(n) + ".fits"
             else:
-                path = "./K_kilp_ADI_RDI/RDI_WITH_MASK_3_best_32/RDI_Masked11" + str(n) + ".fits"
+                path = "../K_kilp_ADI_RDI/ADI/mycode/mycode_adi" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", n, "of", 100,"=== fits writed ===")
             tmp_time_end = datetime.datetime.now()
@@ -550,6 +580,7 @@ if __name__ == "__main__":
         data = origin_flux_companion(slice_frame(target_frames, len(target_frames[0, 0, 0]), scale), read_file(str(sys.argv[2]),"ROTATION"))
         #hdu = fits.PrimaryHDU(res_cADI)
         #hdu.writeto("./GJ_667C_origin_rotated.fits") 
+        #positions = [(126.05284, 249.11)]
         positions = [(126.05284, 249.11)]
         aperture = CircularAperture(positions, r=2)
         annulus = CircularAnnulus(positions, r_in=4, r_out=6)
@@ -568,8 +599,8 @@ if __name__ == "__main__":
         plt.imshow(data[0], norm=norm, interpolation='nearest')
         ap_patches = aperture.plot(color='white', lw=2, label='Photometry aperture')
         ann_patches = annulus.plot(color='red', lw=2, label='Background annulus') 
-        handles=(ap_patches[0],ann_patches[0])
-        plt.legend(loc=(0.17, 0.05), facecolor='#458989', labelcolor='white', handles=handles, prop={'weight':'bold', 'size':11})
+        #handles=(ap_patches[0],ann_patches[0])
+        plt.legend(loc=(0.17, 0.05), facecolor='#458989', labelcolor='white', prop={'weight':'bold', 'size':11})
         plt.xlim(100,170)
         plt.ylim(200,256)
         #plt.savefig('./Origin_Companion_Flux.png')
