@@ -512,12 +512,12 @@ if __name__ == "__main__":
             print(s)
         
         # select the best correlated targets
-        #ref_files = selection(1, target_frames, ref_files, scale, 0) # 0 is the default wave length
-        #print(ref_files) 
+        ref_files = selection(3, target_frames, ref_files, scale, 0) # 0 is the default wave length
+        print(ref_files) 
         
         # 3. put the related data (all frames of the reference cubes) in np.array
-        #ref_frames = collect_data(ref_files, scale)
-        ref_frames = target_frames
+        ref_frames = collect_data(ref_files, scale)
+        #ref_frames = target_frames
         print("ref_frames shape =", ref_frames.shape)
         
         wl_ref, nb_fr_ref, w, h = ref_frames.shape
@@ -525,7 +525,7 @@ if __name__ == "__main__":
         n = nb_fr_ref
         
         # create outer mask
-        r_in = 32
+        r_in = 118
         r_out = (w/2)
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
         print("outer_mask :", outer_mask[128])
@@ -543,9 +543,9 @@ if __name__ == "__main__":
             
             path = " "
             if n<10:
-                path = "../K_kilp_ADI_RDI/ADI/mycode/mycode_adi0" + str(n) + ".fits"
+                path = "../K_kilp_ADI_RDI/RDI_3_best/mycode_bak/mycode_adi0" + str(n) + ".fits"
             else:
-                path = "../K_kilp_ADI_RDI/ADI/mycode/mycode_adi" + str(n) + ".fits"
+                path = "../K_kilp_ADI_RDI/RDI_3_best/mycode_bak/mycode_adi" + str(n) + ".fits"
             hdu.writeto(path) 
             print(">>===", n, "of", 100,"=== fits writed ===")
             tmp_time_end = datetime.datetime.now()
@@ -601,8 +601,8 @@ if __name__ == "__main__":
         ann_patches = annulus.plot(color='red', lw=2, label='Background annulus') 
         #handles=(ap_patches[0],ann_patches[0])
         plt.legend(loc=(0.17, 0.05), facecolor='#458989', labelcolor='white', prop={'weight':'bold', 'size':11})
-        plt.xlim(100,170)
-        plt.ylim(200,256)
+        plt.xlim(20,170)
+        plt.ylim(20,256)
         #plt.savefig('./Origin_Companion_Flux.png')
         plt.show() 
         #hdu = fits.PrimaryHDU(data)

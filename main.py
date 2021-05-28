@@ -469,12 +469,12 @@ if __name__ == "__main__":
         r_out = (w/2)
         
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
-        science_target_croped[wl] = science_target_croped[wl]*outer_mask
+        #science_target_croped[wl] = science_target_croped[wl]
         
         for s in scalings:
-            for i in range(1,31):
-                res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=s)
-                path = "./K_kilp_ADI_RDI/RDI_3_best/" +s+"/{0:05d}".format(i) + ".fits"
+            for i in range(1, n+1):
+                res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl], scaling=s)
+                path = "./K_kilp_ADI_RDI/RDI_only_big_inner/" +s+"/{0:05d}".format(i) + "_with_mask_on_ref.fits"
                 hdu = fits.PrimaryHDU(res_tmp)
                 hdu.writeto(path)
                 print(">>===", i, "of", n,"=== fits writed ===")
