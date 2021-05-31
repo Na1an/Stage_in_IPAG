@@ -469,7 +469,7 @@ if __name__ == "__main__":
         r_out = (w/2)
         
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
-        #science_target_croped[wl] = science_target_croped[wl]
+        #science_target_croped[wl] = science_target_croped[wl] * outer_mask
         
         for s in scalings:
             for i in range(1, n+1):
