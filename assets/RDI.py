@@ -295,7 +295,7 @@ def origin_flux_companion(science_frames, rotations):
         science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
         rotations : a numpy.ndarry. The angles of ratations    
     Return:
-        res : a numpy.ndarray, 4 dimesi. Ex. (2 wavelengths, 24 frames, 256, 256).
+        res : a numpy.ndarray, 4 dims. Ex. (2 wavelengths, 24 frames, 256, 256).
     '''
     
     wave_length, sc_fr_nb, w, h = science_frames.shape
@@ -310,6 +310,49 @@ def origin_flux_companion(science_frames, rotations):
             res[wl] = res[wl] + rotate((science_frames[wl, n])*mask, rotations[n])
     
     return res/sc_fr_nb 
+
+# convert 2d image to 1d array
+# take annulus from center to outer 
+# calculate the background mean of the image
+def radial_data_mean(target_frames):
+    '''
+    Args:
+        target_frames : a numpy.ndarray, 2 dims. (x, y)
+    Return:
+        img : a numpy.ndarray, 2 dims. Ex. (255, 255) in case input (256,256). And img is a copy, it means not impact the target frame.
+    '''
+    
+    # target_frame.shape = (256,256)
+    # img.shape = (255,255)
+    img = np.copy(target_frames[1:,1:])
+    side, _ = img.shape
+    print("img.shape =", img.shape)
+    
+    # center
+    cent_x = side//2
+    cent_y = side//2
+
+    # for each lth layer, we will calculate the mean value (background)
+    lay = (side//2)+1
+    for lth in range(lay):
+        coords = []
+        values = []
+        
+        # traversal the entire img
+        for i in range(side):
+            for j in range(side):
+                d = distance(i,j,cent_x,cent_y)
+                if lth <= d and d < (lth+1):
+                    coords.append((i,j))
+                    values.append(img[i,j])
+        # mean
+        mean = np.mean(values)
+
+        # assig the mean to the layer, 
+        for (l_x,l_y) in coords:
+            img[l_x,l_y] = mean
+    
+    return img 
 
 # 4. KLIP/PCA - Principle Component Analysis
 #   Be attention! The values of science_frames and ref_frames will change !!!
@@ -568,7 +611,7 @@ if __name__ == "__main__":
         # Step 3: process the science frames
         sc_frames_procced = process_RDI(slice_frame(science_frames, len(science_frames[0][0][0]), 0.25), ref_frames)
     
-    elif opt== "TEST":
+    elif opt== "FLUX":
         # 1. get the target frames from Master cube
         target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
         
@@ -578,13 +621,20 @@ if __name__ == "__main__":
         
         # 3. result of cADI
         data = origin_flux_companion(slice_frame(target_frames, len(target_frames[0, 0, 0]), scale), read_file(str(sys.argv[2]),"ROTATION"))
+        data_bkg_mean = radial_data_mean(data[0])
+        c = plt.imshow(data_bkg_mean, interpolation='nearest', origin='lower')
+        plt.colorbar(c)
+        plt.title('backgraound flux of target science')
+        plt.show()
+
         #hdu = fits.PrimaryHDU(res_cADI)
         #hdu.writeto("./GJ_667C_origin_rotated.fits") 
         #positions = [(126.05284, 249.11)]
         positions = [(126.05284, 249.11)]
         aperture = CircularAperture(positions, r=2)
         annulus = CircularAnnulus(positions, r_in=4, r_out=6)
-
+        
+        data[0][1:,1:] = data[0][1:,1:] - data_bkg_mean
         flux_companion = aperture_photometry(data[0], [aperture,annulus])
         bkg_mean = flux_companion['aperture_sum_1']/annulus.area
         bkg_sum_in_companion = bkg_mean * aperture.area 
