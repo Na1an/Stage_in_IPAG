@@ -188,6 +188,7 @@ class FrameTemp:
         
         return res 
     
+    
     # print the property
     def print_property(self):
         '''
@@ -211,4 +212,23 @@ class FrameTemp:
         '''
         for i in range(self.radius):
             print(self.coords[i]) 
-        
+
+# remove separation mean from a cube
+def remove_separation_mean_from_cube(cube):
+    '''
+    Only consider the input cube has even shape. Ex. (..., 256, 256) 
+    Args:
+        self : object it self.
+        cube : a ndarry, 3 dims. The input cube. ( nb_frames, x, y)
+    Return:
+        None
+    '''
+    nb_fr, w, h = cube.shape
+    temp = FrameTemp(w-1)
+    # traversal the cube in wave length = wl
+    for i in range(nb_fr):
+        sep_mean = temp.separation_mean(cube[i, 1:,1:])
+        cube[i, 1:, 1:] = cube[i, 1:, 1:] - sep_mean
+        print("===", i+1, "of", nb_fr, " separation_mean removed ===")
+
+    return None

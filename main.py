@@ -406,7 +406,7 @@ if __name__ == "__main__":
         pxscale = get_pxscale()
 
         # make fake companion
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=60, plsc=pxscale, rad_dists=[40], theta=70, n_branches = 1)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[40], theta=70, n_branches = 1)
         fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1000, plsc=pxscale, rad_dists=[40], theta=70, n_branches = 1)
         print("fake companion 0 shape = ", fake_comp_0.shape)
         
@@ -483,18 +483,7 @@ if __name__ == "__main__":
         print("PCA Scals ", n," take", end_time - start_time)
     elif opt == "SAM":
         # SAM : spat-annular-mean
-        '''
-        t = FrameTemp(5)
-        t.print_property()
-        t.print_coords()
-        u = np.zeros((5,5))
-        u[1,2] = 44
-        u[0,1] = 355
-        u[4,2] = 100
-        res = t.separation_mean(u, True)
-        print(u)
-        print(res)
-        '''
+        
         print(">> Analysis spat-mean vs spat-annular-mean! ")
         start_time = datetime.datetime.now()
         
@@ -503,8 +492,11 @@ if __name__ == "__main__":
         
         # 1. get target
         target_path = str(sys.argv[2])
-        science_target = read_file(target_path, "MASTER_CUBE-center")
+        #science_target = read_file(target_path, "MASTER_CUBE-center")
+        science_target = read_file(target_path, "fake_comp")
         science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+        # science target scale 
+        wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
         print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
        
         # 2. get the list of files in library
@@ -518,7 +510,7 @@ if __name__ == "__main__":
 
         # Select the best correlated targets
         # count is the number of we want to chose
-        count = 3
+        count = int(sys.argv[5])
         ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
         # 3. put the related data (all frames of the reference cubes) in np.array
@@ -539,13 +531,30 @@ if __name__ == "__main__":
         
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
         science_target_croped[wl] = science_target_croped[wl] * outer_mask
-            
+        '''
+        t = FrameTemp(5)
+        t.print_property()
+        t.print_coords()
+        u = np.zeros((5,5))
+        u[1,2] = 44
+        u[0,1] = 355
+        u[4,2] = 100
+        res = t.separation_mean(u, True)
+        print(u)
+        print(res)
+        '''
+        
+        print("start remove separation mean from science_target")
+        remove_separation_mean_from_cube(science_target_croped[0])
+        print("star remove separation mean from ref_frames")
+        remove_separation_mean_from_cube(ref_frames[0])
+
         for i in range(1, n+1):
-            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling="spat-mean")
-            path = "./K_kilp_ADI_RDI/spat-mean/" +str(count)+"_best/{0:05d}".format(i) + "spat_mean.fits"
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
+            path = "./K_kilp_ADI_RDI/spat-annular/" +str(count)+"_best/{0:05d}".format(i) + "spat_mean.fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
-            print(">>===", i, "of", n,"=== fits writed ===")
+            print(">>===", i, "of", n,"=== fits writed === path :", path)
 
         end_time = datetime.datetime.now()
         
