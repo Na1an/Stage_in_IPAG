@@ -345,7 +345,7 @@ if __name__ == "__main__":
 
         # 1. get target
         target_path = str(sys.argv[2])
-        science_target = read_file(target_path, "MASTER_CUBE-center")
+        science_target = read_file(target_path, "fake")
         science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
         print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
         
@@ -358,7 +358,7 @@ if __name__ == "__main__":
         n = nb_fr_ref
         
         # create outer mask
-        r_in = 118
+        r_in = 15 
         r_out = 125
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
         science_target_croped[wl] = science_target_croped[wl]*outer_mask
@@ -370,7 +370,7 @@ if __name__ == "__main__":
             res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, scaling='temp-mean')
 
             #path = "./K_kilp_ADI_RDI/Test_ADI/ADI_Masked" + "{0:05d}".format(i) + ".fits"
-            path = "./K_kilp_ADI_RDI/fake_res_adi/ADI_Masked" + "{0:05d}".format(i) + ".fits"
+            path = "./K_kilp_ADI_RDI/fake_planet/ADI_Masked" + "{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed ===")
@@ -406,8 +406,8 @@ if __name__ == "__main__":
         pxscale = get_pxscale()
 
         # make fake companion
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=80, plsc=pxscale, rad_dists=[25, 36, 51, 72, 97], theta=70, n_branches = 1)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 80, plsc=pxscale, rad_dists=[25, 36, 51, 72, 97], theta=70, n_branches = 1)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=60, plsc=pxscale, rad_dists=[40], theta=70, n_branches = 1)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1000, plsc=pxscale, rad_dists=[40], theta=70, n_branches = 1)
         print("fake companion 0 shape = ", fake_comp_0.shape)
         
         # display
@@ -416,7 +416,7 @@ if __name__ == "__main__":
         fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
-        path_fake_comp = "./fake_planet/fake_comp01.fits"
+        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp01.fits"
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp)
@@ -483,9 +483,73 @@ if __name__ == "__main__":
         print("PCA Scals ", n," take", end_time - start_time)
     elif opt == "SAM":
         # SAM : spat-annular-mean
+        '''
+        t = FrameTemp(5)
+        t.print_property()
+        t.print_coords()
+        u = np.zeros((5,5))
+        u[1,2] = 44
+        u[0,1] = 355
+        u[4,2] = 100
+        res = t.separation_mean(u, True)
+        print(u)
+        print(res)
+        '''
+        print(">> Analysis spat-mean vs spat-annular-mean! ")
+        start_time = datetime.datetime.now()
         
+        if(len(sys.argv) >4):
+            scale = float(sys.argv[4])
+        
+        # 1. get target
+        target_path = str(sys.argv[2])
+        science_target = read_file(target_path, "MASTER_CUBE-center")
+        science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+        print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+       
+        # 2. get the list of files in library
+        ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
+        
+        # Check if the taget is in the ref files, if true remove it
+        ref_files = remove_target(str(sys.argv[2]),ref_files)
+        print(">> what we have in ref_res")
+        for s in ref_files:
+            print(s)
 
+        # Select the best correlated targets
+        # count is the number of we want to chose
+        count = 3
+        ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
+        # 3. put the related data (all frames of the reference cubes) in np.array
+        ref_frames = collect_data(ref_files, scale)
+        print("ref_frames shape =", ref_frames.shape)
+
+        # get angles
+        angles = read_file(str(sys.argv[2]), "ROTATION")
+        
+        # get science target shape
+        wl_ref, nb_fr_ref, w, h = ref_frames.shape
+        wl = 0
+        n = 50 
+        
+        # create outer mask
+        r_in = 15 
+        r_out = 125 
+        
+        outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+        science_target_croped[wl] = science_target_croped[wl] * outer_mask
+            
+        for i in range(1, n+1):
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling="spat-mean")
+            path = "./K_kilp_ADI_RDI/spat-mean/" +str(count)+"_best/{0:05d}".format(i) + "spat_mean.fits"
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>===", i, "of", n,"=== fits writed ===")
+
+        end_time = datetime.datetime.now()
+        
+        print("PCA Scals ", n," take", end_time - start_time)
     else:
         print("No such option")
 

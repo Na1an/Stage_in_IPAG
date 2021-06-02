@@ -103,6 +103,20 @@ def median_of_cube(cube, wl=0):
             res[i,j] = np.median(cube[wl,:,i,j])
     return res
 
+# distance between two points
+def distance(x1, y1, x2, y2):
+    '''
+    Args:
+        x1 : an integer. object 1 - coordinate X
+        y1 : an integer. object 1 - coordinate Y
+        x2 : an integer. object 2 - coordinate X
+        y2 : an integer. object 2 - coordinate Y
+    Return:
+        res : an integer. The distance between two points.
+    '''
+
+    return ((x1-x2)**2+(y1-y2)**2)**0.5
+
 # class : template of frame, for sapt-annular-mean
 class FrameTemp:
     '''
@@ -114,12 +128,87 @@ class FrameTemp:
     Attributes:
         side (int): the side length of a frame.
     '''
+
+    # init function, we need make the template in this step
     def __init__(self, side):
-        self.side = side
-        self.coords = []
-        self.values_mean = []
-    
-    def process_frame(self, frame):
+        '''
+        Args:
+            self : object itself.
+            side : side lenght of a frame. Normally, it is a odd number 
+        '''
+        if (side%2) != 1:
+            raise Exception("Side is not a odd number! So crop the frame. side =", side)
         
-        return None
+        self.side = side
+        self.radius = (side//2)+1
+        self.values_mean = []  
+        self.coords = [None]*self.radius
+
+        # center
+        cent_x = side//2
+        cent_y = side//2
+
+        # make the template : repartition the coordinates
+        for rth in range(self.radius):
+            coord = []
+            for i in range(side):
+                for j in range(side):
+                    d = distance(i,j,cent_x,cent_y)
+                    if rth-1 < d and d <= rth:
+                        coord.append((i,j))
+            self.coords[rth] = coord
+    
+    # process the image, have it seperation mean
+    def separation_mean(self, frame, detail=False):
+        '''
+        Process the input frame, do the mean option
+        Args:
+            self : object it self.
+            frame : a ndarry, 2 dims. The input frame.
+            detail : a boolean. The default is false. 
+        Return:
+            res : a ndarry, 2 dims. The output frame separation mean.
+        '''
+        if len(frame) != self.side:
+            raise Exception("The shape of input frame is different from template, len(frame) =", len(frame))
+        
+        res = np.zeros((frame.shape))
+
+        for i in range(self.radius):
+            tmp = 0
+            for (x,y) in self.coords[i]:
+                tmp = tmp + frame[x, y]
+            
+            mean = tmp/len(self.coords[i])
+            if detail is True:
+                print( "mean =", mean)
+                print("len this layer =", len(self.coords[i]))
+            for (x,y) in self.coords[i]:
+                res[x, y] = mean
+        
+        return res 
+    
+    # print the property
+    def print_property(self):
+        '''
+        Just print the self.side, self.radius, nothing special.
+        Args:
+            self : object it self.
+        Return:
+            None.
+        '''
+        print("self.side =", self.side)
+        print("self.radius =", self.radius)
+    
+    # print the coords
+    def print_coords(self):
+        '''
+        Just print the self.coords, nothing special.
+        Args:
+            self : object it self.
+        Return:
+            None.
+        '''
+        for i in range(self.radius):
+            print(self.coords[i]) 
         
