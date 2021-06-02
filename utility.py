@@ -103,3 +103,23 @@ def median_of_cube(cube, wl=0):
             res[i,j] = np.median(cube[wl,:,i,j])
     return res
 
+# class : template of frame, for sapt-annular-mean
+class FrameTemp:
+    '''
+    This class is the objet of a frame template. It simplifie the computation when we want to have the background mean in different separations.
+    Note:
+        Do not include the `self` parameter in the ``Args`` section.
+    Args:
+        side (int): the side length of a frame.
+    Attributes:
+        side (int): the side length of a frame.
+    '''
+    def __init__(self, side):
+        self.side = side
+        self.coords = []
+        self.values_mean = []
+    
+    def process_frame(self, frame):
+        
+        return None
+        

@@ -406,8 +406,8 @@ if __name__ == "__main__":
         pxscale = get_pxscale()
 
         # make fake companion
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=80, plsc=pxscale, rad_dists=[36], theta=70, n_branches = 1)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 80, plsc=pxscale, rad_dists=[36], theta=70, n_branches = 1)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=80, plsc=pxscale, rad_dists=[25, 36, 51, 72, 97], theta=70, n_branches = 1)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 80, plsc=pxscale, rad_dists=[25, 36, 51, 72, 97], theta=70, n_branches = 1)
         print("fake companion 0 shape = ", fake_comp_0.shape)
         
         # display
@@ -416,7 +416,7 @@ if __name__ == "__main__":
         fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
-        path_fake_comp = "./fake_planet/fake_comp04.fits"
+        path_fake_comp = "./fake_planet/fake_comp01.fits"
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp)
@@ -481,6 +481,11 @@ if __name__ == "__main__":
         end_time = datetime.datetime.now()
         
         print("PCA Scals ", n," take", end_time - start_time)
+    elif opt == "SAM":
+        # SAM : spat-annular-mean
+        
+
+
     else:
         print("No such option")
 

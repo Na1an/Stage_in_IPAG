@@ -12,9 +12,9 @@ img = np.zeros((SIZE,SIZE))
 for i in range(SIZE):
     for j in range(SIZE):
         d = dist_r(i,j)
-        if d>=112 and d < 113:
+        if d>112 and d <= 113:
             img[i,j] = 455
-        if d>=113 and d <114:
+        if d>113 and d <=114:
             img[i,j] = 100
 
 c = plt.imshow(img, interpolation='nearest', origin='lower',extent=(0,3,0,3))
