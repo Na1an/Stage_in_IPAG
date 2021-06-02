@@ -117,6 +117,21 @@ def distance(x1, y1, x2, y2):
 
     return ((x1-x2)**2+(y1-y2)**2)**0.5
 
+# plot a image
+def plot_image(img):
+    '''
+    Args:
+        img : an 2D ndarray, a image. 
+    Return:
+        None 
+    '''
+    c = plt.imshow(img, interpolation='nearest', origin='lower',extent=(0,3,0,3))
+    plt.colorbar(c)
+    plt.title('lala')
+    plt.show()
+    
+    return None
+
 # class : template of frame, for sapt-annular-mean
 class FrameTemp:
     '''

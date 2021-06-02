@@ -498,7 +498,6 @@ if __name__ == "__main__":
         # science target scale 
         wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
         print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
-       
         # 2. get the list of files in library
         ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
         
@@ -531,27 +530,15 @@ if __name__ == "__main__":
         
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
         science_target_croped[wl] = science_target_croped[wl] * outer_mask
-        '''
-        t = FrameTemp(5)
-        t.print_property()
-        t.print_coords()
-        u = np.zeros((5,5))
-        u[1,2] = 44
-        u[0,1] = 355
-        u[4,2] = 100
-        res = t.separation_mean(u, True)
-        print(u)
-        print(res)
-        '''
-        
+       
         print("start remove separation mean from science_target")
-        remove_separation_mean_from_cube(science_target_croped[0])
+        #remove_separation_mean_from_cube(science_target_croped[0])
         print("star remove separation mean from ref_frames")
-        remove_separation_mean_from_cube(ref_frames[0])
+        #remove_separation_mean_from_cube(ref_frames[0])
 
-        for i in range(1, n+1):
-            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
-            path = "./K_kilp_ADI_RDI/spat-annular/" +str(count)+"_best/{0:05d}".format(i) + "spat_mean.fits"
+        for i in range(51, 141):
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling="spat-mean")
+            path = "./K_kilp_ADI_RDI/spat-mean/" +str(count)+"_best/{0:05d}".format(i) + "spat_mean.fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed === path :", path)

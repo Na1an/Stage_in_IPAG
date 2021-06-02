@@ -18,7 +18,7 @@ from photutils.aperture import CircularAperture, aperture_photometry, CircularAn
 from utility_RDI import *
 
 # Global variable
-MASK_RADIUS = 32
+MASK_RADIUS = 15
 
 # 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
 def get_reference_cubes(repository_path, keyword):
@@ -613,7 +613,7 @@ if __name__ == "__main__":
     
     elif opt== "FLUX":
         # 1. get the target frames from Master cube
-        target_frames = read_file(str(sys.argv[2]), "MASTER_CUBE-center")
+        target_frames = read_file(str(sys.argv[2]), "fake")
         
         # 2. argv[3] may give us the scale
         if(sys.argv[3] is not None):
@@ -629,12 +629,12 @@ if __name__ == "__main__":
 
         #hdu = fits.PrimaryHDU(res_cADI)
         #hdu.writeto("./GJ_667C_origin_rotated.fits") 
-        #positions = [(126.05284, 249.11)]
         positions = [(126.05284, 249.11)]
+        #positions = [(143.06025, 166.01939)]
         aperture = CircularAperture(positions, r=2)
         annulus = CircularAnnulus(positions, r_in=4, r_out=6)
         
-        data[0][1:,1:] = data[0][1:,1:] - data_bkg_mean
+        #data[0][1:,1:] = data[0][1:,1:] - data_bkg_mean
         flux_companion = aperture_photometry(data[0], [aperture,annulus])
         bkg_mean = flux_companion['aperture_sum_1']/annulus.area
         bkg_sum_in_companion = bkg_mean * aperture.area 
