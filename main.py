@@ -509,17 +509,17 @@ if __name__ == "__main__":
         # Select the best correlated targets
         # count is the number of we want to chose
         count = int(sys.argv[5])
-        ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+        #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
         # 3. put the related data (all frames of the reference cubes) in np.array
-        ref_frames = collect_data(ref_files, scale)
-        print("ref_frames shape =", ref_frames.shape)
+        #ref_frames = collect_data(ref_files, scale)
+        #print("ref_frames shape =", ref_frames.shape)
 
         # get angles
         angles = read_file(str(sys.argv[2]), "ROTATION")
         
         # get science target shape
-        wl_ref, nb_fr_ref, w, h = ref_frames.shape
+        wl_ref, nb_fr_ref, w, h = science_target_croped.shape
         wl = 0
         n = 50 
         
@@ -529,9 +529,13 @@ if __name__ == "__main__":
         
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
         science_target_croped[wl] = science_target_croped[wl] * outer_mask
-       
+        
+        
         print("start remove separation mean from science_target")
         remove_separation_mean_from_cube(science_target_croped[0])
+        path = "./K_kilp_ADI_RDI/target_after_substract_mean.fits"
+        hdu = fits.PrimaryHDU(science_target_croped[wl])
+        hdu.writeto(path)
         print("star remove separation mean from ref_frames")
         remove_separation_mean_from_cube(ref_frames[0])
 
