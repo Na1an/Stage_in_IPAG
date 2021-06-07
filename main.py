@@ -385,8 +385,11 @@ if __name__ == "__main__":
         # 1. get target
         target_path = str(sys.argv[2])
         science_target = read_file(target_path, "MASTER_CUBE-center")
-        #science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
-        print("Scale =", scale, "\n science target shape =", science_target.shape)
+        obj = "abc"
+        if(len(sys.argv) >4):
+            obj = str(sys.argv[4]).upper()
+            print("obj =", obj)
+        print("science target shape =", science_target.shape)
         
         # 2. prepare these parameters
         # get angles
@@ -405,13 +408,39 @@ if __name__ == "__main__":
         pxscale = get_pxscale()
 
         # make fake companion
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[40], theta=160, n_branches = 1)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1000, plsc=pxscale, rad_dists=[40], theta=160, n_branches = 1)
-        print("fake companion 0 shape = ", fake_comp_0.shape)
+        if obj == "PLANETE":
+            fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[40], theta=160, n_branches = 1)
+            fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1000, plsc=pxscale, rad_dists=[40], theta=160, n_branches = 1)
+            print("fake companion 0 shape = ", fake_comp_0.shape)
+        
+        elif obj == "DISK":
+            dstar = 80 # distance to the star in pc, the bigger the disk if more small and more close to star
+            nx = 200 # number of pixels of your image in X
+            ny = 200 # number of pixels of your image in Y
+            itilt = 0 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
+            pa = 80 # position angle of the disk in degrees (0 means north, 90 means east)
+            a = 50 # semimajoraxis of the disk in au / semimajor axis in arcsec is 80 au/80px = 1 arcsec
+            fake_disk1 = vip.metrics.scattered_light_disk.ScatteredLightDisk(\
+                        nx=nx,ny=ny,distance=dstar,\
+                        itilt=itilt,omega=0,pxInArcsec=pxscale,pa=pa,\
+                        density_dico={'name':'2PowerLaws','ain':4,'aout':-4,\
+                        'a':a,'e':0.0,'ksi0':1.,'gamma':2.,'beta':1.},\
+                        spf_dico={'name':'HG', 'g':0., 'polar':False})
+            fake_disk1_map = fake_disk1.compute_scattered_light()
+
+            fake_disk1_map = fake_disk1_map/np.max(fake_disk1_map)
+            ds9 = vip.Ds9Window()
+            ds9.display(fake_disk1_map)
+            #scaling_factor = 0.1
+            #cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map*scaling_factor ,parang,psf=psf)
+
+        else:
+            print("No such object inject option")
         
         # display
         #ds9 = vip.Ds9Window()
         #ds9.display(fake_comp[0])
+        '''
         fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
@@ -419,7 +448,7 @@ if __name__ == "__main__":
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp)
-    
+        '''
     elif opt == "SCAL":
         
         print(">> Analysis scalings effect! ")
