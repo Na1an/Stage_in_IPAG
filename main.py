@@ -289,7 +289,7 @@ if __name__ == "__main__":
 
         # 1. get target
         target_path = str(sys.argv[2])
-        science_target = read_file(target_path, "fake_comp02")
+        science_target = read_file(target_path, "fake_comp_added_disk")
         science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
         print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
         
@@ -316,7 +316,7 @@ if __name__ == "__main__":
         
         # get ref shape
         wl_ref, nb_fr_ref, w, h = ref_frames.shape
-        wl = 0
+        wl = 1
         n = nb_fr_ref
         
         # create outer mask
@@ -325,10 +325,10 @@ if __name__ == "__main__":
         outer_mask, n_pxls = create_outer_mask(w,h,r_out)
         science_target_croped[wl] = science_target_croped[wl]*outer_mask
         
-        for i in range(31,51):
+        for i in range(1,51):
             res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling='spat-mean')
             #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-            path = "./K_kilp_ADI_RDI/spat-mean-bis/" +str(count)+"_best/{0:05d}".format(i) + "spat_mean.fits"            
+            path = "./K_kilp_ADI_RDI/disk/"+"{0:05d}".format(i) + ".fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed to === path:", path)
@@ -387,7 +387,9 @@ if __name__ == "__main__":
         science_target = read_file(target_path, "MASTER_CUBE-center")
         obj = "abc"
         if(len(sys.argv) >4):
-            obj = str(sys.argv[4]).upper()
+            scale = float(sys.argv[4])
+        if(len(sys.argv) >5):
+            obj = str(sys.argv[5]).upper()
             print("obj =", obj)
         print("science target shape =", science_target.shape)
         
@@ -403,7 +405,8 @@ if __name__ == "__main__":
         # fwhm psfn
         fwhm = get_fwhm_from_psf(psf[wl])
         psfn = vip.metrics.normalize_psf(psf[wl], fwhm, size=17)
-        
+        print("psfn =", psfn.shape, "psfn.ndim =", psfn.ndim)
+
         # pxscale of IRDIS
         pxscale = get_pxscale()
 
@@ -412,14 +415,21 @@ if __name__ == "__main__":
             fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[40], theta=160, n_branches = 1)
             fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1000, plsc=pxscale, rad_dists=[40], theta=160, n_branches = 1)
             print("fake companion 0 shape = ", fake_comp_0.shape)
+            fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
+            fake_comp[0] = fake_comp_0
+            fake_comp[1] = fake_comp_1
+            path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp02.fits"
+
+            hdu = fits.PrimaryHDU(fake_comp)
+            hdu.writeto(path_fake_comp) 
         
         elif obj == "DISK":
-            dstar = 80 # distance to the star in pc, the bigger the disk if more small and more close to star
-            nx = 200 # number of pixels of your image in X
-            ny = 200 # number of pixels of your image in Y
-            itilt = 0 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
-            pa = 80 # position angle of the disk in degrees (0 means north, 90 means east)
-            a = 50 # semimajoraxis of the disk in au / semimajor axis in arcsec is 80 au/80px = 1 arcsec
+            dstar = 35 # distance to the star in pc, the bigger the disk if more small and more close to star
+            nx = 256 # number of pixels of your image in X
+            ny = 256 # number of pixels of your image in Y
+            itilt = 65 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
+            pa = -50 # position angle of the disk in degrees (0 means north, 90 means east)
+            a = 40 # semimajoraxis of the disk in au / semimajor axis in arcsec is 80 au/80px = 1 arcsec
             fake_disk1 = vip.metrics.scattered_light_disk.ScatteredLightDisk(\
                         nx=nx,ny=ny,distance=dstar,\
                         itilt=itilt,omega=0,pxInArcsec=pxscale,pa=pa,\
@@ -427,13 +437,23 @@ if __name__ == "__main__":
                         'a':a,'e':0.0,'ksi0':1.,'gamma':2.,'beta':1.},\
                         spf_dico={'name':'HG', 'g':0., 'polar':False})
             fake_disk1_map = fake_disk1.compute_scattered_light()
-
             fake_disk1_map = fake_disk1_map/np.max(fake_disk1_map)
-            ds9 = vip.Ds9Window()
-            ds9.display(fake_disk1_map)
-            #scaling_factor = 0.1
-            #cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map*scaling_factor ,parang,psf=psf)
-
+            #ds9 = vip.Ds9Window()
+            #ds9.display(fake_disk1_map)
+            
+            # add fake disk to science target
+            scaling_factor = 0.1
+            cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map*scaling_factor ,angle_list=angles,psf=psfn)
+            
+            # only want center
+            start = int(w*(1-scale)/2)
+            end = int(start+w*scale)
+            science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk
+            cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map,angle_list=angles,psf=psfn)
+            science_target[1,:,start:end,start:end] = science_target[1,:,start:end,start:end] + cube_fakeddisk*100
+            path_fake_disk = "./K_kilp_ADI_RDI/fake_planet/"+str(sys.argv[6])
+            hdu = fits.PrimaryHDU(science_target)
+            hdu.writeto(path_fake_disk)
         else:
             print("No such object inject option")
         
@@ -441,13 +461,6 @@ if __name__ == "__main__":
         #ds9 = vip.Ds9Window()
         #ds9.display(fake_comp[0])
         '''
-        fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
-        fake_comp[0] = fake_comp_0
-        fake_comp[1] = fake_comp_1
-        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp02.fits"
-
-        hdu = fits.PrimaryHDU(fake_comp)
-        hdu.writeto(path_fake_comp)
         '''
     elif opt == "SCAL":
         
