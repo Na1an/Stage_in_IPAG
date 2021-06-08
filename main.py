@@ -44,49 +44,26 @@ def read_file(file_path, keyword):
     '''
     return fits.getdata(get_reference_cubes(file_path, keyword)[0])
 
-# chose the best correlated reference stars, not all
-def selection(nb_best, target, refs, scale, wave_length=0):
+# read one file and return its data
+def read_wdh(file_path, keyword):
     '''
     Args:
-        nb_best : a integer. How many best ref stars we want.
-        target : a numpy.ndarray. (wavelengths, nb_frames, x, y)
-        refs : a list of string. All stars data we have.
-        wave_length : a integer. Wave length of the cube.
-    Rrturn:
-        res : a list of string. The int(nb_best) best chosen ref stars.
+        file_path : a string. The file path!
+        keyword : a string. The keyword contains in the file name.
+    Return:
+        return the list of wind Drection_image, type float. Should be type nparray, 1 dimensions.
     '''
-    res = {}
-    # target_median is 2 dims. (256, 256)
-    target_median = median_of_cube(target, wave_length)
-    w, h = target_median.shape
-    # create mask
-    m, pxs_center = create_mask(w,h,MASK_RADIUS)
-    target_median_vector = np.reshape(target_median*m,(w*h))
 
-    for i in range(len(refs)):
-        # hd is 4 dims: (wl, nb frmes, x, y)
-        hd = fits.getdata(refs[i])
-        # ref_median is 2 dims. (256, 256)
-        ref_meidan = median_of_cube(crop_frame(hd,len(hd[wave_length,i,0]),scale), wave_length)
-        ref_meidan_vector = np.reshape(ref_meidan*m, (w*h))
-
-        # maby should try cosine similarity, structural simimarity(SSIM)
-        coef_corr = np.corrcoef(target_median_vector, ref_meidan_vector)
-        #print(refs[i],"=",coef_corr[0,1])
-        res[refs[i]] = coef_corr[0,1]
-
-    tmp = sorted(res.items(),key = lambda r:(r[1],r[0]), reverse=True)
-
-    print(">> There are", len(tmp), "reference stars in the library")
-    print(">> we will chose", nb_best, "correlated cube to do PCA on RDI")
-
-    res_bis = []
-    for k in range(nb_best):
-        (x,y) = tmp[k]
-        res_bis.append(x)
-        print(k,"- corrcoef value =", y)
+    # now, we have the csv file
+    file = None
+    files = get_reference_cubes(file_path, keyword) 
+    for f in files:
+        if f.split('.')[-1] == "csv":
+            file = f
+            break
     
-    return res_bis
+    data = np.genfromtxt(file, delimiter=',', dtype=str)
+    return np.char.replace(data[1:,5], '"','').astype(float)
 
 # 2. Collect the data from SPHERE_DC_DATA
 def collect_data(files_path, scale=0.25):
@@ -522,6 +499,10 @@ def WDH(argv, scale):
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
     science_target_croped[wl] = science_target_croped[wl] * outer_mask
    
+    # 5. Wind driven halo
+    # get the wind angle : penault angle for each frame of science target
+    wind_angle = read_wdh(science_target(argv[2]), "Analysis_wdh_*.csv")
+    
     '''
     # 5. remove SAM in the option SAM, but we don't do this in WDH
     print("start remove separation mean from science_target")
@@ -543,7 +524,6 @@ def WDH(argv, scale):
     end_time = datetime.datetime.now()
     
     print("PCA WDH", n," take", end_time - start_time)
-
 
 if __name__ == "__main__":
     start_and_end_program(True)
@@ -577,7 +557,9 @@ if __name__ == "__main__":
 
     elif opt == "WDH":
         # WDH : wind driven halo
-        WDH(sys.argv, scale)
+        #WDH(sys.argv, scale)
+        wind_angle = read_wdh(sys.argv[2], "Analysis_wdh_")
+        print(wind_angle, "shape =", wind_angle.shape)
 
     else:
         print("No such option")
