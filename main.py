@@ -478,11 +478,11 @@ def WDH(argv, scale):
     # Select the best correlated targets
     # count is the number of we want to chose
     count = int(argv[5])
-    ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+    #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
     # 3. put the related data (all frames of the reference cubes) in np.array
-    ref_frames = collect_data(ref_files, scale)
-    print("ref_frames shape =", ref_frames.shape)
+    #ref_frames = collect_data(ref_files, scale)
+    #print("ref_frames shape =", ref_frames.shape)
 
     # get angles
     angles = read_file(str(argv[2]), "ROTATION")
@@ -500,9 +500,26 @@ def WDH(argv, scale):
     science_target_croped[wl] = science_target_croped[wl] * outer_mask
    
     # 5. Wind driven halo
-    # get the wind angle : penault angle for each frame of science target
-    wind_angle = read_wdh(science_target(argv[2]), "Analysis_wdh_*.csv")
+    # get the image directions : penault angle for each frame of science target
+    target_wind_angle = read_wdh(argv[2], "Analysis_wdh_")
+    print("start attenuate the wdh influence")
+
+    path = "./K_kilp_ADI_RDI/wdh/origin.fits"
+    hdu = fits.PrimaryHDU(science_target_croped[wl])
+    hdu.writeto(path)
     
+    wdh_influence = attenuate_wdh_influence_from_cube(science_target_croped[0], target_wind_angle, detail=True)
+    
+    path = "./K_kilp_ADI_RDI/wdh/wdh_influence.fits"
+    hdu = fits.PrimaryHDU(wdh_influence)
+    hdu.writeto(path)
+
+    path = "./K_kilp_ADI_RDI/wdh/after_attenuate.fits"
+    hdu = fits.PrimaryHDU(science_target_croped[wl])
+    hdu.writeto(path)
+    print("we end here for now")
+    exit()
+
     '''
     # 5. remove SAM in the option SAM, but we don't do this in WDH
     print("start remove separation mean from science_target")
@@ -557,10 +574,9 @@ if __name__ == "__main__":
 
     elif opt == "WDH":
         # WDH : wind driven halo
-        #WDH(sys.argv, scale)
-        wind_angle = read_wdh(sys.argv[2], "Analysis_wdh_")
-        print(wind_angle, "shape =", wind_angle.shape)
-
+        #tmp = FrameTempRadian(5)
+        #tmp.print_coords()
+        WDH(sys.argv, scale)
     else:
         print("No such option")
 

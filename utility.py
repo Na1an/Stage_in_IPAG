@@ -59,7 +59,6 @@ def get_pxscale():
     #print("In SPHERE IRDIS : pxscale =", res, "arcsec/px")
     return res 
 
-
 # distance between two points
 def distance(x1, y1, x2, y2):
     '''
@@ -357,6 +356,32 @@ def remove_separation_mean_from_cube(cube):
 
     return None
 
+# amplitude
+def get_amplitude_b(thetas, theta_zero, B):
+    '''
+    This is a function for calculating the amplutude of sinus.
+    Used in the calss FrameTempRadian.eliminate_wdh_influence.
+    Args:
+        thetas : a list of angle. More explicit, the angles of each pixels in a annulus.
+        thera_zero : a float. The image direction of a frame.
+        B : a float. The average velue of the pixels in a annulus.
+    Returns:
+        A float. The amplitude of sinus for each annulus.
+    '''
+    tmp = 0
+    sum_a = 0
+
+    for (d, theta, x, y) in self.coords[i]:
+        tmp = tmp + frame[x, y]
+        sum_a = sum_a + frame[x, y]*math.sin(math.radians(2*theta-direction))/((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2)
+
+    # B, theta_zero = direction
+    b = tmp/len(self.coords[i])
+    
+    # A, amplitude
+
+    return None
+
 # class : template of frame, in radian
 class FrameTempRadian:
     '''
@@ -396,18 +421,19 @@ class FrameTempRadian:
                 for j in range(side):
                     d = distance(i,j,cent_x,cent_y)
                     if rth-1 < d and d <= rth:
-                        dx = i - cent_x 
-                        dy = j - cent_y
-                        coord.append((d, math.atan(dx/dy), x, y))
+                        x = j - cent_y 
+                        y = cent_x - i
+                        coord.append((d, math.degrees(math.atan2(y, x)), i, j))
             self.coords[rth] = coord
     
-    # process the image, have it seperation mean
-    def separation_mean(self, frame, detail=False):
+    # process the image, remove the inlfluence of wind driven halo
+    def wdh_influence(self, frame, direction, detail=False):
         '''
-        Process the input frame, do the mean option
+        Process the input frame, give the wind driven halo influence.
         Args:
             self : object it self.
             frame : a ndarry, 2 dims. The input frame.
+            directions : a float. The image direction of this frame, wind driven halo, theta zero.
             detail : a boolean. The default is false. 
         Return:
             res : a ndarry, 2 dims. The output frame separation mean.
@@ -418,19 +444,27 @@ class FrameTempRadian:
         res = np.zeros((frame.shape))
 
         for i in range(self.radius):
-            tmp = 0
+            # A, amplitude
+            a = 0
+            # B, theta_zero = direction
+            b = 0
             for (d, theta, x, y) in self.coords[i]:
-                tmp = tmp + frame[x, y]
-            
-            mean = tmp/len(self.coords[i])
+                b = b + frame[x, y]
+                a = a + frame[x, y]*math.sin(math.radians(2*theta-direction))/((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2)
+
+            b = b/len(self.coords[i])
+            a = a/len(self.coords[i])
+
             if detail is True:
-                print( "mean =", mean)
+                print("a =", a)
+                print("b =", b)
+                print("a*math.sin(math.radians(2*theta-direction)) + b =", a*math.sin(math.radians(2*theta-direction)) + b)
                 print("len this layer =", len(self.coords[i]))
-            for (x,y) in self.coords[i]:
-                res[x, y] = mean
+            
+            for (d, theta, x, y) in self.coords[i]:
+                res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
         
         return res 
-    
     
     # print the property
     def print_property(self):
@@ -456,3 +490,24 @@ class FrameTempRadian:
         for i in range(self.radius):
             print(self.coords[i]) 
 
+# attenuate wdh influence from a cube
+def attenuate_wdh_influence_from_cube(cube, directions, detail=False):
+    '''
+    Only consider the input cube has even shape. Ex. (..., 256, 256) 
+    Args:
+        self : object it self.
+        cube : a ndarry, 3 dims. The input cube. ( nb_frames, x, y).
+        detail : a boolean. To see the detail.
+    Return:
+        wdh_influence : a ndarry, 3 dims. The output is the wdh influence of the input cube.
+    '''
+    nb_fr, w, h = cube.shape
+    wdh_influence = np.zeros((nb_fr, w, h))
+    temp = FrameTempRadian(w-1)
+    # traversal the cube in wave length = wl
+    for i in range(nb_fr):
+        wdh_influence[i, 1:, 1:] = temp.wdh_influence(cube[i, 1:,1:], directions[i], detail)
+        cube[i, 1:, 1:] = cube[i, 1:, 1:] - wdh_influence[i, 1:, 1:]
+        print("===", i+1, "of", nb_fr, " attenuate wdh influence ===")
+
+    return wdh_influence
