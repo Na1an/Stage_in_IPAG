@@ -450,10 +450,13 @@ class FrameTempRadian:
             b = 0
             for (d, theta, x, y) in self.coords[i]:
                 b = b + frame[x, y]
-                a = a + frame[x, y]*math.sin(math.radians(2*theta-direction))/((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2)
+                if ((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2) <= 0:
+                    a = a + frame[x, y]
+                else:
+                    a = a + frame[x, y]*math.sin(math.radians(2*theta-direction))/((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2)
 
             b = b/len(self.coords[i])
-            a = a/len(self.coords[i])
+            #a = a/len(self.coords[i])
 
             if detail is True:
                 print("a =", a)
@@ -462,8 +465,12 @@ class FrameTempRadian:
                 print("len this layer =", len(self.coords[i]))
             
             for (d, theta, x, y) in self.coords[i]:
+                # case 1, same to case 2, but a is different
                 res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
-        
+                # case 2
+                #res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
+                # case 3
+                #res[x, y] = a*math.sin(math.radians(2*theta-direction))
         return res 
     
     # print the property
