@@ -6,8 +6,10 @@ import numpy as np
 import skimage
 import vip_hci as vip
 import matplotlib.pyplot as plt
-
 from hciplot import plot_frames, plot_cubes
+
+# Global constant
+MASK_RADIUS = 32
 
 # start or end of the program
 def start_and_end_program(start):
@@ -22,6 +24,7 @@ def start_and_end_program(start):
         print("######### program start :", localtime,"###########")
     else:
         print("########## program end :", localtime, "############")
+
 # get one fwhm of a frame
 def get_fwhm_from_psf(psf):
     '''
@@ -55,6 +58,111 @@ def get_pxscale():
     res = vip.conf.VLT_SPHERE_IRDIS['plsc']
     #print("In SPHERE IRDIS : pxscale =", res, "arcsec/px")
     return res 
+
+
+# distance between two points
+def distance(x1, y1, x2, y2):
+    '''
+    Args:
+        x1 : an integer. object 1 - coordinate X
+        y1 : an integer. object 1 - coordinate Y
+        x2 : an integer. object 2 - coordinate X
+        y2 : an integer. object 2 - coordinate Y
+    Return:
+        res : an integer. The distance between two points.
+    '''
+
+    return ((x1-x2)**2+(y1-y2)**2)**0.5
+
+# A mask, cover the center of image, inner mask
+def create_inner_mask(w, h, radius=MASK_RADIUS):
+    '''
+    Args:
+        w : an integer. The weight of image.
+        h : an integer. The height of image.
+        radius : an integer. The radius of mask.
+    Return:
+        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
+    '''
+    count = 0
+    res = np.full((w,h),True)
+    x = w//2
+    y = h//2
+    for i in range(w):
+        for j in range(h):
+            if distance(i, j, x, y) <= radius:
+                res[i,j] = False
+                count = count + 1
+    return res, count
+
+# A mask, cover the center of image, outer mask
+def create_outer_mask(w, h, radius):
+    '''
+    Args:
+        w : an integer. The weight of image.
+        h : an integer. The height of image.
+        radius : an integer. The radius of mask.
+    Return:
+        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
+    '''
+    count = 0
+    res = np.full((w,h),True)
+    x = w//2
+    y = h//2
+    for i in range(w):
+        for j in range(h):
+            if distance(i, j, x, y) >= radius:
+                res[i,j] = False
+                count = count + 1
+    return res, count
+
+# rotate the frames in a cube
+def rotate(image, angle, center=None, scale=1.0):
+    '''
+    Args:
+        image : a 2 dimension list, a image.
+    Return:
+        rotated : a 2 dimension list, the image rotated.
+    '''
+    # grab the dimensions of the image
+    # should be 128 * 128
+    (h, w) = image.shape[:2]
+
+    # if the center is None, initialize it as the center of the image
+    if center is None:
+        center = (w // 2, h // 2)
+
+    # perform the rotation
+    rotation_matrix = cv2.getRotationMatrix2D(center, angle, scale)
+    rotated = cv2.warpAffine(image, rotation_matrix, (w, h))
+
+    # return the rotated image
+    return rotated
+
+# store the median of the cube and rotate -- Not work
+def median_of_cube_test(science_frames, rotations, scale):
+    '''
+    Args:
+        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        rotations : a numpy.ndarry. The angles of ratations
+        scale : a float. The scale of study area in the center of frames.
+    Return:
+        res : a numpy.ndarray, 3 dimensions. Ex. (2 wavelengths, 256, 256).
+    '''
+    wave_length, sc_fr_nb, w, h = science_frames.shape
+    f_median = np.zeros((wave_length, w, h))
+    res = np.zeros((wave_length, int(w*scale), int(h*scale)))
+
+    for wl in range(wave_length):
+        for i in range(w):
+            for j in range(h):
+                f_median[wl, i, j] = np.median(science_frames[wl, :, i, j])
+
+    for wl in range(wave_length):
+        for n in range(sc_fr_nb):
+            res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
+
+    return None
 
 # slice frame, we only take the interesting area
 # for exemple, 1/4 in the center of each frame

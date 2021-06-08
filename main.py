@@ -13,9 +13,6 @@ from hciplot import plot_frames, plot_cubes
 # private module
 from utility import *
 
-# Global constant
-MASK_RADIUS = 32
-
 # 1. travesal the SPHERE_DC_DATA and get all the reference master cubes
 def get_reference_cubes(repository_path, keyword):
     '''
@@ -117,110 +114,6 @@ def collect_data(files_path, scale=0.25):
 
     return ref_frames
 
-# distance between two points
-def distance(x1, y1, x2, y2):
-    '''
-    Args:
-        x1 : an integer. object 1 - coordinate X
-        y1 : an integer. object 1 - coordinate Y
-        x2 : an integer. object 2 - coordinate X
-        y2 : an integer. object 2 - coordinate Y
-    Return:
-        res : an integer. The distance between two points.
-    '''
-
-    return ((x1-x2)**2+(y1-y2)**2)**0.5
-
-# A mask, cover the center of image, inner mask
-def create_inner_mask(w, h, radius=MASK_RADIUS):
-    '''
-    Args:
-        w : an integer. The weight of image.
-        h : an integer. The height of image.
-        radius : an integer. The radius of mask.
-    Return:
-        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
-    '''
-    count = 0
-    res = np.full((w,h),True)
-    x = w//2
-    y = h//2
-    for i in range(w):
-        for j in range(h):
-            if distance(i, j, x, y) <= radius:
-                res[i,j] = False
-                count = count + 1
-    return res, count
-
-# A mask, cover the center of image, outer mask
-def create_outer_mask(w, h, radius):
-    '''
-    Args:
-        w : an integer. The weight of image.
-        h : an integer. The height of image.
-        radius : an integer. The radius of mask.
-    Return:
-        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
-    '''
-    count = 0
-    res = np.full((w,h),True)
-    x = w//2
-    y = h//2
-    for i in range(w):
-        for j in range(h):
-            if distance(i, j, x, y) >= radius:
-                res[i,j] = False
-                count = count + 1
-    return res, count
-
-# rotate the frames in a cube
-def rotate(image, angle, center=None, scale=1.0):
-    '''
-    Args:
-        image : a 2 dimension list, a image.
-    Return:
-        rotated : a 2 dimension list, the image rotated.
-    '''
-    # grab the dimensions of the image
-    # should be 128 * 128
-    (h, w) = image.shape[:2]
-
-    # if the center is None, initialize it as the center of the image
-    if center is None:
-        center = (w // 2, h // 2)
-
-    # perform the rotation
-    rotation_matrix = cv2.getRotationMatrix2D(center, angle, scale)
-    rotated = cv2.warpAffine(image, rotation_matrix, (w, h))
-
-    # return the rotated image
-    return rotated
-
-# store the median of the cube and rotate -- Not work
-def median_of_cube_test(science_frames, rotations, scale):
-    '''
-    Args:
-        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
-        rotations : a numpy.ndarry. The angles of ratations
-        scale : a float. The scale of study area in the center of frames.
-    Return:
-        res : a numpy.ndarray, 3 dimensions. Ex. (2 wavelengths, 256, 256).
-    '''
-    wave_length, sc_fr_nb, w, h = science_frames.shape
-    f_median = np.zeros((wave_length, w, h))
-    res = np.zeros((wave_length, int(w*scale), int(h*scale)))
-
-    for wl in range(wave_length):
-        for i in range(w):
-            for j in range(h):
-                f_median[wl, i, j] = np.median(science_frames[wl, :, i, j])
-
-    for wl in range(wave_length):
-        for n in range(sc_fr_nb):
-            res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
-
-    return None
-
 # chose the best correlated reference stars, not all
 def selection(nb_best, target, refs, scale, wave_length=0):
     '''
@@ -269,6 +162,208 @@ def selection(nb_best, target, refs, scale, wave_length=0):
 def rdi_detection():
     return None
 
+# option for main : SCAL
+def SCAL(argv, scale):
+    print(">> Analysis scalings effect! ")
+    start_time = datetime.datetime.now()
+    
+    if(len(argv) >4):
+        scale = float(argv[4])
+
+    scalings = ["temp-mean", "spat-mean", "temp-standard","spat-standard"]
+    
+    # 1. get target
+    target_path = str(argv[2])
+    science_target = read_file(target_path, "MASTER_CUBE-center")
+    science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+    print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+   
+    # 2. get the list of files in library
+    ref_files = get_reference_cubes(str(argv[3]), "MASTER_CUBE-center")
+    
+    # Check if the taget is in the ref files, if true remove it
+    ref_files = remove_target(str(argv[2]),ref_files)
+    print(">> what we have in ref_res")
+    for s in ref_files:
+        print(s)
+
+    # Select the best correlated targets
+    # count is the number of we want to chose
+    count = 3
+    ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+
+    # 3. put the related data (all frames of the reference cubes) in np.array
+    ref_frames = collect_data(ref_files, scale)
+    print("ref_frames shape =", ref_frames.shape)
+
+    # get angles
+    angles = read_file(str(argv[2]), "ROTATION")
+    
+    # get science target shape
+    wl_ref, nb_fr_ref, w, h = ref_frames.shape
+    wl = 0
+    n = nb_fr_ref       
+    
+    # create outer mask
+    r_in = 118
+    r_out = (w/2)
+    
+    outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+    #science_target_croped[wl] = science_target_croped[wl] * outer_mask
+    
+    for s in scalings:
+        for i in range(1, n+1):
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl], scaling=s)
+            path = "./K_kilp_ADI_RDI/RDI_only_big_inner/" +s+"/{0:05d}".format(i) + "_with_mask_on_ref.fits"
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>===", i, "of", n,"=== fits writed ===")
+
+    end_time = datetime.datetime.now()
+    
+    print("PCA Scals ", n," take", end_time - start_time)
+
+# option for main : SAM
+def SAM(argv, scale):
+    print(">> Analysis spat-mean vs spat-annular-mean! ")
+    start_time = datetime.datetime.now()
+    
+    if(len(argv) >4):
+        scale = float(argv[4])
+
+    # 1. get target
+    target_path = str(argv[2])
+    #science_target = read_file(target_path, "MASTER_CUBE-center")
+    science_target = read_file(target_path, "fake_comp02")
+    science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+    # science target scale 
+    wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
+    print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+    # 2. get the list of files in library
+    ref_files = get_reference_cubes(str(argv[3]), "MASTER_CUBE-center")
+    
+    # Check if the taget is in the ref files, if true remove it
+    ref_files = remove_target(str(argv[2]),ref_files)
+    print(">> what we have in ref_res")
+    for s in ref_files:
+        print(s)
+
+    # Select the best correlated targets
+    # count is the number of we want to chose
+    count = int(argv[5])
+    #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+
+    # 3. put the related data (all frames of the reference cubes) in np.array
+    #ref_frames = collect_data(ref_files, scale)
+    #print("ref_frames shape =", ref_frames.shape)
+
+    # get angles
+    angles = read_file(str(argv[2]), "ROTATION")
+    
+    # get science target shape
+    wl_ref, nb_fr_ref, w, h = science_target_croped.shape
+    wl = 0
+    n = 50 
+    
+    # create outer mask
+    r_in = 15 
+    r_out = 125 
+    
+    outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+    science_target_croped[wl] = science_target_croped[wl] * outer_mask
+    
+    
+    print("start remove separation mean from science_target")
+    remove_separation_mean_from_cube(science_target_croped[0])
+    path = "./K_kilp_ADI_RDI/target_after_substract_mean.fits"
+    hdu = fits.PrimaryHDU(science_target_croped[wl])
+    hdu.writeto(path)
+    print("star remove separation mean from ref_frames")
+    remove_separation_mean_from_cube(ref_frames[0])
+
+    for i in range(1, 51):
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
+        path = "./K_kilp_ADI_RDI/spat-annular-bis/" +str(count)+"_best/{0:05d}".format(i) + "spat_annular.fits"
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of", n,"=== fits writed === path :", path)
+
+    end_time = datetime.datetime.now()
+    
+    print("PCA SAM ", n," take", end_time - start_time)
+
+# option for main : WDH - wind driven halo
+def WDH(argv, scale):
+    print(">> Analysis spat-mean vs spat-annular-mean! ")
+    start_time = datetime.datetime.now()
+    
+    if(len(argv) >4):
+        scale = float(argv[4])
+
+    # 1. get target
+    target_path = str(argv[2])
+    #science_target = read_file(target_path, "MASTER_CUBE-center")
+    science_target = read_file(target_path, "fake_comp02")
+    science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+    # science target scale 
+    wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
+    print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+    # 2. get the list of files in library
+    ref_files = get_reference_cubes(str(argv[3]), "MASTER_CUBE-center")
+    
+    # Check if the taget is in the ref files, if true remove it
+    ref_files = remove_target(str(argv[2]), ref_files)
+    print(">> what we have in ref_res")
+    for s in ref_files:
+        print(s)
+
+    # Select the best correlated targets
+    # count is the number of we want to chose
+    count = int(argv[5])
+    ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+
+    # 3. put the related data (all frames of the reference cubes) in np.array
+    ref_frames = collect_data(ref_files, scale)
+    print("ref_frames shape =", ref_frames.shape)
+
+    # get angles
+    angles = read_file(str(argv[2]), "ROTATION")
+    
+    # get science target shape
+    wl_ref, nb_fr_ref, w, h = science_target_croped.shape
+    wl = 0
+    n = 50 
+    
+    # 4. create outer mask, inner mask with VIP
+    r_in = 15 
+    r_out = 125 
+    
+    outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+    science_target_croped[wl] = science_target_croped[wl] * outer_mask
+   
+    '''
+    # 5. remove SAM in the option SAM, but we don't do this in WDH
+    print("start remove separation mean from science_target")
+    remove_separation_mean_from_cube(science_target_croped[0])
+    print("star remove separation mean from ref_frames")
+    remove_separation_mean_from_cube(ref_frames[0])
+    '''
+
+    # 5. WDH process
+    
+    # 6. start the process PCA
+    for i in range(1, 51):
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
+        path = "./K_kilp_ADI_RDI/spat-annular-bis/" +str(count)+"_best/{0:05d}".format(i) + "spat_annular.fits"
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of", n,"=== fits writed === path :", path)
+
+    end_time = datetime.datetime.now()
+    
+    print("PCA WDH", n," take", end_time - start_time)
+
+
 if __name__ == "__main__":
     start_and_end_program(True)
     print("vip.version :", vip.__version__)
@@ -278,7 +373,6 @@ if __name__ == "__main__":
     
     # algo option
     opt = str(sys.argv[1]).upper()
-
     
     if opt == "RDI":
         # product the processed images    
@@ -460,137 +554,17 @@ if __name__ == "__main__":
         # display
         #ds9 = vip.Ds9Window()
         #ds9.display(fake_comp[0])
-        '''
-        '''
     elif opt == "SCAL":
-        
-        print(">> Analysis scalings effect! ")
-        start_time = datetime.datetime.now()
-        
-        if(len(sys.argv) >4):
-            scale = float(sys.argv[4])
-
-        scalings = ["temp-mean", "spat-mean", "temp-standard","spat-standard"]
-        
-        # 1. get target
-        target_path = str(sys.argv[2])
-        science_target = read_file(target_path, "MASTER_CUBE-center")
-        science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
-        print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
-       
-        # 2. get the list of files in library
-        ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
-        
-        # Check if the taget is in the ref files, if true remove it
-        ref_files = remove_target(str(sys.argv[2]),ref_files)
-        print(">> what we have in ref_res")
-        for s in ref_files:
-            print(s)
-
-        # Select the best correlated targets
-        # count is the number of we want to chose
-        count = 3
-        ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
-
-        # 3. put the related data (all frames of the reference cubes) in np.array
-        ref_frames = collect_data(ref_files, scale)
-        print("ref_frames shape =", ref_frames.shape)
-
-        # get angles
-        angles = read_file(str(sys.argv[2]), "ROTATION")
-        
-        # get science target shape
-        wl_ref, nb_fr_ref, w, h = ref_frames.shape
-        wl = 0
-        n = nb_fr_ref       
-        
-        # create outer mask
-        r_in = 118
-        r_out = (w/2)
-        
-        outer_mask, n_pxls = create_outer_mask(w,h,r_out)
-        #science_target_croped[wl] = science_target_croped[wl] * outer_mask
-        
-        for s in scalings:
-            for i in range(1, n+1):
-                res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl], scaling=s)
-                path = "./K_kilp_ADI_RDI/RDI_only_big_inner/" +s+"/{0:05d}".format(i) + "_with_mask_on_ref.fits"
-                hdu = fits.PrimaryHDU(res_tmp)
-                hdu.writeto(path)
-                print(">>===", i, "of", n,"=== fits writed ===")
-
-        end_time = datetime.datetime.now()
-        
-        print("PCA Scals ", n," take", end_time - start_time)
+        # SCAL : analysis scalings effects 
+        SCAL(sys.argv, scale)        
     elif opt == "SAM":
         # SAM : spat-annular-mean
-        
-        print(">> Analysis spat-mean vs spat-annular-mean! ")
-        start_time = datetime.datetime.now()
-        
-        if(len(sys.argv) >4):
-            scale = float(sys.argv[4])
-        
-        # 1. get target
-        target_path = str(sys.argv[2])
-        #science_target = read_file(target_path, "MASTER_CUBE-center")
-        science_target = read_file(target_path, "fake_comp02")
-        science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
-        # science target scale 
-        wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
-        print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
-        # 2. get the list of files in library
-        ref_files = get_reference_cubes(str(sys.argv[3]), "MASTER_CUBE-center")
-        
-        # Check if the taget is in the ref files, if true remove it
-        ref_files = remove_target(str(sys.argv[2]),ref_files)
-        print(">> what we have in ref_res")
-        for s in ref_files:
-            print(s)
+        SAM(sys.argv, scale)
 
-        # Select the best correlated targets
-        # count is the number of we want to chose
-        count = int(sys.argv[5])
-        #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+    elif opt == "WDH":
+        # WDH : wind driven halo
+        WDH(sys.argv, scale)
 
-        # 3. put the related data (all frames of the reference cubes) in np.array
-        #ref_frames = collect_data(ref_files, scale)
-        #print("ref_frames shape =", ref_frames.shape)
-
-        # get angles
-        angles = read_file(str(sys.argv[2]), "ROTATION")
-        
-        # get science target shape
-        wl_ref, nb_fr_ref, w, h = science_target_croped.shape
-        wl = 0
-        n = 50 
-        
-        # create outer mask
-        r_in = 15 
-        r_out = 125 
-        
-        outer_mask, n_pxls = create_outer_mask(w,h,r_out)
-        science_target_croped[wl] = science_target_croped[wl] * outer_mask
-        
-        
-        print("start remove separation mean from science_target")
-        remove_separation_mean_from_cube(science_target_croped[0])
-        path = "./K_kilp_ADI_RDI/target_after_substract_mean.fits"
-        hdu = fits.PrimaryHDU(science_target_croped[wl])
-        hdu.writeto(path)
-        print("star remove separation mean from ref_frames")
-        remove_separation_mean_from_cube(ref_frames[0])
-
-        for i in range(1, 51):
-            res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
-            path = "./K_kilp_ADI_RDI/spat-annular-bis/" +str(count)+"_best/{0:05d}".format(i) + "spat_annular.fits"
-            hdu = fits.PrimaryHDU(res_tmp)
-            hdu.writeto(path)
-            print(">>===", i, "of", n,"=== fits writed === path :", path)
-
-        end_time = datetime.datetime.now()
-        
-        print("PCA Scals ", n," take", end_time - start_time)
     else:
         print("No such option")
 
