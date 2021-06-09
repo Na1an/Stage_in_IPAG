@@ -73,6 +73,7 @@ def collect_data(files_path, scale=0.25):
         scale : a float. The scale in center that we want process, is equal to 1/4 by default.
     Rrturn:
         ref_frames : ndarray, 4 dimensions. Return (wavelengths, nb_frames, x, y)
+        ref_wdh : nbarray, 1 dims. Return the image directions for all related frames.
     '''
     hd = fits.getdata(files_path[0])
 
@@ -88,8 +89,34 @@ def collect_data(files_path, scale=0.25):
     for i in range(1,len(files_path)):
         hd = fits.getdata(files_path[i])
         ref_frames =np.append(ref_frames, hd[..., start:end, start:end], axis=1)
-
     return ref_frames
+
+def collect_data_wdh(files_path, scale=0.25):
+    '''
+    Args:
+        files_path : a list of string. files path contain keyword.
+        scale : a float. The scale in center that we want process, is equal to 1/4 by default.
+    Rrturn:
+        ref_frames : ndarray, 4 dimensions. Return (wavelengths, nb_frames, x, y)
+        ref_wdh : nbarray, 1 dims. Return the image directions for all related frames.
+    '''
+    hd = fits.getdata(files_path[0])
+    ref_wdh = read_wdh(files_path[0], "Analysis_wdh_")
+
+    # frames in the first wavelength and second wavelength
+    # K1/K2, H2/H3, etc...
+    tmp = (1-scale)*0.5
+    size = len(hd[0][0])
+    start = int(size*tmp)
+    end = int(size*(1-tmp))
+
+    ref_frames = hd[..., start:end, start:end]
+
+    for i in range(1,len(files_path)):
+        hd = fits.getdata(files_path[i])
+        ref_frames =np.append(ref_frames, hd[..., start:end, start:end], axis=1)
+        ref_wdh = np.append(ref_wdh, read_wdh(files_path[0], "Analysis_wdh_"))
+    return ref_frames, ref_wdh
 
 # chose the best correlated reference stars, not all
 def selection(nb_best, target, refs, scale, wave_length=0):
@@ -481,7 +508,7 @@ def WDH(argv, scale):
     #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
     # 3. put the related data (all frames of the reference cubes) in np.array
-    #ref_frames = collect_data(ref_files, scale)
+    #ref_frames, ref_wdh = collect_data(ref_files, scale)
     #print("ref_frames shape =", ref_frames.shape)
 
     # get angles
@@ -502,12 +529,15 @@ def WDH(argv, scale):
     # 5. Wind driven halo
     # get the image directions : penault angle for each frame of science target
     target_wind_angle = read_wdh(argv[2], "Analysis_wdh_")
+    
     print("start attenuate the wdh influence")
-
+    
     path = "./K_kilp_ADI_RDI/wdh/origin.fits"
     hdu = fits.PrimaryHDU(science_target_croped[wl])
     hdu.writeto(path)
     
+    print("start remove separation mean from science_target")
+    remove_separation_mean_from_cube(science_target_croped[0])
     wdh_influence = attenuate_wdh_influence_from_cube(science_target_croped[0], target_wind_angle, detail=True)
     
     path = "./K_kilp_ADI_RDI/wdh/wdh_influence.fits"
@@ -577,6 +607,8 @@ if __name__ == "__main__":
         #tmp = FrameTempRadian(5)
         #tmp.print_coords()
         WDH(sys.argv, scale)
+        #target_wind_angle = read_wdh(sys.argv[2], "Analysis_wdh_")
+        #print(target_wind_angle)
     else:
         print("No such option")
 

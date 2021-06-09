@@ -356,6 +356,7 @@ def remove_separation_mean_from_cube(cube):
 
     return None
 
+"""
 # amplitude
 def get_amplitude_b(thetas, theta_zero, B):
     '''
@@ -381,6 +382,7 @@ def get_amplitude_b(thetas, theta_zero, B):
     # A, amplitude
 
     return None
+"""
 
 # class : template of frame, in radian
 class FrameTempRadian:
@@ -443,6 +445,9 @@ class FrameTempRadian:
         
         res = np.zeros((frame.shape))
 
+        # try
+        #direction = direction - 90
+
         for i in range(self.radius):
             # A, amplitude
             a = 0
@@ -452,11 +457,12 @@ class FrameTempRadian:
                 b = b + frame[x, y]
                 if ((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2) <= 0:
                     a = a + frame[x, y]
+                    #continue
                 else:
                     a = a + frame[x, y]*math.sin(math.radians(2*theta-direction))/((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2)
-
             b = b/len(self.coords[i])
-            #a = a/len(self.coords[i])
+            
+            a = a/len(self.coords[i])
 
             if detail is True:
                 print("a =", a)
@@ -464,13 +470,15 @@ class FrameTempRadian:
                 print("a*math.sin(math.radians(2*theta-direction)) + b =", a*math.sin(math.radians(2*theta-direction)) + b)
                 print("len this layer =", len(self.coords[i]))
             
+            #direction = direction + 90
+
             for (d, theta, x, y) in self.coords[i]:
                 # case 1, same to case 2, but a is different
-                res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
-                # case 2
                 #res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
+                # case 2
+                ##res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
                 # case 3
-                #res[x, y] = a*math.sin(math.radians(2*theta-direction))
+                res[x, y] = a*math.sin(math.radians(2*theta-direction))
         return res 
     
     # print the property
