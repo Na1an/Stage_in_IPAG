@@ -537,7 +537,7 @@ def WDH(argv, scale):
     hdu.writeto(path)
     
     print("start remove separation mean from science_target")
-    remove_separation_mean_from_cube(science_target_croped[0])
+    #remove_separation_mean_from_cube(science_target_croped[0])
     wdh_influence = attenuate_wdh_influence_from_cube(science_target_croped[0], target_wind_angle, detail=True)
     
     path = "./K_kilp_ADI_RDI/wdh/wdh_influence.fits"
@@ -604,11 +604,40 @@ if __name__ == "__main__":
 
     elif opt == "WDH":
         # WDH : wind driven halo
-        #tmp = FrameTempRadian(5)
-        #tmp.print_coords()
-        WDH(sys.argv, scale)
+        tmp = FrameTempRadian(7)
+        tmp.print_coords()
+        #WDH(sys.argv, scale)
         #target_wind_angle = read_wdh(sys.argv[2], "Analysis_wdh_")
         #print(target_wind_angle)
+        t1 = np.ones((7,7))
+        
+        # assignment the values to frame template
+        l1 = [(1,5), (2,4), (5,1), (4,2)]
+        l2 = [(1,4), (2,5), (4,1), (5,2)]
+        l3 = [(1,3), (2,3), (3,1), (3,2), (3,4), (3,5), (4,3), (5,3)]
+        l4 = [(2,2), (4,4)]
+        give_value(l1, t1, 150)
+        give_value(l2, t1, 120)
+        give_value(l3, t1, 20)
+        give_value(l4, t1, 3)
+        print(">> origin frame")
+        print(t1)
+        print("\n")
+        m = tmp.wdh_influence(t1, 45, True)
+        print("\n>> wdh influence")
+        print(m)
+        print(">> origin - wdh influence")
+        print(t1-m)
+
+        fig, ax = plt.subplots(1,3)
+        ax[0].set_title("origin")
+        ax[0].imshow(t1, origin='lower')
+        ax[1].set_title("wdh_influence")
+        ax[1].imshow(m, origin='lower')
+        ax[2].set_title("origin - wdh_influence")
+        ax[2].imshow(t1-m, origin='lower')
+        plt.show()
+
     else:
         print("No such option")
 

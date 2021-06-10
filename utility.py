@@ -211,20 +211,6 @@ def median_of_cube(cube, wl=0):
             res[i,j] = np.median(cube[wl,:,i,j])
     return res
 
-# distance between two points
-def distance(x1, y1, x2, y2):
-    '''
-    Args:
-        x1 : an integer. object 1 - coordinate X
-        y1 : an integer. object 1 - coordinate Y
-        x2 : an integer. object 2 - coordinate X
-        y2 : an integer. object 2 - coordinate Y
-    Return:
-        res : an integer. The distance between two points.
-    '''
-
-    return ((x1-x2)**2+(y1-y2)**2)**0.5
-
 # plot a image
 def plot_image(img):
     '''
@@ -238,6 +224,12 @@ def plot_image(img):
     plt.title('lala')
     plt.show()
     
+    return None
+
+# give value to a image
+def give_value(ll, t, v):
+    for (x,y) in ll:
+        t[x, y] = v
     return None
 
 # class : template of frame, for sapt-annular-mean
@@ -465,20 +457,23 @@ class FrameTempRadian:
             a = a/len(self.coords[i])
 
             if detail is True:
+                print("This is layer", i, "- len(layer) =", len(self.coords[i]))
                 print("a =", a)
                 print("b =", b)
                 print("a*math.sin(math.radians(2*theta-direction)) + b =", a*math.sin(math.radians(2*theta-direction)) + b)
-                print("len this layer =", len(self.coords[i]))
+                
             
             #direction = direction + 90
 
             for (d, theta, x, y) in self.coords[i]:
                 # case 1, same to case 2, but a is different
-                #res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
+                res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
                 # case 2
                 ##res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
                 # case 3
-                res[x, y] = a*math.sin(math.radians(2*theta-direction))
+                #res[x, y] = a*math.sin(math.radians(2*theta-direction))
+                # case 4
+                #res[x, y] = (a-b)*math.sin(math.radians(2*theta-direction))
         return res 
     
     # print the property
@@ -522,7 +517,7 @@ def attenuate_wdh_influence_from_cube(cube, directions, detail=False):
     # traversal the cube in wave length = wl
     for i in range(nb_fr):
         wdh_influence[i, 1:, 1:] = temp.wdh_influence(cube[i, 1:,1:], directions[i], detail)
-        cube[i, 1:, 1:] = cube[i, 1:, 1:] - wdh_influence[i, 1:, 1:]
+        cube[i, 1:, 1:] = cube[i, 1:, 1:] - wdh_influence[i, 1:, 1:] # wdh_influence[i, 1:, 1:]*0.1...0.9
         print("===", i+1, "of", nb_fr, " attenuate wdh influence ===")
 
     return wdh_influence
