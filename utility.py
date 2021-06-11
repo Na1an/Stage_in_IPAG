@@ -445,36 +445,40 @@ class FrameTempRadian:
             a = 0
             # B, theta_zero = direction
             b = 0
-            for (d, theta, x, y) in self.coords[i]:
-                
-                b = b + frame[x, y]
-                angle_simp = 2*theta-direction
-                #angle_simp = theta-direction+90
+            angles = np.ones(len(self.coords[i]))
 
-                if ((np.linalg.norm(math.sin(math.radians(angle_simp))))**2) <= 0:
+            k=0
+            for (d, theta, x, y) in self.coords[i]:
+                b = b + frame[x, y]
+                angle_simp = theta-direction
+                a = a + frame[x, y]*math.cos(math.radians(angle_simp))
+                angles[k] = angle_simp
+                k = k+1 
+                '''
+                if ((np.linalg.norm(math.cos(math.radians(angle_simp))))**2) <= 0:
                     a = a + frame[x, y]
                     #continue
                 else:
-                    a = a + frame[x, y]*math.sin(math.radians(angle_simp))/((np.linalg.norm(math.sin(math.radians(angle_simp))))**2)
+                    a = a + frame[x, y]*math.cos(math.radians(angle_simp))/((np.linalg.norm(math.cos(math.radians(angle_simp))))**2)
+                '''
             
+            sum_down = np.linalg.norm(list(map(lambda x: math.cos(math.radians(x)), angles)))**2
+            a = a/sum_down
             b = b/len(self.coords[i])
-            
-            #a = a/len(self.coords[i])
 
             if detail is True:
                 print("This is layer", i, "- len(layer) =", len(self.coords[i]))
+                print("angles =", angles)
                 print("a =", a)
                 print("b =", b)
-            
-            #direction = direction + 90
 
             for (d, theta, x, y) in self.coords[i]:
                 # case 1, same to case 2, but a is different
                 
-                angle_simp = 2*theta-direction
+                angle_simp = theta-direction
                 #angle_simp = theta-direction+90
                 
-                res[x, y] = a*math.sin(angle_simp) + b
+                res[x, y] = a*math.cos(angle_simp) + b
                 # case 2
                 ##res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
                 # case 3
