@@ -42,6 +42,7 @@ def read_file(file_path, keyword):
     Return:
         return the data of hd[0],hd type HDUList. Should be type nparray, 4 dimensions (wave_length, sc_fr_nb, x, y).
     '''
+    print("path of target =",get_reference_cubes(file_path, keyword)[0])
     return fits.getdata(get_reference_cubes(file_path, keyword)[0])
 
 # read one file and return its data
@@ -419,7 +420,7 @@ def SAM(argv, scale):
     # 1. get target
     target_path = str(argv[2])
     #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "fake_comp_added_disk_02")
+    science_target = read_file(target_path, "fake_comp_added_disk_01")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     # science target scale 
     wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
@@ -447,7 +448,7 @@ def SAM(argv, scale):
     
     # get science target shape
     wl_ref, nb_fr_ref, w, h = science_target_croped.shape
-    wl = 0
+    wl = 1
     n = 50 
     
     # create outer mask
@@ -459,15 +460,17 @@ def SAM(argv, scale):
     
     print("start remove separation mean from science_target")
     remove_separation_mean_from_cube(science_target_croped[0])
-    #path = "./K_kilp_ADI_RDI/target_after_substract_mean.fits"
-    #hdu = fits.PrimaryHDU(science_target_croped[wl])
-    #hdu.writeto(path)
+
+    path = "./K_kilp_ADI_RDI/disk_after_substract_mean_11_06_wl_h3.fits"
+    hdu = fits.PrimaryHDU(science_target_croped[wl])
+    hdu.writeto(path)
+    exit()
     print("star remove separation mean from ref_frames")
     remove_separation_mean_from_cube(ref_frames[0])
 
     for i in range(1, 31):
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
-        path = "./K_kilp_ADI_RDI/disk_bis/scale_02/"+"{0:05d}".format(i) + "spat_annular.fits"
+        path = "./K_kilp_ADI_RDI/disk_bis/scale_01_bis/"+"{0:05d}".format(i) + "spat_annular.fits"
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of", n,"=== fits writed === path :", path)
