@@ -446,34 +446,42 @@ class FrameTempRadian:
             # B, theta_zero = direction
             b = 0
             for (d, theta, x, y) in self.coords[i]:
+                
                 b = b + frame[x, y]
-                if ((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2) <= 0:
+                angle_simp = 2*theta-direction
+                #angle_simp = theta-direction+90
+
+                if ((np.linalg.norm(math.sin(math.radians(angle_simp))))**2) <= 0:
                     a = a + frame[x, y]
                     #continue
                 else:
-                    a = a + frame[x, y]*math.sin(math.radians(2*theta-direction))/((np.linalg.norm(math.sin(math.radians(2*theta-direction))))**2)
+                    a = a + frame[x, y]*math.sin(math.radians(angle_simp))/((np.linalg.norm(math.sin(math.radians(angle_simp))))**2)
+            
             b = b/len(self.coords[i])
             
-            a = a/len(self.coords[i])
+            #a = a/len(self.coords[i])
 
             if detail is True:
                 print("This is layer", i, "- len(layer) =", len(self.coords[i]))
                 print("a =", a)
                 print("b =", b)
-                print("a*math.sin(math.radians(2*theta-direction)) + b =", a*math.sin(math.radians(2*theta-direction)) + b)
-                
             
             #direction = direction + 90
 
             for (d, theta, x, y) in self.coords[i]:
                 # case 1, same to case 2, but a is different
-                res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
+                
+                angle_simp = 2*theta-direction
+                #angle_simp = theta-direction+90
+                
+                res[x, y] = a*math.sin(angle_simp) + b
                 # case 2
                 ##res[x, y] = a*math.sin(math.radians(2*theta-direction)) + b
                 # case 3
                 #res[x, y] = a*math.sin(math.radians(2*theta-direction))
                 # case 4
                 #res[x, y] = (a-b)*math.sin(math.radians(2*theta-direction))
+                #print("a*math.sin(...)", res[x, y])
         return res 
     
     # print the property
@@ -521,3 +529,4 @@ def attenuate_wdh_influence_from_cube(cube, directions, detail=False):
         print("===", i+1, "of", nb_fr, " attenuate wdh influence ===")
 
     return wdh_influence
+    

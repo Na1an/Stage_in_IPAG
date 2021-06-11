@@ -175,7 +175,7 @@ def RDI(argv, scale):
 
     # 1. get target
     target_path = str(argv[2])
-    science_target = read_file(target_path, "fake_comp_added_disk")
+    science_target = read_file(target_path, "MASTER_CUBE-center")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -211,10 +211,10 @@ def RDI(argv, scale):
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
     science_target_croped[wl] = science_target_croped[wl]*outer_mask
     
-    for i in range(1,51):
+    for i in range(1,31):
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/disk/"+"{0:05d}".format(i) + ".fits"            
+        path = "./K_kilp_ADI_RDI/disk_bis/origin/"+"{0:05d}".format(i) + ".fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of", n,"=== fits writed to === path:", path)
@@ -230,7 +230,7 @@ def ADI(argv, scale):
 
     # 1. get target
     target_path = str(sys.argv[2])
-    science_target = read_file(target_path, "fake")
+    science_target = read_file(target_path, "fake_comp_added_disk_01")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -255,7 +255,7 @@ def ADI(argv, scale):
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, scaling='temp-mean')
 
         #path = "./K_kilp_ADI_RDI/Test_ADI/ADI_Masked" + "{0:05d}".format(i) + ".fits"
-        path = "./K_kilp_ADI_RDI/fake_planet/ADI_Masked" + "{0:05d}".format(i) + ".fits"
+        path = "./K_kilp_ADI_RDI/disk_bis/ADI_01/" + "{0:05d}".format(i) + ".fits"
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of", n,"=== fits writed ===")
@@ -328,13 +328,13 @@ def INJECTION(argv, scale):
         #ds9.display(fake_disk1_map)
         
         # add fake disk to science target
-        scaling_factor = 0.1
+        scaling_factor = float(argv[7])
         cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map*scaling_factor ,angle_list=angles,psf=psfn)
         
         # only want center
         start = int(w*(1-scale)/2)
         end = int(start+w*scale)
-        science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk
+        science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*2
         cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map,angle_list=angles,psf=psfn)
         science_target[1,:,start:end,start:end] = science_target[1,:,start:end,start:end] + cube_fakeddisk*100
         path_fake_disk = "./K_kilp_ADI_RDI/fake_planet/"+str(argv[6])
@@ -419,7 +419,7 @@ def SAM(argv, scale):
     # 1. get target
     target_path = str(argv[2])
     #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "fake_comp02")
+    science_target = read_file(target_path, "fake_comp_added_disk_02")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     # science target scale 
     wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
@@ -436,11 +436,11 @@ def SAM(argv, scale):
     # Select the best correlated targets
     # count is the number of we want to chose
     count = int(argv[5])
-    #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+    ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
 
     # 3. put the related data (all frames of the reference cubes) in np.array
-    #ref_frames = collect_data(ref_files, scale)
-    #print("ref_frames shape =", ref_frames.shape)
+    ref_frames = collect_data(ref_files, scale)
+    print("ref_frames shape =", ref_frames.shape)
 
     # get angles
     angles = read_file(str(argv[2]), "ROTATION")
@@ -457,18 +457,17 @@ def SAM(argv, scale):
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
     science_target_croped[wl] = science_target_croped[wl] * outer_mask
     
-    
     print("start remove separation mean from science_target")
     remove_separation_mean_from_cube(science_target_croped[0])
-    path = "./K_kilp_ADI_RDI/target_after_substract_mean.fits"
-    hdu = fits.PrimaryHDU(science_target_croped[wl])
-    hdu.writeto(path)
+    #path = "./K_kilp_ADI_RDI/target_after_substract_mean.fits"
+    #hdu = fits.PrimaryHDU(science_target_croped[wl])
+    #hdu.writeto(path)
     print("star remove separation mean from ref_frames")
     remove_separation_mean_from_cube(ref_frames[0])
 
-    for i in range(1, 51):
+    for i in range(1, 31):
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
-        path = "./K_kilp_ADI_RDI/spat-annular-bis/" +str(count)+"_best/{0:05d}".format(i) + "spat_annular.fits"
+        path = "./K_kilp_ADI_RDI/disk_bis/scale_02/"+"{0:05d}".format(i) + "spat_annular.fits"
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of", n,"=== fits writed === path :", path)
@@ -631,11 +630,13 @@ if __name__ == "__main__":
 
         fig, ax = plt.subplots(1,3)
         ax[0].set_title("origin")
-        ax[0].imshow(t1, origin='lower')
+        im1 = ax[0].imshow(t1, origin='lower')
+        #fig.colorbar(im1, ax=ax)
         ax[1].set_title("wdh_influence")
         ax[1].imshow(m, origin='lower')
         ax[2].set_title("origin - wdh_influence")
         ax[2].imshow(t1-m, origin='lower')
+        #fig.colorbar(images[0], ax=axs, orientation='horizontal', fraction=.1)
         plt.show()
 
     else:
