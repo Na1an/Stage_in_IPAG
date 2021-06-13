@@ -177,7 +177,7 @@ def RDI(argv, scale):
     # 1. get target
     target_path = str(argv[2])
     #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "fake_comp_added_disk_10")
+    science_target = read_file(target_path, "fake_comp_added_disk_1_times5")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -332,11 +332,13 @@ def INJECTION(argv, scale):
         # add fake disk to science target
         scaling_factor = float(argv[7])
         cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map*scaling_factor ,angle_list=angles,psf=psfn)
-        
+        #ds9 = vip.Ds9Window()
+        #ds9.display(cube_fakeddisk[0])
+        #print(">>>> cube fake disk :", cube_fakeddisk[0:50, 0:50])
         # only want center
         start = int(w*(1-scale)/2)
         end = int(start+w*scale)
-        science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk
+        science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*5
         cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map,angle_list=angles,psf=psfn)
         science_target[1,:,start:end,start:end] = science_target[1,:,start:end,start:end] + cube_fakeddisk*100
         path_fake_disk = "./K_kilp_ADI_RDI/fake_planet/"+str(argv[6])
@@ -423,7 +425,7 @@ def SAM(argv, scale):
     #science_target_origin = read_file(target_path, "MASTER_CUBE-center")
     #science_target_origin_croped = crop_frame(science_target_origin, len(science_target_origin[0,0,0]), scale)
 
-    science_target = read_file(target_path, "fake_comp_added_disk_10")
+    science_target = read_file(target_path, "fake_comp_added_disk_1_times5")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     #store_to_fits(science_target_croped[0]-science_target_origin_croped[0], "./K_kilp_ADI_RDI/1206_origin_minus_fake_disk_01.fits")
     #exit()
