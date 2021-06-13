@@ -176,7 +176,8 @@ def RDI(argv, scale):
 
     # 1. get target
     target_path = str(argv[2])
-    science_target = read_file(target_path, "MASTER_CUBE-center")
+    #science_target = read_file(target_path, "MASTER_CUBE-center")
+    science_target = read_file(target_path, "fake_comp_added_disk_10")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -203,7 +204,7 @@ def RDI(argv, scale):
     
     # get ref shape
     wl_ref, nb_fr_ref, w, h = ref_frames.shape
-    wl = 1
+    wl = 0
     n = nb_fr_ref
     
     # create outer mask
@@ -215,7 +216,7 @@ def RDI(argv, scale):
     for i in range(1,31):
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/disk_bis/origin/"+"{0:05d}".format(i) + ".fits"            
+        path = "./K_kilp_ADI_RDI/1306_spat_mean/"+"{0:05d}".format(i) + "_spat_mean.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of", n,"=== fits writed to === path:", path)
@@ -335,7 +336,7 @@ def INJECTION(argv, scale):
         # only want center
         start = int(w*(1-scale)/2)
         end = int(start+w*scale)
-        science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*2
+        science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk
         cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map,angle_list=angles,psf=psfn)
         science_target[1,:,start:end,start:end] = science_target[1,:,start:end,start:end] + cube_fakeddisk*100
         path_fake_disk = "./K_kilp_ADI_RDI/fake_planet/"+str(argv[6])
@@ -419,9 +420,13 @@ def SAM(argv, scale):
 
     # 1. get target
     target_path = str(argv[2])
-    #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "fake_comp_added_disk_01")
+    #science_target_origin = read_file(target_path, "MASTER_CUBE-center")
+    #science_target_origin_croped = crop_frame(science_target_origin, len(science_target_origin[0,0,0]), scale)
+
+    science_target = read_file(target_path, "fake_comp_added_disk_10")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+    #store_to_fits(science_target_croped[0]-science_target_origin_croped[0], "./K_kilp_ADI_RDI/1206_origin_minus_fake_disk_01.fits")
+    #exit()
     # science target scale 
     wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
@@ -448,7 +453,7 @@ def SAM(argv, scale):
     
     # get science target shape
     wl_ref, nb_fr_ref, w, h = science_target_croped.shape
-    wl = 1
+    wl = 0
     n = 50 
     
     # create outer mask
@@ -457,20 +462,21 @@ def SAM(argv, scale):
     
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
     science_target_croped[wl] = science_target_croped[wl] * outer_mask
-    
-    print("start remove separation mean from science_target")
-    remove_separation_mean_from_cube(science_target_croped[0])
+    #store_to_fits(science_target_croped[wl], "./K_kilp_ADI_RDI/1306_fake_disk_10_before_sep_mean.fits")
 
-    path = "./K_kilp_ADI_RDI/disk_after_substract_mean_11_06_wl_h3.fits"
-    hdu = fits.PrimaryHDU(science_target_croped[wl])
-    hdu.writeto(path)
-    exit()
+    print("start remove separation mean from science_target")
+    sep_mean = remove_separation_mean_from_cube(science_target_croped[wl])
+    #store_to_fits(sep_mean, "./K_kilp_ADI_RDI/1306_fake_disk_10_sep_mean.fits")
+    #store_to_fits(science_target_croped[wl], "./K_kilp_ADI_RDI/1306_fake_disk_10_after_sep_mean.fits")
+    
+    #exit()
+
     print("star remove separation mean from ref_frames")
-    remove_separation_mean_from_cube(ref_frames[0])
+    remove_separation_mean_from_cube(ref_frames[wl])
 
     for i in range(1, 31):
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
-        path = "./K_kilp_ADI_RDI/disk_bis/scale_01_bis/"+"{0:05d}".format(i) + "spat_annular.fits"
+        path = "./K_kilp_ADI_RDI/1306_spat_annular_mean/"+"{0:05d}".format(i) + "_spat_annular.fits"
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of", n,"=== fits writed === path :", path)
@@ -490,7 +496,7 @@ def WDH(argv, scale):
     # 1. get target
     target_path = str(argv[2])
     #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "fake_comp02")
+    science_target = read_file(target_path, "fake_comp_added_disk_01")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     # science target scale 
     wl_tar, nb_fr_tar, w_tar, h_tar = science_target_croped.shape
@@ -606,11 +612,12 @@ if __name__ == "__main__":
 
     elif opt == "WDH":
         # WDH : wind driven halo
-        tmp = FrameTempRadian(7)
-        tmp.print_coords()
-        #WDH(sys.argv, scale)
+        #tmp = FrameTempRadian(7)
+        #tmp.print_coords()
+        WDH(sys.argv, scale)
         #target_wind_angle = read_wdh(sys.argv[2], "Analysis_wdh_")
         #print(target_wind_angle)
+        '''
         t1 = np.ones((7,7))
         
         # assignment the values to frame template
@@ -641,7 +648,7 @@ if __name__ == "__main__":
         ax[2].imshow(t1-m, origin='lower')
         #fig.colorbar(images[0], ax=axs, orientation='horizontal', fraction=.1)
         plt.show()
-
+        '''
     else:
         print("No such option")
 

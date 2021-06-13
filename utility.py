@@ -6,6 +6,7 @@ import numpy as np
 import skimage
 import vip_hci as vip
 import matplotlib.pyplot as plt
+from astropy.io import fits
 from hciplot import plot_frames, plot_cubes
 
 # Global constant
@@ -226,6 +227,18 @@ def plot_image(img):
     
     return None
 
+# sotre data as fits
+def store_to_fits(data, path):
+    '''
+    Args:
+        data : a ndarray, 2 or 3 dims. The cube we want to sotre.
+        path : a string. The file path. 
+    Return:
+        None
+    '''
+    hdu = fits.PrimaryHDU(data)
+    hdu.writeto(path)
+
 # give value to a image
 def give_value(ll, t, v):
     for (x,y) in ll:
@@ -336,17 +349,19 @@ def remove_separation_mean_from_cube(cube):
         self : object it self.
         cube : a ndarry, 3 dims. The input cube. ( nb_frames, x, y)
     Return:
-        None
+        res : a ndarry, 3 dims. The result of seperation mean image.
     '''
     nb_fr, w, h = cube.shape
+    res = np.zeros((nb_fr, w, h))
     temp = FrameTemp(w-1)
     # traversal the cube in wave length = wl
     for i in range(nb_fr):
         sep_mean = temp.separation_mean(cube[i, 1:,1:])
         cube[i, 1:, 1:] = cube[i, 1:, 1:] - sep_mean
+        res[i, 1:, 1:] = sep_mean
         print("===", i+1, "of", nb_fr, " separation_mean removed ===")
 
-    return None
+    return res
 
 """
 # amplitude
