@@ -35,7 +35,6 @@ def get_fwhm_from_psf(psf):
         res : a float. The one fwhm of the psf.
     ''' 
     fwhm = vip.var.fit_2dgaussian(psf, crop=True, cropsize=9, debug=False)
-    
     return np.mean([fwhm.loc[0,'fwhm_y'], fwhm.loc[0,'fwhm_x']])
 
 # print info for a file *.fits
@@ -196,6 +195,22 @@ def remove_target(target, refs):
             break
     return refs
 
+# chose wave length and 
+def chose_reference_files(refs, ky_wl, ky_type):
+    '''
+    Args:
+        target : a string.
+        refs : a list of string
+    Return:
+        refs : a list of string. Target string removed.
+    '''
+    res = []
+    for s in refs:
+        if (ky_wl in s) and (ky_type in s):
+            res.append(s)
+            print(s)
+    return res
+
 # median of cube
 def median_of_cube(cube, wl=0):
     '''
@@ -252,9 +267,12 @@ class FrameTemp:
     Note:
         Do not include the `self` parameter in the ``Args`` section.
     Args:
-        side (int): the side length of a frame.
+        side : an integer. The side length of a frame.
     Attributes:
-        side (int): the side length of a frame.
+        side : an integer. The side length of a frame.
+        radius : an integer. The radius of this frame template.
+        values_mean : a list of integer. The mean value for each annulus/radius.
+        coords : a list of tuple (x,y). The coordinates of each pixels in the frame template.
     '''
 
     # init function, we need make the template in this step
@@ -269,7 +287,7 @@ class FrameTemp:
         
         self.side = side
         self.radius = (side//2)+1
-        self.values_mean = []  
+        self.values_mean = [None]*self.radius
         self.coords = [None]*self.radius
 
         # center
@@ -298,7 +316,7 @@ class FrameTemp:
             res : a ndarry, 2 dims. The output frame separation mean.
         '''
         if len(frame) != self.side:
-            raise Exception("The shape of input frame is different from template, len(frame) =", len(frame))
+            raise Exception("The shape of input frame is different from template, len(frame) =", len(frame), "and self.side =", self.side)
         
         res = np.zeros((frame.shape))
 
@@ -308,14 +326,15 @@ class FrameTemp:
                 tmp = tmp + frame[x, y]
             
             mean = tmp/len(self.coords[i])
+            self.values_mean[i] = mean
+            
             if detail is True:
-                print( "mean =", mean)
+                print("mean =", mean)
                 print("len this layer =", len(self.coords[i]))
             for (x,y) in self.coords[i]:
                 res[x, y] = mean
         
-        return res 
-    
+        return res
     
     # print the property
     def print_property(self):
@@ -346,7 +365,6 @@ def remove_separation_mean_from_cube(cube):
     '''
     Only consider the input cube has even shape. Ex. (..., 256, 256) 
     Args:
-        self : object it self.
         cube : a ndarry, 3 dims. The input cube. ( nb_frames, x, y)
     Return:
         res : a ndarry, 3 dims. The result of seperation mean image.
@@ -549,3 +567,35 @@ def attenuate_wdh_influence_from_cube(cube, directions, detail=False):
 
     return wdh_influence
     
+# raw contrast
+def get_raw_contrast(fwhm, frame):
+    '''
+    Args:
+        fwhm : a float. The psf of the frame.
+        frame : a ndarray, 2 dims. The input frame of a cube.
+    Return:
+        res : a ndarray, 1 dims. The raw contrast of this frame.
+    '''
+    w, h = frame.shape
+    temp = FrameTemp(w-1)
+    temp.separation_mean(frame[1:, 1:])
+
+    return list(map(lambda x: x/fwhm, temp.values_mean))
+
+# raw contrast for a cube
+def get_raw_contrast_cube(fwhm, frame):
+    '''
+    Args:
+        fwhm : a float. The psf of the frame.
+        frame : a ndarray, 3 dims. The input frame of a cube. (nb_frames, x, y)
+    Return:
+        res : a ndarray, 1 dims. The raw contrast of this frame.
+    '''
+    nb_fr, w, h = frame.shape
+    temp = FrameTemp(w-1)
+    res = np.zeros((nb_fr, temp.radius))
+    for i in range(nb_fr):
+        temp.separation_mean(frame[i, 1:, 1:])
+        res[i] = list(map(lambda x: x/fwhm, temp.values_mean))
+
+    return res

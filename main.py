@@ -4,6 +4,8 @@ import sys
 import time
 import datetime
 import numpy as np
+import pandas as pd
+import seaborn as sns
 import skimage
 import vip_hci as vip
 import matplotlib.pyplot as plt
@@ -186,10 +188,12 @@ def RDI(argv, scale):
     
     # Check if the taget is in the ref files, if true remove it
     ref_files = remove_target(str(argv[2]),ref_files)
+    ref_files = chose_reference_files(ref_files, "H23", "IRD")
     print(">> what we have in ref_res")
     for s in ref_files:
         print(s)
-
+    print(len(ref_files))
+    exit()
     # Select the best correlated targets
     # count is the number of we want to chose
     count = int(argv[5])
@@ -326,14 +330,14 @@ def INJECTION(argv, scale):
                     spf_dico={'name':'HG', 'g':0., 'polar':False})
         fake_disk1_map = fake_disk1.compute_scattered_light()
         fake_disk1_map = fake_disk1_map/np.max(fake_disk1_map)
-        #ds9 = vip.Ds9Window()
-        #ds9.display(fake_disk1_map)
+        ds9 = vip.Ds9Window()
+        ds9.display(fake_disk1_map)
         
         # add fake disk to science target
         scaling_factor = float(argv[7])
         cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map*scaling_factor ,angle_list=angles,psf=psfn)
-        #ds9 = vip.Ds9Window()
-        #ds9.display(cube_fakeddisk[0])
+        ds9 = vip.Ds9Window()
+        ds9.display(cube_fakeddisk[0])
         #print(">>>> cube fake disk :", cube_fakeddisk[0:50, 0:50])
         # only want center
         start = int(w*(1-scale)/2)
@@ -651,6 +655,66 @@ if __name__ == "__main__":
         #fig.colorbar(images[0], ax=axs, orientation='horizontal', fraction=.1)
         plt.show()
         '''
+    elif opt == "CONTRAST":
+        print(">> Test raw contrast")
+        
+        # 1. get target
+        argv = sys.argv
+        target_path = str(argv[2])
+        science_target = read_file(target_path, "MASTER_CUBE-center")
+        science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+        obj = "abc"
+        if(len(argv) >4):
+            scale = float(argv[4])
+        if(len(argv) >5):
+            obj = str(argv[5]).upper()
+            print("obj =", obj)
+        print("science target shape =", science_target.shape)
+        
+        # 2. prepare these parameters
+        # get angles
+        angles = read_file(target_path, "ROTATION")
+        psf = read_file(target_path, "PSF_MASTER_CUBE") 
+        
+        # get science target shape
+        wl_ref, nb_fr_ref, w, h = science_target.shape
+        wl = 0
+        
+        # fwhm psfn
+        fwhm = get_fwhm_from_psf(psf[wl])
+        
+        psfn, fwhm_flux, fwhm = vip.metrics.normalize_psf(psf[wl], fwhm, size=17, full_output=True)
+        print("psfn.shape =", psfn.shape, "psfn.ndim =", psfn.ndim)
+        raw_contrast = get_raw_contrast(fwhm_flux[0], median_of_cube(science_target_croped, wl=0))
+
+        plt.title("The contrast of the science cube (median)")
+        plt.plot(raw_contrast)
+        plt.ylabel("raw contrast (mean)")
+        plt.xlabel("separation (pxs)")
+        plt.show()
+        '''
+        df = pd.DataFrame(raw_contrast, columns=["Contrast"])
+        df["Radius"] = df.index
+        #print(df.head())
+        #exit()
+        for i in range(1,nb_fr_ref,1):
+            raw_contrast = get_raw_contrast(fwhm, science_target_croped[wl,i])
+            df_temp = pd.DataFrame(raw_contrast, columns=["Contrast"])
+            df_temp["Radius"] = df_temp.index
+            df = pd.concat([df,df_temp], axis=0, ignore_index=False)
+        
+        print(df)
+        #df.index.name = "Frames"
+        data = pd.DataFrame(raw_contrast)
+        #data.columns.name = "Radius"
+        data.index.name = "Frames"
+        print(data.head())
+        data.index = data.index * 0.01227
+        ax = sns.relplot(kind='line', data=data)
+        plt.show()
+        '''
+        
+        
     else:
         print("No such option")
 
