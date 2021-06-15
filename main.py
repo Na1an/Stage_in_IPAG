@@ -225,7 +225,7 @@ def RDI(argv, scale):
     # 1. get target
     target_path = str(argv[2])
     #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "real")
+    science_target = read_file(target_path, "fake_disk_far")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -281,7 +281,7 @@ def RDI(argv, scale):
     for i in number_klips:
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_3[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/spat_mean/real/3_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        path = "./K_kilp_ADI_RDI/spat_mean/fake_disk_far/3_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of 3_best === fits writed to === path:", path)
@@ -290,7 +290,7 @@ def RDI(argv, scale):
     for i in number_klips:
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_5[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/spat_mean/real/5_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        path = "./K_kilp_ADI_RDI/spat_mean/fake_disk_far/5_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of 5_best === fits writed to === path:", path)
@@ -299,7 +299,7 @@ def RDI(argv, scale):
     for i in number_klips:
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_7[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/spat_mean/real/7_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        path = "./K_kilp_ADI_RDI/spat_mean/fake_disk_far/7_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of 7_best === fits writed to === path:", path)
@@ -308,7 +308,7 @@ def RDI(argv, scale):
     for i in number_klips:
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_9[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/spat_mean/real/9_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        path = "./K_kilp_ADI_RDI/spat_mean/fake_disk_far/9_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of 9_best === fits writed to === path:", path)
@@ -317,7 +317,7 @@ def RDI(argv, scale):
     for i in number_klips:
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_11[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/spat_mean/real/11_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        path = "./K_kilp_ADI_RDI/spat_mean/fake_disk_far/11_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of 11_best === fits writed to === path:", path)
@@ -528,7 +528,7 @@ def SAM(argv, scale):
     #science_target_origin = read_file(target_path, "MASTER_CUBE-center")
     #science_target_origin_croped = crop_frame(science_target_origin, len(science_target_origin[0,0,0]), scale)
 
-    science_target = read_file(target_path, "fake_comp_added_disk_1_times5")
+    science_target = read_file(target_path, "fake_disk_close")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     #store_to_fits(science_target_croped[0]-science_target_origin_croped[0], "./K_kilp_ADI_RDI/1206_origin_minus_fake_disk_01.fits")
     #exit()
@@ -537,21 +537,35 @@ def SAM(argv, scale):
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     # 2. get the list of files in library
     ref_files = get_reference_cubes(str(argv[3]), "MASTER_CUBE-center")
-    
+
     # Check if the taget is in the ref files, if true remove it
-    ref_files = remove_target(str(argv[2]),ref_files)
+    ref_files = remove_target(str(argv[2]), ref_files)
+    ref_files = chose_reference_files(ref_files, "H23", "IRD")
     print(">> what we have in ref_res")
     for s in ref_files:
         print(s)
+    print(">>> we have", len(ref_files), "reference stars in our library")
 
     # Select the best correlated targets
     # count is the number of we want to chose
     count = int(argv[5])
-    ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+    #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+    print("Scale =", scale, "\n science target croped shape =", science_target_croped.shape)
+    ref_files = selection_n_best([3,5,7,9,11], science_target_croped, ref_files, scale, 0)
 
     # 3. put the related data (all frames of the reference cubes) in np.array
-    ref_frames = collect_data(ref_files, scale)
-    print("ref_frames shape =", ref_frames.shape)
+    #ref_frames = collect_data(ref_files, scale)
+    #print("ref_frames shape =", ref_frames.shape)
+    ref_frames_3 = collect_data(ref_files[0], scale)
+    print("ref_frames_3 shape =", ref_frames_3.shape)
+    ref_frames_5 = collect_data(ref_files[1], scale)
+    print("ref_frames_5 shape =", ref_frames_5.shape)
+    ref_frames_7 = collect_data(ref_files[2], scale)
+    print("ref_frames_7 shape =", ref_frames_7.shape)
+    ref_frames_9 = collect_data(ref_files[3], scale)
+    print("ref_frames_9 shape =", ref_frames_9.shape)
+    ref_frames_11 = collect_data(ref_files[4], scale)
+    print("ref_frames_11 shape =", ref_frames_11.shape)
 
     # get angles
     angles = read_file(str(argv[2]), "ROTATION")
@@ -559,7 +573,7 @@ def SAM(argv, scale):
     # get science target shape
     wl_ref, nb_fr_ref, w, h = science_target_croped.shape
     wl = 0
-    n = 50 
+    n = 100
     
     # create outer mask
     r_in = 15 
@@ -577,15 +591,57 @@ def SAM(argv, scale):
     #exit()
 
     print("star remove separation mean from ref_frames")
-    remove_separation_mean_from_cube(ref_frames[wl])
+    remove_separation_mean_from_cube(ref_frames_3[wl])
+    remove_separation_mean_from_cube(ref_frames_5[wl])
+    remove_separation_mean_from_cube(ref_frames_7[wl])
+    remove_separation_mean_from_cube(ref_frames_9[wl])
+    remove_separation_mean_from_cube(ref_frames_11[wl])
 
-    for i in range(1, 31):
-        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling=None)
-        path = "./K_kilp_ADI_RDI/1306_spat_annular_mean/"+"{0:05d}".format(i) + "_spat_annular.fits"
+    number_klips = []
+    for i in range(0,101,5):
+        number_klips.append(i)
+    number_klips[0] = 1
+
+    # 3
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_3[wl]*outer_mask, scaling=None)
+        path = "./K_kilp_ADI_RDI/spat_annular_mean/fake_disk_close/3_best/"+"{0:05d}".format(i) + "_spat_annular.fits"
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
-        print(">>===", i, "of", n,"=== fits writed === path :", path)
+        print(">>===", i, "of 3 best=== fits writed === path :", path)
+    
+    # 5
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_5[wl]*outer_mask, scaling=None)
+        path = "./K_kilp_ADI_RDI/spat_annular_mean/fake_disk_close/5_best/"+"{0:05d}".format(i) + "_spat_annular.fits"
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of 5 best=== fits writed === path :", path)
+    
+    # 7
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_7[wl]*outer_mask, scaling=None)
+        path = "./K_kilp_ADI_RDI/spat_annular_mean/fake_disk_close/7_best/"+"{0:05d}".format(i) + "_spat_annular.fits"
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of 7 best=== fits writed === path :", path)
 
+    # 9
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_9[wl]*outer_mask, scaling=None)
+        path = "./K_kilp_ADI_RDI/spat_annular_mean/fake_disk_close/9_best/"+"{0:05d}".format(i) + "_spat_annular.fits"
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of 9 best=== fits writed === path :", path)
+
+    # 11
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_11[wl]*outer_mask, scaling=None)
+        path = "./K_kilp_ADI_RDI/spat_annular_mean/fake_disk_close/11_best/"+"{0:05d}".format(i) + "_spat_annular.fits"
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of 11 best=== fits writed === path :", path)
+    
     end_time = datetime.datetime.now()
     
     print("PCA SAM ", n," take", end_time - start_time)
