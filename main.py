@@ -165,6 +165,52 @@ def selection(nb_best, target, refs, scale, wave_length=0):
 
     return res_bis
 
+# chose the best correlated reference stars, not all
+def selection_n_best(nb_best, target, refs, scale, wave_length=0):
+    '''
+    Args:
+        nb_best : a list of integer. How many best ref stars we want.
+        target : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        refs : a list of string. All stars data we have.
+        wave_length : a integer. Wave length of the cube.
+    Rrturn:
+        res : a list of list of string. The int(nb_best) best chosen ref stars.
+    '''
+    res = {}
+    # target_median is 2 dims. (256, 256)
+    target_median = median_of_cube(target, wave_length)
+    w, h = target_median.shape
+    # create mask
+    m, pxs_center = create_inner_mask(w,h,MASK_RADIUS)
+    target_median_vector = np.reshape(target_median*m,(w*h))
+
+    for i in range(len(refs)):
+        # hd is 4 dims: (wl, nb frmes, x, y)
+        hd = fits.getdata(refs[i])
+        # ref_median is 2 dims. (256, 256)
+        ref_meidan = median_of_cube(crop_frame(hd,len(hd[wave_length,i,0]),scale), wave_length)
+        ref_meidan_vector = np.reshape(ref_meidan*m, (w*h))
+
+        # maby should try cosine similarity, structural simimarity(SSIM)
+        coef_corr = np.corrcoef(target_median_vector, ref_meidan_vector)
+        #print(refs[i],"=",coef_corr[0,1])
+        res[refs[i]] = coef_corr[0,1]
+
+    tmp = sorted(res.items(),key = lambda r:(r[1],r[0]), reverse=True)
+
+    print(">> There are", len(tmp), "reference stars in the library")
+    res_bis = [None]*len(nb_best)
+    for n in range(len(nb_best)):
+        print(">> we will chose", nb_best[n], "correlated cube to do PCA on RDI")
+        res_temp = []
+        for k in range(nb_best[n]):
+            (x,y) = tmp[k]
+            res_temp.append(x)
+            print(k,"- corrcoef value =", y)
+        res_bis[n] = res_temp
+
+    return res_bis
+
 # detection
 def rdi_detection():
     return None
@@ -193,12 +239,13 @@ def RDI(argv, scale):
     for s in ref_files:
         print(s)
     print(len(ref_files))
-    exit()
+    
     # Select the best correlated targets
     # count is the number of we want to chose
     count = int(argv[5])
-    ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
-
+    #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+    ref_files = selection_n_best([1,2,3], science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+    exit()
     # 3. put the related data (all frames of the reference cubes) in np.array
     ref_frames = collect_data(ref_files, scale)
     print("ref_frames shape =", ref_frames.shape)
@@ -304,19 +351,19 @@ def INJECTION(argv, scale):
 
     # make fake companion
     if obj == "PLANETE":
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[40], theta=160, n_branches = 1)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1000, plsc=pxscale, rad_dists=[40], theta=160, n_branches = 1)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 1)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1000, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 1)
         print("fake companion 0 shape = ", fake_comp_0.shape)
         fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
-        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp02.fits"
+        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp_100px.fits"
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp) 
     
     elif obj == "DISK":
-        dstar = 35 # distance to the star in pc, the bigger the disk if more small and more close to star
+        dstar = 135 # distance to the star in pc, the bigger the disk if more small and more close to star
         nx = 256 # number of pixels of your image in X
         ny = 256 # number of pixels of your image in Y
         itilt = 65 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
