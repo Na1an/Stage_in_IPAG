@@ -225,7 +225,7 @@ def RDI(argv, scale):
     # 1. get target
     target_path = str(argv[2])
     #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "fake_comp_added_disk_1_times5")
+    science_target = read_file(target_path, "real")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -244,17 +244,25 @@ def RDI(argv, scale):
     # count is the number of we want to chose
     count = int(argv[5])
     #ref_files = selection(count, science_target_croped, ref_files, scale, 0) # 0 is the default wave length
-    ref_files = selection_n_best([1,2,3], science_target_croped, ref_files, scale, 0) # 0 is the default wave length
-    exit()
+    ref_files = selection_n_best([3,5,7,9,11], science_target_croped, ref_files, scale, 0) # 0 is the default wave length
+    
     # 3. put the related data (all frames of the reference cubes) in np.array
-    ref_frames = collect_data(ref_files, scale)
-    print("ref_frames shape =", ref_frames.shape)
+    ref_frames_3 = collect_data(ref_files[0], scale)
+    print("ref_frames_3 shape =", ref_frames_3.shape)
+    ref_frames_5 = collect_data(ref_files[1], scale)
+    print("ref_frames_5 shape =", ref_frames_5.shape)
+    ref_frames_7 = collect_data(ref_files[2], scale)
+    print("ref_frames_7 shape =", ref_frames_7.shape)
+    ref_frames_9 = collect_data(ref_files[3], scale)
+    print("ref_frames_9 shape =", ref_frames_9.shape)
+    ref_frames_11 = collect_data(ref_files[4], scale)
+    print("ref_frames_11 shape =", ref_frames_11.shape)
     
     # get angles
     angles = read_file(str(argv[2]), "ROTATION")
     
     # get ref shape
-    wl_ref, nb_fr_ref, w, h = ref_frames.shape
+    wl_ref, nb_fr_ref, w, h = ref_frames_11.shape
     wl = 0
     n = nb_fr_ref
     
@@ -264,13 +272,56 @@ def RDI(argv, scale):
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
     science_target_croped[wl] = science_target_croped[wl]*outer_mask
     
-    for i in range(1,31):
-        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl]*outer_mask, scaling='spat-mean')
+    number_klips = []
+    for i in range(0,101,5):
+        number_klips.append(i)
+    number_klips[0] = 1
+
+    # 3
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_3[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/1306_spat_mean/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        path = "./K_kilp_ADI_RDI/spat_mean/real/3_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
-        print(">>===", i, "of", n,"=== fits writed to === path:", path)
+        print(">>===", i, "of 3_best === fits writed to === path:", path)
+    
+    # 5
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_5[wl]*outer_mask, scaling='spat-mean')
+        #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
+        path = "./K_kilp_ADI_RDI/spat_mean/real/5_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of 5_best === fits writed to === path:", path)
+    
+    # 7
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_7[wl]*outer_mask, scaling='spat-mean')
+        #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
+        path = "./K_kilp_ADI_RDI/spat_mean/real/7_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of 7_best === fits writed to === path:", path)
+    
+    # 9
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_9[wl]*outer_mask, scaling='spat-mean')
+        #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
+        path = "./K_kilp_ADI_RDI/spat_mean/real/9_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of 9_best === fits writed to === path:", path)
+    
+    # 11
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_11[wl]*outer_mask, scaling='spat-mean')
+        #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
+        path = "./K_kilp_ADI_RDI/spat_mean/real/11_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of 11_best === fits writed to === path:", path)
+    
     end_time = datetime.datetime.now()
     print("PCA on RDI ", n," take", end_time - start_time)
 
@@ -283,7 +334,7 @@ def ADI(argv, scale):
 
     # 1. get target
     target_path = str(sys.argv[2])
-    science_target = read_file(target_path, "fake_comp_added_disk_01")
+    science_target = read_file(target_path, "fake_disk_close")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -292,7 +343,7 @@ def ADI(argv, scale):
     
     # get science target shape
     wl_ref, nb_fr_ref, w, h = science_target_croped.shape
-    wl = 0
+    wl = 1
     n = nb_fr_ref
     
     # create outer mask
@@ -308,7 +359,7 @@ def ADI(argv, scale):
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, scaling='temp-mean')
 
         #path = "./K_kilp_ADI_RDI/Test_ADI/ADI_Masked" + "{0:05d}".format(i) + ".fits"
-        path = "./K_kilp_ADI_RDI/disk_bis/ADI_01/" + "{0:05d}".format(i) + ".fits"
+        path = "./K_kilp_ADI_RDI/ADI/fake_disk_close/" + "{0:05d}".format(i) + "_bright.fits"
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of", n,"=== fits writed ===")
@@ -363,11 +414,12 @@ def INJECTION(argv, scale):
         hdu.writeto(path_fake_comp) 
     
     elif obj == "DISK":
-        dstar = 135 # distance to the star in pc, the bigger the disk if more small and more close to star
+        # far = 32, close = 145
+        dstar = 145 # distance to the star in pc, the bigger the disk if more small and more close to star
         nx = 256 # number of pixels of your image in X
         ny = 256 # number of pixels of your image in Y
         itilt = 65 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
-        pa = -50 # position angle of the disk in degrees (0 means north, 90 means east)
+        pa = 90 # position angle of the disk in degrees (0 means north, 90 means east)
         a = 40 # semimajoraxis of the disk in au / semimajor axis in arcsec is 80 au/80px = 1 arcsec
         fake_disk1 = vip.metrics.scattered_light_disk.ScatteredLightDisk(\
                     nx=nx,ny=ny,distance=dstar,\
@@ -389,9 +441,9 @@ def INJECTION(argv, scale):
         # only want center
         start = int(w*(1-scale)/2)
         end = int(start+w*scale)
-        science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*5
+        science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*0
         cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map,angle_list=angles,psf=psfn)
-        science_target[1,:,start:end,start:end] = science_target[1,:,start:end,start:end] + cube_fakeddisk*100
+        science_target[1,:,start:end,start:end] = science_target[1,:,start:end,start:end] + cube_fakeddisk*10000
         path_fake_disk = "./K_kilp_ADI_RDI/fake_planet/"+str(argv[6])
         hdu = fits.PrimaryHDU(science_target)
         hdu.writeto(path_fake_disk)
