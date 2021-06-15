@@ -734,10 +734,10 @@ if __name__ == "__main__":
         print("psfn.shape =", psfn.shape, "psfn.ndim =", psfn.ndim)
         raw_contrast = get_raw_contrast(fwhm_flux[0], median_of_cube(science_target_croped, wl=0))
 
-        plt.title("The contrast of the science cube (median)")
+        plt.title("The contrast of the science cube (median)", fontsize="20")
         plt.plot(raw_contrast)
-        plt.ylabel("raw contrast (mean)")
-        plt.xlabel("separation (pxs)")
+        plt.ylabel("raw contrast (mean)", fontsize="18")
+        plt.xlabel("separation (pxs)", fontsize="18")
         plt.show()
         '''
         df = pd.DataFrame(raw_contrast, columns=["Contrast"])
