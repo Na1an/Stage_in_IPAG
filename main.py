@@ -225,7 +225,7 @@ def RDI(argv, scale):
     # 1. get target
     target_path = str(argv[2])
     #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "fake_disk_far")
+    science_target = read_file(target_path, "fake_disk_close")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -263,7 +263,7 @@ def RDI(argv, scale):
     
     # get ref shape
     wl_ref, nb_fr_ref, w, h = ref_frames_11.shape
-    wl = 0
+    wl = 1
     n = nb_fr_ref
     
     # create outer mask
@@ -277,6 +277,7 @@ def RDI(argv, scale):
         number_klips.append(i)
     number_klips[0] = 1
 
+    '''
     # 3
     for i in number_klips:
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_3[wl]*outer_mask, scaling='spat-mean')
@@ -294,16 +295,17 @@ def RDI(argv, scale):
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of 5_best === fits writed to === path:", path)
-    
+    '''
     # 7
     for i in number_klips:
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_7[wl]*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/spat_mean/fake_disk_far/7_best/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        path = "./K_kilp_ADI_RDI/spat_mean/fake_disk_close/7_best_bis/"+"{0:05d}".format(i) + "_spat_mean.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of 7_best === fits writed to === path:", path)
     
+    '''
     # 9
     for i in number_klips:
         res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_9[wl]*outer_mask, scaling='spat-mean')
@@ -321,7 +323,7 @@ def RDI(argv, scale):
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of 11_best === fits writed to === path:", path)
-    
+    '''
     end_time = datetime.datetime.now()
     print("PCA on RDI ", n," take", end_time - start_time)
 
