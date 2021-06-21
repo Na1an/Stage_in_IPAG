@@ -126,8 +126,9 @@ def selection(nb_best, target, refs, scale, wave_length=0):
     '''
     Args:
         nb_best : a integer. How many best ref stars we want.
-        target : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        target : a numpy.ndarray. (wavelengths, nb_frames, x, y).
         refs : a list of string. All stars data we have.
+        scale : a float. The scale in center region that we want process, is equal to 1/4 by default.
         wave_length : a integer. Wave length of the cube.
     Rrturn:
         res : a list of string. The int(nb_best) best chosen ref stars.
@@ -211,8 +212,79 @@ def selection_n_best(nb_best, target, refs, scale, wave_length=0):
 
     return res_bis
 
-# detection
-def rdi_detection():
+
+# another version selection the best correalted data - frame based version
+def selection_frame_based(nb_best_frame, target, refs, scale, wave_length=0):
+    '''
+    Args:
+        nb_best : a integer. How many best frames fo the references stars array we want for each target frame.
+        target : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        refs : a list of string. All stars data we have.
+        wave_length : a integer. Wave length of the cube.
+    Rrturn:
+        res : a ndarray, 4 dimensions. Return (wavelengths, nb_frames, x, y).
+    '''
+    res = {}
+    # target_median is 2 dims. (256, 256)
+    target_median = median_of_cube(target, wave_length)
+    w, h = target_median.shape
+    # create mask
+    m, pxs_center = create_inner_mask(w,h,MASK_RADIUS)
+    target_median_vector = np.reshape(target_median*m,(w*h))
+
+    for i in range(len(refs)):
+        # hd is 4 dims: (wl, nb frmes, x, y)
+        hd = fits.getdata(refs[i])
+        # ref_median is 2 dims. (256, 256)
+        ref_meidan = median_of_cube(crop_frame(hd,len(hd[wave_length,i,0]),scale), wave_length)
+        ref_meidan_vector = np.reshape(ref_meidan*m, (w*h))
+
+        # maby should try cosine similarity, structural simimarity(SSIM)
+        coef_corr = np.corrcoef(target_median_vector, ref_meidan_vector)
+        #print(refs[i],"=",coef_corr[0,1])
+        res[refs[i]] = coef_corr[0,1]
+
+    tmp = sorted(res.items(),key = lambda r:(r[1],r[0]), reverse=True)
+
+    print(">> There are", len(tmp), "reference stars in the library")
+    print(">> we will chose", nb_best, "correlated cube to do PCA on RDI")
+
+    res_bis = []
+    for k in range(nb_best):
+        (x,y) = tmp[k]
+        res_bis.append(x)
+        print(k,"- corrcoef value =", y)
+
+    return res_bis
+
+"""
+# frame based RDI
+def RDI_frame_based(target, refs, nb_best_frame, r_in, r_out, klip_max, scale=0.25, wave_length=0):
+    '''
+    Args:
+        target : a numpy.ndarray. (wavelengths, nb_frames, x, y).
+        refs : a list of string. Target string removed.
+        nb_best_frame : a integer. How many best frames fo the references stars array we want for each target frame.
+        r_in : a integer. Inner radius for the inner mask. Usually for vip function.
+        r_out : a integer. Outer radius for the outer mask. For my own code.
+        klip_max : a integer. The max number of components we want to limit. 
+        scale : a float. The scale in center region that we want process, which is equal to 0.25 (1/4*2014=256) by default. 
+        wave_length : a integer. Wave length of the cube.
+    Return:
+        res : a list of list of string. The int(nb_best) best chosen ref stars.
+    '''
+
+    res = {}
+    # target_median is 2 dims. (256, 256)
+    target_median = median_of_cube(target, wave_length)
+    w, h = target_median.shape
+    # create mask
+    m, pxs_center = create_inner_mask(w,h,MASK_RADIUS)
+    target_median_vector = np.reshape(target_median*m,(w*h))
+
+    for i in range(len(target[0]))
+
+
     return None
 
 # option for main : RDI
@@ -238,7 +310,7 @@ def RDI(argv, scale):
     print(">> what we have in ref_res")
     for s in ref_files:
         print(s)
-    print(len(ref_files))
+    print(">> so we have",len(ref_files),"reference stars in total, all of them are on wave_length H23, type IRDIS, we will focus on wave length - H2 for instance")
     
     # Select the best correlated targets
     # count is the number of we want to chose
