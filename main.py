@@ -132,27 +132,27 @@ def collect_frames(files_path, scale=0.25):
     '''
 
     ref_frames_coords = []
-
     hd = fits.getdata(files_path[0])
 
     # frames in the first wavelength and second wavelength
     # K1/K2, H2/H3, etc...
+    wl, nb_fr, w, h = hd.shape
     tmp = (1-scale)*0.5
-    size = len(hd[0][0])
+    size = w
     start = int(size*tmp)
     end = int(size*(1-tmp))
 
     ref_frames = hd[..., start:end, start:end]
-    print("hd.shape =", hd.shape)
-
-    exit()
     
+    ref_frames_coords = ref_frames_coords + get_coords_of_ref_frames(0, nb_fr)
+
     for i in range(1,len(files_path)):
         hd = fits.getdata(files_path[i])
+        wl, nb_fr, w, h = hd.shape
         ref_frames =np.append(ref_frames, hd[..., start:end, start:end], axis=1)
+        ref_frames_coords = ref_frames_coords + get_coords_of_ref_frames(i, nb_fr)
 
-
-    return ref_frames
+    return ref_frames, ref_frames_coords
 
 # chose the best correlated reference stars, not all
 def selection(nb_best, target, refs, scale, wave_length=0):
@@ -206,6 +206,7 @@ def selection_n_best(nb_best, target, refs, scale, wave_length=0):
         nb_best : a list of integer. How many best ref stars we want.
         target : a numpy.ndarray. (wavelengths, nb_frames, x, y)
         refs : a list of string. All stars data we have.
+        scale : a float. The scale in center region that we want process, is equal to 1/4 by default.
         wave_length : a integer. Wave length of the cube.
     Rrturn:
         res : a list of list of string. The int(nb_best) best chosen ref stars.
@@ -245,50 +246,53 @@ def selection_n_best(nb_best, target, refs, scale, wave_length=0):
 
     return res_bis
 
-
-# another version selection the best correalted data - frame based version
-def selection_frame_based(nb_best_frame, target, refs, scale, wave_length=0):
+# frame based version selection the best correalted data
+def selection_frame_based(target, nb_best_frame, ref_frames, wave_length=0):
     '''
     Args:
+        target : a numpy.ndarray, 4 dims. The science target cube, (wavelengths, nb_frames, x, y).
         nb_best : a integer. How many best frames fo the references stars array we want for each target frame.
-        target : a numpy.ndarray. (wavelengths, nb_frames, x, y)
-        refs : a list of string. All stars data we have.
+        ref_frames : a numpy.ndarry, 4 dims. The reference stars data we have.
+        ref_frames_coords : a list of tuple. [(nth_star, nth_frame_of_star), ...].
         wave_length : a integer. Wave length of the cube.
     Rrturn:
-        res : a ndarray, 4 dimensions. Return (wavelengths, nb_frames, x, y).
+        res : a ndarray, 3 dimensions. Return (nb_frames, x, y).
+        res_coords : a 2-dims ndarray. (nb_fr_t, nb_best_frame)
     '''
-    res = {}
-    # target_median is 2 dims. (256, 256)
-    target_median = median_of_cube(target, wave_length)
-    w, h = target_median.shape
-    # create mask
-    m, pxs_center = create_inner_mask(w,h,MASK_RADIUS)
-    target_median_vector = np.reshape(target_median*m,(w*h))
+    start_time = datetime.datetime.now()
+    # target shape
+    wl_t, nb_fr_t, w, h = target.shape
+    wl_ref, nb_fr_ref, w_ref, h_ref = ref_frames.shape
 
-    for i in range(len(refs)):
-        # hd is 4 dims: (wl, nb frmes, x, y)
-        hd = fits.getdata(refs[i])
-        # ref_median is 2 dims. (256, 256)
-        ref_meidan = median_of_cube(crop_frame(hd,len(hd[wave_length,i,0]),scale), wave_length)
-        ref_meidan_vector = np.reshape(ref_meidan*m, (w*h))
+    # 2 tarverses, for building the ref_frames
+    cursor = 0
+    res_coords = np.zeros((nb_fr_t, nb_best_frame))
+    for i in range(nb_fr_t):
+        #frames_coords_tmp = ref_frames_coords[cursor, cursor + ]
+        tmp = {}
+        for j in range(nb_fr_ref):
+            tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
+        
+        if nb_best_frame > len(tmp):
+            raise Exception("!!! inside the function selection_frame_based, tmp", len(tmp),"is samller than nb_best_frame", nb_best_frame)
+        res_tmp = sorted(tmp.items(),key = lambda r:(r[1],r[0]), reverse=True)[0:nb_best_frame]
+        res_tmp_bis = []
+        for (ind, pcc) in res_tmp:
+            res_tmp_bis.append(ind)
+        res_coords[i] = np.array(res_tmp_bis)
 
-        # maby should try cosine similarity, structural simimarity(SSIM)
-        coef_corr = np.corrcoef(target_median_vector, ref_meidan_vector)
-        #print(refs[i],"=",coef_corr[0,1])
-        res[refs[i]] = coef_corr[0,1]
+    # we will only take the unique frame, what makes our reference library smaller
+    # but it should be ok considering the direction of frame (peanut..) 
+    all_inds = np.unique(np.reshape(res_coords, nb_fr_t*nb_best_frame))
+    
+    res = np.zeros((len(all_inds), w_ref, h_ref))
+    for k in range(len(all_inds)):
+        res[k] = ref_frames[wave_length, int(all_inds[k])]
 
-    tmp = sorted(res.items(),key = lambda r:(r[1],r[0]), reverse=True)
-
-    print(">> There are", len(tmp), "reference stars in the library")
-    print(">> we will chose", nb_best, "correlated cube to do PCA on RDI")
-
-    res_bis = []
-    for k in range(nb_best):
-        (x,y) = tmp[k]
-        res_bis.append(x)
-        print(k,"- corrcoef value =", y)
-
-    return res_bis
+    end_time = datetime.datetime.now()
+    print(">> frame based selection take:", end_time - start_time)
+    
+    return res, res_coords
 
 """
 # frame based RDI
@@ -875,12 +879,17 @@ def RDI_frame(argv, scale):
     print(">> so we have",len(ref_files),"reference stars in total, all of them are on wave_length H23, type IRDIS, we will focus on wave length - H2 for instance")
     
     # take all reference cubes
-    ref_frames = collect_frames(ref_files, scale)
+    ref_frames, ref_frames_coords = collect_frames(ref_files, scale)
+    print(">> in total, there are", len(ref_frames_coords), "frames in our reference librarys")
     
+    nb_best_frame = 100
+    ref_frames_selected, target_ref_coords = selection_frame_based(science_target_croped, nb_best_frame, ref_frames, wave_length=0)
+    print("ref_frame_sele shape", ref_frames_selected.shape)
+    print("target_ref_coords shape", target_ref_coords.shape)
+    exit()
+
     # get angles
     angles = read_file(str(argv[2]), "ROTATION")
-    
-    exit()
 
     # get ref shape
     wl_ref, nb_fr_ref, w, h = ref_frames.shape

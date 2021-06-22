@@ -10,7 +10,7 @@ from astropy.io import fits
 from hciplot import plot_frames, plot_cubes
 
 # Global constant
-MASK_RADIUS = 32
+MASK_RADIUS = 1
 
 # start or end of the program
 def start_and_end_program(start):
@@ -598,4 +598,20 @@ def get_raw_contrast_cube(fwhm, frame):
         temp.separation_mean(frame[i, 1:, 1:])
         res[i] = list(map(lambda x: x/fwhm, temp.values_mean))
 
+    return res
+
+# generate a list of tuple
+def get_coords_of_ref_frames(nth, nb_frames):
+    '''
+    This function can help to preserve the information of frame coordinates. 
+    Can help us find which image is used to process the target frame. 
+    Args:
+        nth : a integer. The nth cube in the reference library.
+        nb_frames : a integer. The frame number of a cube.
+    Return:
+        res : a list of tuple. (nth cube, nth frame of the cube)
+    '''
+    res = []
+    for i in range(nb_frames):
+        res.append((nth, i, nb_frames))
     return res
