@@ -121,6 +121,39 @@ def collect_data_wdh(files_path, scale=0.25):
         ref_wdh = np.append(ref_wdh, read_wdh(files_path[0], "Analysis_wdh_"))
     return ref_frames, ref_wdh
 
+def collect_frames(files_path, scale=0.25):
+    '''
+    Args:
+        files_path : a list of string. files path contain keyword.
+        scale : a float. The scale in center that we want process, is equal to 1/4 by default.
+    Rrturn:
+        ref_frames : ndarray, 4 dimensions. Return (wavelengths, nb_frames, x, y)
+        ref_frames_coords : a list of tuple. [(0,0), (0,1), ...]
+    '''
+
+    ref_frames_coords = []
+
+    hd = fits.getdata(files_path[0])
+
+    # frames in the first wavelength and second wavelength
+    # K1/K2, H2/H3, etc...
+    tmp = (1-scale)*0.5
+    size = len(hd[0][0])
+    start = int(size*tmp)
+    end = int(size*(1-tmp))
+
+    ref_frames = hd[..., start:end, start:end]
+    print("hd.shape =", hd.shape)
+
+    exit()
+    
+    for i in range(1,len(files_path)):
+        hd = fits.getdata(files_path[i])
+        ref_frames =np.append(ref_frames, hd[..., start:end, start:end], axis=1)
+
+
+    return ref_frames
+
 # chose the best correlated reference stars, not all
 def selection(nb_best, target, refs, scale, wave_length=0):
     '''
@@ -286,6 +319,7 @@ def RDI_frame_based(target, refs, nb_best_frame, r_in, r_out, klip_max, scale=0.
 
 
     return None
+"""
 
 # option for main : RDI
 def RDI(argv, scale):
@@ -815,6 +849,67 @@ def WDH(argv, scale):
     
     print("PCA WDH", n," take", end_time - start_time)
 
+# option for main : frame based RDI
+def RDI_frame(argv, scale):
+    print(">> Algo PCA is working! ")
+    start_time = datetime.datetime.now()
+    if(len(argv) >4):
+        scale = float(argv[4])
+
+    # 1. get target
+    target_path = str(argv[2])
+    #science_target = read_file(target_path, "MASTER_CUBE-center")
+    science_target = read_file(target_path, "fake_disk_close")
+    science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+    print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+    
+    # 2. get the list of files in library
+    ref_files = get_reference_cubes(str(argv[3]), "MASTER_CUBE-center")
+    
+    # Check if the taget is in the ref files, if true remove it
+    ref_files = remove_target(str(argv[2]),ref_files)
+    ref_files = chose_reference_files(ref_files, "H23", "IRD")
+    print(">> what we have in ref_res")
+    for s in ref_files:
+        print(s)
+    print(">> so we have",len(ref_files),"reference stars in total, all of them are on wave_length H23, type IRDIS, we will focus on wave length - H2 for instance")
+    
+    # take all reference cubes
+    ref_frames = collect_frames(ref_files, scale)
+    
+    # get angles
+    angles = read_file(str(argv[2]), "ROTATION")
+    
+    exit()
+
+    # get ref shape
+    wl_ref, nb_fr_ref, w, h = ref_frames.shape
+    wl = 1
+    n = nb_fr_ref
+    
+    # create outer mask
+    r_in = 15
+    r_out = 125
+    outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+    science_target_croped[wl] = science_target_croped[wl]*outer_mask
+    
+    number_klips = []
+    for i in range(0,101,5):
+        number_klips.append(i)
+    number_klips[0] = 1
+
+    # 7
+    for i in number_klips:
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_7[wl]*outer_mask, scaling='spat-mean')
+        #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
+        path = "./K_kilp_ADI_RDI/"+"{0:05d}".format(i) + "_spat_mean.fits"            
+        hdu = fits.PrimaryHDU(res_tmp)
+        hdu.writeto(path)
+        print(">>===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+    
+    end_time = datetime.datetime.now()
+    print("PCA on RDI frame based ", n," take", end_time - start_time)
+
 if __name__ == "__main__":
     start_and_end_program(True)
     print("vip.version :", vip.__version__)
@@ -884,6 +979,7 @@ if __name__ == "__main__":
         #fig.colorbar(images[0], ax=axs, orientation='horizontal', fraction=.1)
         plt.show()
         '''
+
     elif opt == "CONTRAST":
         print(">> Test raw contrast")
         
@@ -942,7 +1038,9 @@ if __name__ == "__main__":
         ax = sns.relplot(kind='line', data=data)
         plt.show()
         '''
-        
+    
+    elif opt == "RDI_FRAME":
+        RDI_frame(sys.argv, scale)
         
     else:
         print("No such option")
