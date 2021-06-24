@@ -10,7 +10,7 @@ from astropy.io import fits
 from hciplot import plot_frames, plot_cubes
 
 # Global constant
-MASK_RADIUS = 1
+MASK_RADIUS = 15
 
 # start or end of the program
 def start_and_end_program(start):

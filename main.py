@@ -257,7 +257,7 @@ def selection_frame_based(target, nb_best_frame, ref_frames, wave_length=0):
         wave_length : a integer. Wave length of the cube.
     Rrturn:
         res : a ndarray, 3 dimensions. Return (nb_frames, x, y).
-        res_coords : a 2-dims ndarray. (nb_fr_t, nb_best_frame)
+        res_coords : a 2-dims ndarray. (nb_fr_t, nb_best_frame).
     '''
     start_time = datetime.datetime.now()
     # target shape
@@ -272,7 +272,7 @@ def selection_frame_based(target, nb_best_frame, ref_frames, wave_length=0):
         tmp = {}
         for j in range(nb_fr_ref):
             # tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
-            tmp[j] = np.corrcoef(np.reshape(target[3, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
+            tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
         if nb_best_frame > len(tmp):
             raise Exception("!!! inside the function selection_frame_based, tmp", len(tmp),"is samller than nb_best_frame", nb_best_frame)
         res_tmp = sorted(tmp.items(),key = lambda r:(r[1],r[0]), reverse=True)[0:nb_best_frame]
@@ -306,6 +306,7 @@ def selection_frame_based_score(target, nb_best_frame, ref_frames, score, wave_l
         wave_length : a integer. Wave length of the cube.
     Rrturn:
         res : a ndarray, 3 dimensions. Return (nb_frames, x, y).
+        res_coords : a 2-dims ndarray. (nb_fr_t, nb_best_frame)
     '''
     start_time = datetime.datetime.now()
     # target shape
@@ -319,7 +320,7 @@ def selection_frame_based_score(target, nb_best_frame, ref_frames, score, wave_l
         tmp = {}
         for j in range(nb_fr_ref):
             # tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
-            tmp[j] = np.corrcoef(np.reshape(target[3, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
+            tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
         
         if nb_best_frame > len(tmp):
             raise Exception("!!! inside the function selection_frame_based, tmp", len(tmp),"is samller than nb_best_frame", nb_best_frame)
@@ -328,13 +329,14 @@ def selection_frame_based_score(target, nb_best_frame, ref_frames, score, wave_l
         
         for (ind, pcc) in res_tmp:
             ref_scores[ind] = ref_scores[ind] + 1
-        
-    res = ref_frames[wave_length][np.where(ref_scores>score)]
+
+    res_coords = np.where(ref_scores>score)
+    res = ref_frames[wave_length][res_coords]
 
     end_time = datetime.datetime.now()
     print(">> frame based selection take:", end_time - start_time)
     
-    return res
+    return res, np.array(res_coords[:])
 
 """
 # frame based RDI
@@ -573,7 +575,7 @@ def INJECTION(argv, scale):
         nx = 256 # number of pixels of your image in X
         ny = 256 # number of pixels of your image in Y
         itilt = 65 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
-        pa = 90 # position angle of the disk in degrees (0 means north, 90 means east)
+        pa = 180 # position angle of the disk in degrees (0 means north, 90 means east)
         a = 40 # semimajoraxis of the disk in au / semimajor axis in arcsec is 80 au/80px = 1 arcsec
         fake_disk1 = vip.metrics.scattered_light_disk.ScatteredLightDisk(\
                     nx=nx,ny=ny,distance=dstar,\
@@ -916,8 +918,8 @@ def RDI_frame(argv, scale):
 
     # 1. get target
     target_path = str(argv[2])
-    #science_target = read_file(target_path, "MASTER_CUBE-center")
-    science_target = read_file(target_path, "fake_disk_close_5")
+    science_target = read_file(target_path, "MASTER_CUBE-center")
+    #science_target = read_file(target_path, "fake_disk_close_5_bis")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
     
@@ -940,20 +942,25 @@ def RDI_frame(argv, scale):
     # nb_best_frame = 200, we have ? frames in our reference library
     nb_best_frame = 100
 
-    ref_frames = selection_frame_based_score(science_target_croped, 100, ref_frames, 1, wave_length=0)
+    '''
+    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, 1, wave_length=0)
 
     print("ref_frames.shape =", ref_frames.shape)
-    exit()
-
+    print("target_ref_coords.shape =", target_ref_coords.shape)
+    print("target_ref_coords =", target_ref_coords)
+    '''
+    
     ref_frames_selected, target_ref_coords = selection_frame_based(science_target_croped, nb_best_frame, ref_frames, wave_length=0)
     print("ref_frame_sele shape", ref_frames_selected.shape)
     print("target_ref_coords shape", target_ref_coords.shape)
+    print("target_ref_coords", target_ref_coords)
+    exit()
 
     # get angles
     angles = read_file(str(argv[2]), "ROTATION")
 
     # get ref shape
-    wl_ref, nb_fr_ref, w, h = ref_frames.shape
+    nb_fr_ref, w, h = ref_frames_selected.shape
     wl = 0
     n = nb_fr_ref
     
@@ -961,8 +968,8 @@ def RDI_frame(argv, scale):
     r_in = 15
     r_out = 125
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
-    # science_target_croped[wl] = science_target_croped[wl]*outer_mask
-    science_target_croped[3] = science_target_croped[3]*outer_mask
+    science_target_croped[wl] = science_target_croped[wl]*outer_mask
+    #science_target_croped[3] = science_target_croped[3]*outer_mask
     
     number_klips = []
     for i in range(0,266,20):
@@ -970,9 +977,9 @@ def RDI_frame(argv, scale):
     number_klips[0] = 1
 
     for i in number_klips:
-        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[3], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling='spat-mean')
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/frame_based_algo/RDI_100_best/"+"{0:05d}".format(i) + ".fits"            
+        path = "./K_kilp_ADI_RDI/frame_based_algo/real/"+"{0:05d}".format(i) + ".fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)

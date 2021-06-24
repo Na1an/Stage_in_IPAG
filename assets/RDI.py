@@ -427,6 +427,80 @@ def PCA(science_frames, ref_frames, K, wl=0):
 
     return res.reshape((sc_fr_nb, w, h))
 
+
+# 4. KLIP/PCA - Principle Component Analysis
+#   Be attention! The values of science_frames and ref_frames will change !!!
+#   copy/deepcopy may solve the probleme
+#   For corelation, we may multiple standard variance in the end.
+#   mask added, let's see what will happen
+def PCA_track(science_frames, ref_frames, K, wl=0):
+    '''
+    Args:
+        science_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        ref_frames : a numpy.ndarray. (wavelengths, nb_frames, x, y)
+        K : a integer. K is K_klip here (K_klip <= rf_fr_nb).
+        wl : a interger. The wavelength.
+    Return:
+        res : a numpy.ndarray, 3 dimens. Ex. (24 frames, 256, 256).
+    '''
+    # 0 reshape image to a vector : (nb of frames, 128, 128) -> (nb of frames, 128*128) 
+    sc_fr_nb, w, h = science_frames[wl].shape
+    rf_fr_nb = len(ref_frames[wl])
+    N = w*h
+    
+    # create mask, and the MASK_RADIUS is a global variable
+    m, pxs_center = create_mask(w, h, MASK_RADIUS)
+    m_reshape = np.reshape(m, N)
+    science_frames_vector = np.reshape(science_frames[wl], (sc_fr_nb, N))
+    ref_frames_vector = np.reshape(ref_frames[wl], (rf_fr_nb, N))
+    
+    # 1 zero both science_frales and ref_frames, partition target T and refs R in the library 
+    for f in range(sc_fr_nb):
+        mean = np.mean(science_frames_vector[f]*m_reshape) * (N/(N - pxs_center))
+        science_frames_vector[f] = (science_frames_vector[f] - mean)*m_reshape/np.std(science_frames_vector[f])
+        #print("---", f+1, "of", sc_fr_nb,"--- substract mean from science_frames")
+
+    for f_r in range(rf_fr_nb):
+        mean_r = np.mean(ref_frames_vector[f_r]*m_reshape) * (N/(N - pxs_center))
+        ref_frames_vector[f_r] = (ref_frames_vector[f_r] - mean_r)*m_reshape/np.std(ref_frames_vector[f_r]) 
+        #print("---", f_r+1, "of", rf_fr_nb,"--- substract mean from rf_frames")
+    print("------ substract mean done ------")
+    # 2 compute the Karhunen-Loève transform of the set of reference PSFs Rk(N)? 
+    # inner product for each frame of target and each frame of references
+    # K = rf_fr_nb
+    
+    # cov(bias=false), so it is divided by N-1 not N
+    # ERR Covariance matrix
+    ERR = np.cov(ref_frames_vector) * (N-1)
+    
+    # lambda_k - eigenvalue (increase), C_k - eigenvector
+    lambda_incre, C_incre = np.linalg.eigh(ERR)
+    lambda_k = np.flip(lambda_incre)
+    C_k = np.flip(C_incre, axis=1)
+    
+    # Z_KL_k.shape = (N, K) , N because c_k*ref[p], k in K
+    Z_KL_k = np.zeros((N, rf_fr_nb)) 
+    for k in range(rf_fr_nb): # put the biggest eigenvalue at first
+        for p in range(rf_fr_nb):
+            Z_KL_k[:,k] = Z_KL_k[:,k] + (1/np.sqrt(lambda_k[k]))*(C_k[p, k] * ref_frames_vector[p]) 
+    print("------ eigenvalue done -------")
+    
+    # 3 choose a number of modes K = 30
+    Z_KL_chosen = Z_KL_k[:,:K]
+    
+    # 4 compute the best estimate
+    # 5 substact the I[i] from science_frames[i]
+    res = np.zeros((sc_fr_nb, N))
+    for f in range(sc_fr_nb):
+        for k in range(K):
+            inner_product = np.dot(Z_KL_chosen[:,k], science_frames_vector[f])
+            # res[f] stock the PSF image
+            res[f] = res[f] + inner_product*(Z_KL_chosen[:,k])
+        res[f] = science_frames_vector[f] - res[f] 
+    print("------ substracut res from science_frames done ------")
+
+    return res.reshape((sc_fr_nb, w, h))
+
 # 4. process the science frames, substract the starlight
 # we do care wavelength!
 def process_RDI(science_frames, ref_frames):
