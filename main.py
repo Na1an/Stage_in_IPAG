@@ -303,7 +303,7 @@ def selection_frame_based(target, nb_best_frame, ref_frames, wave_length=0):
 
 # frame based version selection but with score system
 # frame based version selection the best correalted data
-def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_frames, score, wave_length=0):
+def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_frames, score, wave_length, wave_length_target):
     '''
     Args:
         target : a numpy.ndarray, 4 dims. The science target cube, (wavelengths, nb_frames, x, y).
@@ -311,7 +311,8 @@ def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_f
         ref_frames : a numpy.ndarry, 4 dims. The reference stars data we have.
         ref_cube_nb_frames : a list of integer. Each element is the frame number of a reference star.
         score : a integer. We will pick all the reference stars which has higher or equal score.
-        wave_length : a integer. Wave length of the cube.
+        wave_length : a integer. Wave length of the reference cube.
+        wave_length_target : a integer. Wave length of the target cube.
     Rrturn:
         res : a ndarray, 3 dimensions. Return (nb_frames, x, y).
         res_coords : a 2-dims ndarray. (nb_fr_t, nb_best_frame)
@@ -328,7 +329,7 @@ def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_f
         tmp = {}
         for j in range(nb_fr_ref):
             # tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
-            tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
+            tmp[j] = np.corrcoef(np.reshape(target[wave_length_target, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
         
         if nb_best_frame > len(tmp):
             raise Exception("!!! inside the function selection_frame_based, tmp", len(tmp),"is samller than nb_best_frame", nb_best_frame)
@@ -580,11 +581,12 @@ def INJECTION(argv, scale):
     
     elif obj == "DISK":
         # far = 32, close = 145
-        dstar = 32 # distance to the star in pc, the bigger the disk if more small and more close to star
+        dstar = 145 # distance to the star in pc, the bigger the disk if more small and more close to star
         nx = 256 # number of pixels of your image in X
         ny = 256 # number of pixels of your image in Y
         itilt = 65 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
-        pa = 180 # position angle of the disk in degrees (0 means north, 90 means east)
+        # pa=70, two side of disk are both on the dark side
+        pa = 160 # position angle of the disk in degrees (0 means north, 90 means east)
         a = 40 # semimajoraxis of the disk in au / semimajor axis in arcsec is 80 au/80px = 1 arcsec
         fake_disk1 = vip.metrics.scattered_light_disk.ScatteredLightDisk(\
                     nx=nx,ny=ny,distance=dstar,\
@@ -615,10 +617,10 @@ def INJECTION(argv, scale):
         #science_target[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*5
         #cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map,angle_list=angles,psf=psfn)
         #science_target[1,:,start:end,start:end] = science_target[1,:,start:end,start:end] + cube_fakeddisk*10000
-        fake_comp_differents[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*5
-        fake_comp_differents[1,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*8
-        fake_comp_differents[2,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*10
-        fake_comp_differents[3,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*12
+        fake_comp_differents[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*15
+        fake_comp_differents[1,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*17
+        fake_comp_differents[2,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*20
+        fake_comp_differents[3,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*22
         fake_comp_differents[4,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*150
 
         path_fake_disk = "./K_kilp_ADI_RDI/fake_planet/"+str(argv[6])
@@ -925,9 +927,14 @@ def RDI_frame(argv, scale):
     if(len(argv) >4):
         scale = float(argv[4])
 
+    key_word_target = "MASTER_CUBE-center"
+    if(len(argv) >6):
+        key_word_target = str(argv[6])
+    print("key word of target is:", key_word_target)
+    
     # 1. get target
     target_path = str(argv[2])
-    science_target = read_file(target_path, "MASTER_CUBE-center")
+    science_target = read_file(target_path, key_word_target)
     #science_target = read_file(target_path, "fake_disk_close_5_bis")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
     print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
@@ -952,7 +959,10 @@ def RDI_frame(argv, scale):
     # nb_best_frame = 200, we have ? frames in our reference library
     nb_best_frame = 100
 
-    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, ref_cube_nb_frames, 1, wave_length=0)
+    if(len(argv)>5):
+        nb_best_frame = int(argv[5])
+
+    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, ref_cube_nb_frames, 1, wave_length=0, wave_length_target=3)
 
     print("ref_frames.shape =", ref_frames.shape)
     print("target_ref_coords.shape =", target_ref_coords.shape)
@@ -969,7 +979,6 @@ def RDI_frame(argv, scale):
     plt.ylabel("Number of frames", fontsize="16")
     plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
     plt.show()
-    exit()
 
     # get angles
     angles = read_file(str(argv[2]), "ROTATION")
@@ -977,13 +986,15 @@ def RDI_frame(argv, scale):
     # get ref shape
     nb_fr_ref, w, h = ref_frames_selected.shape
     wl = 0
+    #wl_target = wl
+    wl_target = 3
     n = nb_fr_ref
     
     # create outer mask
     r_in = 15
     r_out = 125
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
-    science_target_croped[wl] = science_target_croped[wl]*outer_mask
+    science_target_vip = science_target_croped[wl_target]*outer_mask
     #science_target_croped[3] = science_target_croped[3]*outer_mask
     
     number_klips = []
@@ -991,10 +1002,15 @@ def RDI_frame(argv, scale):
         number_klips.append(i)
     number_klips[0] = 1
 
+    res_path = "./K_kilp_ADI_RDI/res_0907_presentation/disk_20pxs/pos1/"
+    if(len(argv) >7):
+        res_path = str(argv[7]) + "/"
+    print(">>> We will put our result here:", res_path)
+
     for i in number_klips:
-        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling='spat-mean')
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_vip, -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling='spat-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, cube_ref=ref_frames[wl], radius_int=r_in, asize=96, ncomp=i, scaling='spat-mean')
-        path = "./K_kilp_ADI_RDI/frame_based_algo/real/"+"{0:05d}".format(i) + ".fits"            
+        path = res_path+"{0:05d}".format(i) + "_disk_20pxs_pos1.fits"            
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
