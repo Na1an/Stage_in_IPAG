@@ -121,14 +121,16 @@ def collect_data_wdh(files_path, scale=0.25):
         ref_wdh = np.append(ref_wdh, read_wdh(files_path[0], "Analysis_wdh_"))
     return ref_frames, ref_wdh
 
-def collect_frames(files_path, scale=0.25):
+def collect_frames(files_path, scale=0.25, full_output=True):
     '''
     Args:
         files_path : a list of string. files path contain keyword.
         scale : a float. The scale in center that we want process, is equal to 1/4 by default.
+        full_output : a boolean. Default value is False. If it is true, we will return 3 result, if not, we inly return ref_frames. 
     Rrturn:
         ref_frames : ndarray, 4 dimensions. Return (wavelengths, nb_frames, x, y)
         ref_frames_coords : a list of tuple. [(0,0), (0,1), ...]
+        ref_cube_nb_frames : a list of integer. The list contains all frame numbers of the reference cube. 
     '''
 
     ref_frames_coords = []
@@ -143,16 +145,21 @@ def collect_frames(files_path, scale=0.25):
     end = int(size*(1-tmp))
 
     ref_frames = hd[..., start:end, start:end]
-    
     ref_frames_coords = ref_frames_coords + get_coords_of_ref_frames(0, nb_fr)
+    ref_cube_nb_frames = []
+    ref_cube_nb_frames.append(nb_fr)
 
     for i in range(1,len(files_path)):
         hd = fits.getdata(files_path[i])
         wl, nb_fr, w, h = hd.shape
         ref_frames =np.append(ref_frames, hd[..., start:end, start:end], axis=1)
         ref_frames_coords = ref_frames_coords + get_coords_of_ref_frames(i, nb_fr)
+        ref_cube_nb_frames.append(nb_fr)
 
-    return ref_frames, ref_frames_coords
+    if full_output is False:
+        return ref_frames
+
+    return ref_frames, ref_frames_coords, ref_cube_nb_frames
 
 # chose the best correlated reference stars, not all
 def selection(nb_best, target, refs, scale, wave_length=0):
@@ -296,12 +303,13 @@ def selection_frame_based(target, nb_best_frame, ref_frames, wave_length=0):
 
 # frame based version selection but with score system
 # frame based version selection the best correalted data
-def selection_frame_based_score(target, nb_best_frame, ref_frames, score, wave_length=0):
+def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_frames, score, wave_length=0):
     '''
     Args:
         target : a numpy.ndarray, 4 dims. The science target cube, (wavelengths, nb_frames, x, y).
         nb_best : a integer. How many best frames fo the references stars array we want for each target frame.
         ref_frames : a numpy.ndarry, 4 dims. The reference stars data we have.
+        ref_cube_nb_frames : a list of integer. Each element is the frame number of a reference star.
         score : a integer. We will pick all the reference stars which has higher or equal score.
         wave_length : a integer. Wave length of the cube.
     Rrturn:
@@ -331,12 +339,13 @@ def selection_frame_based_score(target, nb_best_frame, ref_frames, score, wave_l
             ref_scores[ind] = ref_scores[ind] + 1
 
     res_coords = np.where(ref_scores>score)
+    print("res_coords.shape =", type(res_coords), " print =", res_coords[0:100])
     res = ref_frames[wave_length][res_coords]
-
+    print("res.shape =", res.shape)
     end_time = datetime.datetime.now()
     print(">> frame based selection take:", end_time - start_time)
     
-    return res, np.array(res_coords[:])
+    return res, get_histogram_of_ref_stars_score(res_coords[0], ref_cube_nb_frames)
 
 """
 # frame based RDI
@@ -935,25 +944,31 @@ def RDI_frame(argv, scale):
     print(">> so we have",len(ref_files),"reference stars in total, all of them are on wave_length H23, type IRDIS")
     
     # take all reference cubes
-    ref_frames, ref_frames_coords = collect_frames(ref_files, scale)
+    ref_frames, ref_frames_coords, ref_cube_nb_frames = collect_frames(ref_files, scale)
     print(">> in total, there are", len(ref_frames_coords), "frames in our reference librarys")
     
+    #print(">> ref frames_coords =", ref_frames_coords)
     # nb_best_frame = 100, we have 266 frames in our reference library
     # nb_best_frame = 200, we have ? frames in our reference library
     nb_best_frame = 100
 
-    '''
-    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, 1, wave_length=0)
+    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, ref_cube_nb_frames, 1, wave_length=0)
 
     print("ref_frames.shape =", ref_frames.shape)
     print("target_ref_coords.shape =", target_ref_coords.shape)
-    print("target_ref_coords =", target_ref_coords)
-    '''
+    print("target_ref_coords =", target_ref_coords, " sum=", target_ref_coords.sum())
     
-    ref_frames_selected, target_ref_coords = selection_frame_based(science_target_croped, nb_best_frame, ref_frames, wave_length=0)
-    print("ref_frame_sele shape", ref_frames_selected.shape)
-    print("target_ref_coords shape", target_ref_coords.shape)
-    print("target_ref_coords", target_ref_coords)
+    # take ref_files and target_ref_coords, produce a dictionary
+    dict_ref_in_target = get_dict(ref_files, target_ref_coords)
+    print(dict_ref_in_target)
+
+    plt.bar(dict_ref_in_target.keys(), dict_ref_in_target.values())
+    plt.xticks(rotation=45)
+    plt.title("How many frames are used for the reference stars", fontsize="18")
+    plt.xlabel("Name of reference star used", fontsize="16")
+    plt.ylabel("Number of frames", fontsize="16")
+    plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
+    plt.show()
     exit()
 
     # get angles

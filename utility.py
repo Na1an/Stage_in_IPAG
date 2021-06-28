@@ -607,11 +607,62 @@ def get_coords_of_ref_frames(nth, nb_frames):
     Can help us find which image is used to process the target frame. 
     Args:
         nth : a integer. The nth cube in the reference library.
-        nb_frames : a integer. The frame number of a cube.
+        nb_frames : a integer. The nth frame number of a cube.
     Return:
         res : a list of tuple. (nth cube, nth frame of the cube)
     '''
     res = []
     for i in range(nb_frames):
         res.append((nth, i, nb_frames))
+    return res
+
+# get histogram of reference stars
+def get_histogram_of_ref_stars_score(ref_star_scores, ref_cube_nb_frames):
+    '''
+    This function will count how many frames we use for each star in the reference library. 
+    Args:
+        ref_star_scores : a list of integer. The list of indice, nth frame in the reference frame library.
+        ref_cube_nb_frames : a list of integer. Each element is the frame number of a reference star.
+    Return:
+        res : a ndarray list of integer. The number of integer for each reference star we use. 
+    '''
+    l = len(ref_cube_nb_frames)
+    print("l =", l)
+    res = np.zeros(l)
+    for i in ref_star_scores:
+        # indice plus 1, then we can deal with it with the length of 
+        i = i+1
+        for n in range(l):
+            i = i - ref_cube_nb_frames[n]
+            if i<0:
+                res[n] = res[n] + 1
+                break
+    
+    return res
+
+# make a dictionary from two list
+def get_dict(key, value):
+    '''
+    This function will count how many frames we use for each star in the reference library. 
+    Args:
+        key : a list of element, string or integer... Input key is the ref_files.
+        value : a list of element, string or integer...
+    Return:
+        res : a dict. For drawing a barplot. 
+    '''
+    res = {}
+    
+    for i in range(len(key)):
+        
+        k = fits.open(key[i])[0].header['OBJECT']
+        v = value[i]
+
+        if v == 0:
+            continue
+
+        if k not in res.keys():
+            res[k] = value[i]
+        else:
+            res[k] = res[k] + value[i]
+        
     return res
