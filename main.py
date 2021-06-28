@@ -584,7 +584,7 @@ def INJECTION(argv, scale):
         dstar = 145 # distance to the star in pc, the bigger the disk if more small and more close to star
         nx = 256 # number of pixels of your image in X
         ny = 256 # number of pixels of your image in Y
-        itilt = 65 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
+        itilt = 0 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
         # pa=70, two side of disk are both on the dark side
         pa = 160 # position angle of the disk in degrees (0 means north, 90 means east)
         a = 40 # semimajoraxis of the disk in au / semimajor axis in arcsec is 80 au/80px = 1 arcsec
@@ -930,10 +930,11 @@ def RDI_frame(argv, scale):
     key_word_target = "MASTER_CUBE-center"
     if(len(argv) >6):
         key_word_target = str(argv[6])
-    print("key word of target is:", key_word_target)
+    print(">>> key word of target is:", key_word_target)
     
     # 1. get target
     target_path = str(argv[2])
+    print(">>> target_path =", target_path)
     science_target = read_file(target_path, key_word_target)
     #science_target = read_file(target_path, "fake_disk_close_5_bis")
     science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
@@ -973,7 +974,7 @@ def RDI_frame(argv, scale):
     print(dict_ref_in_target)
 
     plt.bar(dict_ref_in_target.keys(), dict_ref_in_target.values())
-    plt.xticks(rotation=45)
+    plt.xticks(rotation=30)
     plt.title("How many frames are used for the reference stars", fontsize="18")
     plt.xlabel("Name of reference star used", fontsize="16")
     plt.ylabel("Number of frames", fontsize="16")
