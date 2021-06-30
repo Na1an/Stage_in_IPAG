@@ -963,7 +963,7 @@ def RDI_frame(argv, scale):
     if(len(argv)>5):
         nb_best_frame = int(argv[5])
 
-    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, ref_cube_nb_frames, 0, wave_length=0, wave_length_target=1)
+    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, ref_cube_nb_frames, 0, wave_length=0, wave_length_target=0)
 
     print("ref_frames.shape =", ref_frames.shape)
     print("target_ref_coords.shape =", target_ref_coords.shape)
@@ -987,8 +987,8 @@ def RDI_frame(argv, scale):
     # get ref shape
     nb_fr_ref, w, h = ref_frames_selected.shape
     wl = 0
-    #wl_target = wl
-    wl_target = 1
+    wl_target = wl
+    #wl_target = 1
     n = nb_fr_ref
     
     # create outer mask
