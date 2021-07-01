@@ -2,6 +2,7 @@ import os
 import cv2
 import sys
 import time
+import copy
 import datetime
 import numpy as np
 import pandas as pd
@@ -568,13 +569,14 @@ def INJECTION(argv, scale):
 
     # make fake companion
     if obj == "PLANETE":
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 1)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1000, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 1)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1500, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
         print("fake companion 0 shape = ", fake_comp_0.shape)
         fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
-        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp_100px.fits"
+        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp_27px.fits"
+        
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp) 
@@ -585,7 +587,7 @@ def INJECTION(argv, scale):
         nx = 256 # number of pixels of your image in X
         ny = 256 # number of pixels of your image in Y
         # itilt = 60, ok, 0 pole-on
-        itilt = 60 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
+        itilt = 0 # inclination of your disk in degreess (0 means pole-on -> can see the full plate, 90 means edge on -> only see a line)
         # pa=70 pos1, 160 pos2 two side of disk are both on the dark side
         pa = 160 # position angle of the disk in degrees (0 means north, 90 means east)
         a = 40 # semimajoraxis of the disk in au / semimajor axis in arcsec is 80 au/80px = 1 arcsec
@@ -619,7 +621,7 @@ def INJECTION(argv, scale):
         #cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map,angle_list=angles,psf=psfn)
         #science_target[1,:,start:end,start:end] = science_target[1,:,start:end,start:end] + cube_fakeddisk*10000
         fake_comp_differents[0,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*0
-        fake_comp_differents[1,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*8
+        fake_comp_differents[1,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*10
         fake_comp_differents[2,:,start:end,start:end] = science_target[0,:,start:end,start:end] + cube_fakeddisk*120
 
         path_fake_disk = "./K_kilp_ADI_RDI/fake_planet/"+str(argv[6])
@@ -963,7 +965,7 @@ def RDI_frame(argv, scale):
     if(len(argv)>5):
         nb_best_frame = int(argv[5])
 
-    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, ref_cube_nb_frames, 0, wave_length=0, wave_length_target=0)
+    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, ref_cube_nb_frames, 0, wave_length=0, wave_length_target=1)
 
     print("ref_frames.shape =", ref_frames.shape)
     print("target_ref_coords.shape =", target_ref_coords.shape)
@@ -987,8 +989,8 @@ def RDI_frame(argv, scale):
     # get ref shape
     nb_fr_ref, w, h = ref_frames_selected.shape
     wl = 0
-    wl_target = wl
-    #wl_target = 1
+    #wl_target = wl
+    wl_target = 1
     n = nb_fr_ref
     
     # create outer mask
@@ -1020,6 +1022,178 @@ def RDI_frame(argv, scale):
         hdu.writeto(path)
         print(">>===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
     
+    end_time = datetime.datetime.now()
+    print("PCA on RDI frame based ", n," take", end_time - start_time)
+
+def RDI_frame_bis(argv, scale):
+    print(">> Algo PCA is working! ")
+    start_time = datetime.datetime.now()
+    if(len(argv) >4):
+        scale = float(argv[4])
+
+    key_word_target = "MASTER_CUBE-center"
+    if(len(argv) >6):
+        key_word_target = str(argv[6])
+    print(">>> key word of target is:", key_word_target)
+    
+    # 1. get target
+    target_path = str(argv[2])
+    print(">>> target_path =", target_path)
+    science_target = read_file(target_path, key_word_target)
+    #science_target = read_file(target_path, "fake_disk_close_5_bis")
+    science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+    print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+    
+    # 2. get the list of files in library
+    ref_files = get_reference_cubes(str(argv[3]), "MASTER_CUBE-center")
+    
+    # Check if the taget is in the ref files, if true remove it
+    ref_files = remove_target(str(argv[2]),ref_files)
+    ref_files = chose_reference_files(ref_files, "H23", "IRD")
+    print(">> what we have in ref_res")
+    for s in ref_files:
+        print(s)
+    print(">> so we have",len(ref_files),"reference stars in total, all of them are on wave_length H23, type IRDIS")
+    
+    # take all reference cubes
+    ref_frames, ref_frames_coords, ref_cube_nb_frames = collect_frames(ref_files, scale)
+    print(">> in total, there are", len(ref_frames_coords), "frames in our reference librarys")
+    
+    #print(">> ref frames_coords =", ref_frames_coords)
+    # 20 89
+    # nb_best_frame = 100, we have 281 frames in our reference library
+    # nb_best_frame = 200, we have 440 frames in our reference library
+    nb_best_frame = [50, 100, 150, 200, 250]
+
+    # store the results
+    res_path_fichier = "./K_kilp_ADI_RDI/res_0907_presentation/"
+    print(">> We will put our result here:", res_path_fichier)
+    res_path_fichier_real = "./K_kilp_ADI_RDI/res_0907_presentation_real/"
+    
+    sc_target_for_sam = []
+
+    for nb in range(len(nb_best_frame)):
+        print(">>> we will chose " + str(nb_best_frame[nb]) + " best correlated frames for each frame")
+        ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame[nb], ref_frames, ref_cube_nb_frames, 0, wave_length=0, wave_length_target=1)
+
+        print("ref_frames.shape =", ref_frames_selected.shape)
+        print("target_ref_coords.shape =", target_ref_coords.shape)
+        print("target_ref_coords =", target_ref_coords, " sum=", target_ref_coords.sum())
+        
+        # take ref_files and target_ref_coords, produce a dictionary
+        dict_ref_in_target = get_dict(ref_files, target_ref_coords)
+        print(dict_ref_in_target)
+
+        plt.bar(dict_ref_in_target.keys(), dict_ref_in_target.values())
+        plt.xticks(rotation=25)
+        plt.title("How many frames are used for the reference stars " + str(target_ref_coords.sum()), fontsize="18")
+        plt.xlabel("Name of reference star used", fontsize="16")
+        plt.ylabel("Number of frames", fontsize="16")
+        plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
+        #plt.show()
+
+        # get angles
+        angles = read_file(str(argv[2]), "ROTATION")
+
+        # get ref shape
+        nb_fr_ref, w, h = ref_frames_selected.shape
+        wl = 0
+        # wl_target = 0 -> deal with the raw data
+        # wl_target = 1 -> deal with the fake data
+        #wl_target = wl
+        wl_target = 1
+        n = nb_fr_ref
+        
+        # create outer mask
+        r_in = 15
+        r_out = 125
+        outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+        science_target_vip_raw = science_target_croped[0]*outer_mask
+        science_target_vip = science_target_croped[wl_target]*outer_mask
+        #science_target_croped[3] = science_target_croped[3]*outer_mask
+        
+        number_klips = []
+        for i in range(0, nb_fr_ref, 20):
+            number_klips.append(i)
+        number_klips[0] = 1
+        print(">>> nb_best_frames =", nb_best_frame[nb], "number_klips =", number_klips)
+
+        res_path = res_path_fichier + "frame_" + "{0:03d}".format(nb_best_frame[nb]) + "/"
+        print(">>> We will put our result here:", res_path)
+        res_path_real = res_path_fichier_real + "frame_" + "{0:03d}".format(nb_best_frame[nb]) + "/"
+        print(">>> We will put our result here, real copy:", res_path_real)
+
+        for i in number_klips:
+            
+            ###############
+            # fake target #
+            ###############
+
+            # non scale
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_vip, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
+            path = res_path+"no_scale/disk_far_100pxs/pos1/" +"{0:05d}".format(i) + "_fake.fits"            
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+
+            # spat-mean
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_vip, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling='spat-mean')
+            path = res_path+ "spat_mean/disk_far_100pxs/pos1/"+"{0:05d}".format(i) + "_fake.fits"            
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>> = scaling is spat-mean === ", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+
+            ###############
+            # raw target #
+            ###############
+
+            # non scale
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
+            path = res_path_real+"no_scale/disk_far_100pxs/pos1/" +"{0:05d}".format(i) + "_raw.fits"            
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+
+            # spat-mean
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling='spat-mean')
+            path = res_path_real+ "spat_mean/disk_far_100pxs/pos1/"+"{0:05d}".format(i) + "_raw.fits"            
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>> = scaling is spat-mean === ", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+        
+        sc_target_for_sam = copy.deepcopy(science_target_vip)
+        sc_target_for_sam_raw = copy.deepcopy(science_target_vip_raw)
+        print("start remove separation mean from sc_target_for_sam")
+        remove_separation_mean_from_cube(sc_target_for_sam)
+        remove_separation_mean_from_cube(sc_target_for_sam_raw)
+
+        print("star remove separation mean from ref_frames")
+        remove_separation_mean_from_cube(ref_frames_selected)
+
+        for i in number_klips:
+
+            ###############
+            # fake target #
+            ###############
+
+            # non scale
+            res_tmp = vip.pca.pca_fullfr.pca(sc_target_for_sam, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
+            path = res_path+"spat_annular_mean/disk_far_100pxs/pos1/" +"{0:05d}".format(i) + "_fake.fits"            
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>> = scaling is spat-annumar-mean ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+
+            ###############
+            # raw target #
+            ###############
+
+            # non scale
+            res_tmp = vip.pca.pca_fullfr.pca(sc_target_for_sam_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
+            path = res_path_real+"spat_annular_mean/disk_far_100pxs/pos1/" +"{0:05d}".format(i) + "_raw.fits"            
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>> = scaling is spat-annumar-mean ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+
     end_time = datetime.datetime.now()
     print("PCA on RDI frame based ", n," take", end_time - start_time)
 
@@ -1154,7 +1328,10 @@ if __name__ == "__main__":
     
     elif opt == "RDI_FRAME":
         RDI_frame(sys.argv, scale)
-        
+
+    elif opt == "RDI_FRAME_BIS":
+        RDI_frame_bis(sys.argv, scale)
+
     else:
         print("No such option")
 
