@@ -116,7 +116,7 @@ def get_contrast_and_SN(path, positions, fwhm, fwhm_flux, path_real):
 
         # SN
         lets_plot = False
-        if i==2:
+        if i==-2:
             lets_plot = True
             #ds9.display(data)
         file_real = path_real+'/'+files_real[i]
@@ -132,17 +132,24 @@ if __name__ == "__main__":
     # companion
     start_time = datetime.datetime.now()
     
-    # far 100 pxs
-    positions = [(28.33241, 158.96815), (225.53186, 88.48893), (92.048477, 28.688365), (166.44321, 225.1759)]
-    positions = [(100.14647, 136.80991), (154.69668, 117.49931), (116.43144, 100.14647), (139.30159, 153.89578)]
-
+    # far disk 100 pxs
+    # positions = [(28.33241, 158.96815), (225.53186, 88.48893), (92.048477, 28.688365), (166.44321, 225.1759)]
+    
+    # close disk 27 pxs
+    #positions = [(100.14647, 136.80991), (154.69668, 117.49931), (116.43144, 100.14647), (139.30159, 153.89578)]
+    
+    # close companion 27 pxs
+    # positions = [(103.0831, 136.98788), (137.25485, 152.9169), (153.27285, 118.56717), (118.74516, 101.65928)]
+    # far companion 100 pxs
+    positions = [(34.330781, 161.45329), (162.53369, 221.5536), (222.11243, 93.479071),(94.038796, 33.459928)]
+    
     wl = 0
     # psf
     psf = vip.fits.open_fits(str(sys.argv[1]))
     fwhm = get_fwhm_from_psf(psf[0])
     psfn, fwhm_flux, fwhm_bis = vip.metrics.normalize_psf(psf[wl], fwhm, size=17, full_output=True)
     print("fwhm =", fwhm, "fwhm_bis =", fwhm_bis, "fwhm_flux[0] =", fwhm_flux[0])
-    fwhm_for_snr=2
+    fwhm_for_snr=4
     
     # (1) header -> with or without injection 
     header = "./res_0907_presentation"
@@ -152,7 +159,8 @@ if __name__ == "__main__":
     path_frame = "/frame_250"
     
     # (3) no scale vs spat_mean vs spat_annular_mean
-    obj = "/disk_close_27pxs" 
+    obj = "/companion_far_100pxs" 
+    '''
     path_no_scale_pos1 = "/no_scale" + obj + "/pos1"
     path_no_scale_pos2 = "/no_scale" + obj +"/pos2"
 
@@ -161,25 +169,29 @@ if __name__ == "__main__":
     
     path_sam_pos1 = "/spat_annular_mean" + obj + "/pos1"
     path_sam_pos2 = "/spat_annular_mean" + obj + "/pos2"
+    '''
+    path_no_scale = "/no_scale" + obj 
+    path_spat_mean = "/spat_mean" + obj 
+    path_sam = "/spat_annular_mean" + obj 
 
     # no scale
-    ns_contrast1, ns_sn1 = get_contrast_and_SN(header+path_frame+path_no_scale_pos1, positions[0], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_no_scale_pos1)
-    ns_contrast2, ns_sn2 = get_contrast_and_SN(header+path_frame+path_no_scale_pos1, positions[1], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_no_scale_pos1)
-    ns_contrast3, ns_sn3 = get_contrast_and_SN(header+path_frame+path_no_scale_pos2, positions[2], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_no_scale_pos2)
-    ns_contrast4, ns_sn4 = get_contrast_and_SN(header+path_frame+path_no_scale_pos2, positions[3], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_no_scale_pos2)
+    ns_contrast1, ns_sn1 = get_contrast_and_SN(header+path_frame+path_no_scale, positions[0], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_no_scale)
+    ns_contrast2, ns_sn2 = get_contrast_and_SN(header+path_frame+path_no_scale, positions[1], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_no_scale)
+    ns_contrast3, ns_sn3 = get_contrast_and_SN(header+path_frame+path_no_scale, positions[2], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_no_scale)
+    ns_contrast4, ns_sn4 = get_contrast_and_SN(header+path_frame+path_no_scale, positions[3], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_no_scale)
 
     
     # spat_mean
-    sm_contrast1, sm_sn1 = get_contrast_and_SN(header+path_frame+path_spat_mean_pos1, positions[0], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_spat_mean_pos1)
-    sm_contrast2, sm_sn2 = get_contrast_and_SN(header+path_frame+path_spat_mean_pos1, positions[1], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_spat_mean_pos1)
-    sm_contrast3, sm_sn3 = get_contrast_and_SN(header+path_frame+path_spat_mean_pos2, positions[2], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_spat_mean_pos2)
-    sm_contrast4, sm_sn4 = get_contrast_and_SN(header+path_frame+path_spat_mean_pos2, positions[3], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_spat_mean_pos2)
+    sm_contrast1, sm_sn1 = get_contrast_and_SN(header+path_frame+path_spat_mean, positions[0], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_spat_mean)
+    sm_contrast2, sm_sn2 = get_contrast_and_SN(header+path_frame+path_spat_mean, positions[1], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_spat_mean)
+    sm_contrast3, sm_sn3 = get_contrast_and_SN(header+path_frame+path_spat_mean, positions[2], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_spat_mean)
+    sm_contrast4, sm_sn4 = get_contrast_and_SN(header+path_frame+path_spat_mean, positions[3], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_spat_mean)
 
     # sam
-    sam_contrast1, sam_sn1 = get_contrast_and_SN(header+path_frame+path_sam_pos1, positions[0], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_sam_pos1)
-    sam_contrast2, sam_sn2 = get_contrast_and_SN(header+path_frame+path_sam_pos1, positions[1], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_sam_pos1)
-    sam_contrast3, sam_sn3 = get_contrast_and_SN(header+path_frame+path_sam_pos2, positions[2], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_sam_pos2)
-    sam_contrast4, sam_sn4 = get_contrast_and_SN(header+path_frame+path_sam_pos2, positions[3], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_sam_pos2)
+    sam_contrast1, sam_sn1 = get_contrast_and_SN(header+path_frame+path_sam, positions[0], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_sam)
+    sam_contrast2, sam_sn2 = get_contrast_and_SN(header+path_frame+path_sam, positions[1], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_sam)
+    sam_contrast3, sam_sn3 = get_contrast_and_SN(header+path_frame+path_sam, positions[2], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_sam)
+    sam_contrast4, sam_sn4 = get_contrast_and_SN(header+path_frame+path_sam, positions[3], fwhm_for_snr, fwhm_flux[0], header_real+path_frame+path_sam)
 
 
     nb_data = 4
@@ -217,7 +229,7 @@ if __name__ == "__main__":
     sns.set(font_scale = 1.5)
     sns.relplot(kind='line',data=data_total)
     plt.subplots_adjust(left=0.07, bottom=0.09, right=0.86, top=0.92)
-    plt.title("RDI close disk far in 27 pxs : contrast - no scale vs spat-mean vs spat_annular_mean [" + path_frame.replace('/','')+"]", fontsize = 20)
+    plt.title("RDI far companion in 100 pxs : contrast - no scale vs spat-mean vs spat_annular_mean [" + path_frame.replace('/','')+"]", fontsize = 20)
     plt.xlabel("K_kilp", fontsize = "18")
     plt.ylabel("Contrast - diameter 4 px", fontsize = "18")
     #plt.ylim(0,70)
@@ -232,7 +244,7 @@ if __name__ == "__main__":
     ax = sns.relplot(kind='line',data=data_total_SN)
     #plt.legend(fontsize = '16')
     plt.subplots_adjust(left=0.07, bottom=0.09, right=0.86, top=0.92)
-    plt.title("RDI close disk far in 27 pxs : signal to noise - no scale vs spat-mean vs spat_annular_mean ["+ path_frame.replace('/','')+"]", fontsize=20)
+    plt.title("RDI far companion in 100 pxs : signal to noise - no scale vs spat-mean vs spat_annular_mean ["+ path_frame.replace('/','')+"]", fontsize=20)
     plt.xlabel("K_kilp", fontsize= "18")
     plt.ylabel("S/N ratio - diameter 4 px", fontsize = "18")
     #plt.ylim(0,20)

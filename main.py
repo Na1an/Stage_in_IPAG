@@ -538,14 +538,15 @@ def INJECTION(argv, scale):
 
     # make fake companion
     if obj == "PLANETE":
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=40, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1500, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=0, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 4)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 40, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 4)
+        fake_comp_2 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1500, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 4)
         print("fake companion 0 shape = ", fake_comp_0.shape)
-        fake_comp = np.zeros((wl_ref, nb_fr_ref, w, h))
+        fake_comp = np.zeros((3, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
-        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp_27px.fits"
-        
+        fake_comp[2] = fake_comp_2
+        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp_100px.fits"
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp) 
@@ -1058,9 +1059,8 @@ def RDI_frame_bis(argv, scale):
         plt.title("How many frames are used for the reference stars " + str(target_ref_coords.sum()), fontsize="18")
         plt.xlabel("Name of reference star used", fontsize="16")
         plt.ylabel("Number of frames", fontsize="16")
-        #plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
-        plt.show()
-        exit()
+        plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
+        #plt.show()
         # get angles
         angles = read_file(str(argv[2]), "ROTATION")
 
