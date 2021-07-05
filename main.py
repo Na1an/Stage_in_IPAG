@@ -1123,6 +1123,8 @@ def RDI_frame_bis(argv, scale):
         res_path_real = res_path_fichier_real + "frame_" + "{0:03d}".format(nb_best_frame[nb]) + "/"
         print(">>> We will put our result here, real copy:", res_path_real)
 
+        where_to_store = "/companion_far_100pxs/"
+
         for i in number_klips:
             
             ###############
@@ -1131,14 +1133,14 @@ def RDI_frame_bis(argv, scale):
 
             # non scale
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
-            path = res_path+"no_scale/disk_far_100pxs/pos1/" +"{0:05d}".format(i) + "_fake.fits"            
+            path = res_path+"no_scale" + where_to_store +"{0:05d}".format(i) + "_fake.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
 
             # spat-mean
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling='spat-mean')
-            path = res_path+ "spat_mean/disk_far_100pxs/pos1/"+"{0:05d}".format(i) + "_fake.fits"            
+            path = res_path+ "spat_mean" + where_to_store +"{0:05d}".format(i) + "_fake.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is spat-mean === ", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
@@ -1149,14 +1151,14 @@ def RDI_frame_bis(argv, scale):
 
             # non scale
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
-            path = res_path_real+"no_scale/disk_far_100pxs/pos1/" +"{0:05d}".format(i) + "_raw.fits"            
+            path = res_path_real+"no_scale" + where_to_store +"{0:05d}".format(i) + "_raw.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
 
             # spat-mean
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling='spat-mean')
-            path = res_path_real+ "spat_mean/disk_far_100pxs/pos1/"+"{0:05d}".format(i) + "_raw.fits"            
+            path = res_path_real+ "spat_mean" + where_to_store +"{0:05d}".format(i) + "_raw.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is spat-mean === ", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
@@ -1178,7 +1180,7 @@ def RDI_frame_bis(argv, scale):
 
             # non scale
             res_tmp = vip.pca.pca_fullfr.pca(sc_target_for_sam, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
-            path = res_path+"spat_annular_mean/disk_far_100pxs/pos1/" +"{0:05d}".format(i) + "_fake.fits"            
+            path = res_path+"spat_annular_mean" + where_to_store +"{0:05d}".format(i) + "_fake.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is spat-annumar-mean ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
@@ -1189,7 +1191,7 @@ def RDI_frame_bis(argv, scale):
 
             # non scale
             res_tmp = vip.pca.pca_fullfr.pca(sc_target_for_sam_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
-            path = res_path_real+"spat_annular_mean/disk_far_100pxs/pos1/" +"{0:05d}".format(i) + "_raw.fits"            
+            path = res_path_real+"spat_annular_mean" + where_to_store +"{0:05d}".format(i) + "_raw.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is spat-annumar-mean ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
