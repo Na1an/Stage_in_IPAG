@@ -341,44 +341,13 @@ def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_f
             ref_scores[ind] = ref_scores[ind] + 1
 
     res_coords = np.where(ref_scores>score)
-    print("res_coords.shape =", type(res_coords), " print =", res_coords[0:100])
+    print("res_coords.shape =", res_coords[0].shape, "res_coords.type = ", type(res_coords), " res_coords =", res_coords)
     res = ref_frames[wave_length][res_coords]
     print("res.shape =", res.shape)
     end_time = datetime.datetime.now()
     print(">> frame based selection take:", end_time - start_time)
     
     return res, get_histogram_of_ref_stars_score(res_coords[0], ref_cube_nb_frames)
-
-"""
-# frame based RDI
-def RDI_frame_based(target, refs, nb_best_frame, r_in, r_out, klip_max, scale=0.25, wave_length=0):
-    '''
-    Args:
-        target : a numpy.ndarray. (wavelengths, nb_frames, x, y).
-        refs : a list of string. Target string removed.
-        nb_best_frame : a integer. How many best frames fo the references stars array we want for each target frame.
-        r_in : a integer. Inner radius for the inner mask. Usually for vip function.
-        r_out : a integer. Outer radius for the outer mask. For my own code.
-        klip_max : a integer. The max number of components we want to limit. 
-        scale : a float. The scale in center region that we want process, which is equal to 0.25 (1/4*2014=256) by default. 
-        wave_length : a integer. Wave length of the cube.
-    Return:
-        res : a list of list of string. The int(nb_best) best chosen ref stars.
-    '''
-
-    res = {}
-    # target_median is 2 dims. (256, 256)
-    target_median = median_of_cube(target, wave_length)
-    w, h = target_median.shape
-    # create mask
-    m, pxs_center = create_inner_mask(w,h,MASK_RADIUS)
-    target_median_vector = np.reshape(target_median*m,(w*h))
-
-    for i in range(len(target[0]))
-
-
-    return None
-"""
 
 # option for main : RDI
 def RDI(argv, scale):
@@ -1076,22 +1045,22 @@ def RDI_frame_bis(argv, scale):
         print(">>> we will chose " + str(nb_best_frame[nb]) + " best correlated frames for each frame")
         ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame[nb], ref_frames, ref_cube_nb_frames, 0, wave_length=0, wave_length_target=1)
 
-        print("ref_frames.shape =", ref_frames_selected.shape)
+        print("ref_frames_selected.shape =", ref_frames_selected.shape)
         print("target_ref_coords.shape =", target_ref_coords.shape)
         print("target_ref_coords =", target_ref_coords, " sum=", target_ref_coords.sum())
         
         # take ref_files and target_ref_coords, produce a dictionary
         dict_ref_in_target = get_dict(ref_files, target_ref_coords)
         print(dict_ref_in_target)
-
-        plt.bar(dict_ref_in_target.keys(), dict_ref_in_target.values())
+        d_keys, d_values = list_of_tuple_to_2_list(sorted(dict_ref_in_target.items(),key = lambda r:(r[1],r[0]), reverse=True))
+        plt.bar(d_keys, d_values)
         plt.xticks(rotation=25)
         plt.title("How many frames are used for the reference stars " + str(target_ref_coords.sum()), fontsize="18")
         plt.xlabel("Name of reference star used", fontsize="16")
         plt.ylabel("Number of frames", fontsize="16")
-        plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
-        #plt.show()
-
+        #plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
+        plt.show()
+        exit()
         # get angles
         angles = read_file(str(argv[2]), "ROTATION")
 

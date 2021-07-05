@@ -631,10 +631,10 @@ def get_histogram_of_ref_stars_score(ref_star_scores, ref_cube_nb_frames):
     res = np.zeros(l)
     for i in ref_star_scores:
         # indice plus 1, then we can deal with it with the length of 
-        i = i+1
+        i = i
         for n in range(l):
             i = i - ref_cube_nb_frames[n]
-            if i<0:
+            if i<=0:
                 res[n] = res[n] + 1
                 break
     
@@ -666,3 +666,21 @@ def get_dict(key, value):
             res[k] = res[k] + value[i]
         
     return res
+
+# convert a list of tuple to list 
+def list_of_tuple_to_2_list(l):
+    '''
+    This function will convert a list of double tuple to 2 list. 
+    Args:
+        l : a list of tuple (x,y).
+    Return:
+        res1 : a list of string. The name of reference star.
+        res2 : a list of integer. The value of counting.
+    '''
+    res1 = []
+    res2 = []
+    for (x,y) in l:
+        res1.append(x)
+        res2.append(y)
+    
+    return res1, res2
