@@ -1304,14 +1304,14 @@ def RDI_scores(argv, scale):
 def Algo_RDI(target_path, ref_path, scale, wl=0, n_corr=150, score=1, scaling=None, res_path=None):
     '''
     Args:
-        target_path : a string. The path where to tarversal is for getting the science target.
-        ref_path : a string. The path of the reference library.
+        target_path : a string. The directory path where to tarversal is for getting the science target.
+        ref_path : a string. The directory path of the reference library.
         scale : a float. The scale in center region that we want process, is equal to 1/4 by default.
         wl : a integer. The wave length we will focus on.
         n_corr : a integer. The best correalted frames we will pick from the reference library for each frame of the science target.
         score : a integer, shouble be positive (>=1). Use the score to chose reference frames in the library.
         scaling : a string. The optiong for vip function. None/spat-mean/temp-mean...
-        res_path : a string. The path where we will store the result. 
+        res_path : a string. The directory path where we will store the result. 
     Rrturn:
         None.
     '''
