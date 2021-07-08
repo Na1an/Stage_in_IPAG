@@ -303,7 +303,6 @@ def selection_frame_based(target, nb_best_frame, ref_frames, wave_length=0):
     return res, res_coords
 
 # frame based version selection but with score system
-# frame based version selection the best correalted data
 def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_frames, score, wave_length, wave_length_target):
     '''
     Args:
@@ -340,7 +339,7 @@ def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_f
         for (ind, pcc) in res_tmp:
             ref_scores[ind] = ref_scores[ind] + 1
 
-    res_coords = np.where(ref_scores>score)
+    res_coords = np.where(ref_scores>=score)
     print("res_coords.shape =", res_coords[0].shape, "res_coords.type = ", type(res_coords), " res_coords =", res_coords)
     res = ref_frames[wave_length][res_coords]
     print("res.shape =", res.shape)
@@ -1230,6 +1229,7 @@ def RDI_scores(argv, scale):
         print("target_ref_coords.shape =", target_ref_coords.shape)
         print("target_ref_coords =", target_ref_coords, " sum=", target_ref_coords.sum())
         
+        '''
         # take ref_files and target_ref_coords, produce a dictionary
         dict_ref_in_target = get_dict(ref_files, target_ref_coords)
         print(dict_ref_in_target)
@@ -1240,7 +1240,8 @@ def RDI_scores(argv, scale):
         plt.xlabel("Name of reference star used", fontsize="16")
         plt.ylabel("Number of frames", fontsize="16")
         plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
-        #plt.show()
+        '''
+
         # get angles
         angles = read_file(str(argv[2]), "ROTATION")
 
@@ -1267,7 +1268,6 @@ def RDI_scores(argv, scale):
         number_klips[0] = 1
         print(">>> nb_best_frames =", nb_best_frame, "number_klips =", number_klips)
 
-        where_to_store = "companion_close_27pxs/"
         res_path = res_path_fichier + where_to_store + "score_" + "{0:03d}".format() + "/"
         print(">>> We will put our result here:", res_path)
         res_path_real = res_path_fichier_real + where_to_store + "score_" + "{0:03d}".format() + "/"
@@ -1299,7 +1299,101 @@ def RDI_scores(argv, scale):
 
     end_time = datetime.datetime.now()
     print("PCA on RDI frame based ", n," take", end_time - start_time)
-            
+
+# Algo_RDI, the algorithm we may apply on the cobrex server
+def Algo_RDI(target_path, ref_path, scale, wl=0, n_corr=150, score=1, scaling=None, res_path=None):
+    '''
+    Args:
+        target_path : a string. The path where to tarversal is for getting the science target.
+        ref_path : a string. The path of the reference library.
+        scale : a float. The scale in center region that we want process, is equal to 1/4 by default.
+        wl : a integer. The wave length we will focus on.
+        n_corr : a integer. The best correalted frames we will pick from the reference library for each frame of the science target.
+        score : a integer, shouble be positive (>=1). Use the score to chose reference frames in the library.
+        scaling : a string. The optiong for vip function. None/spat-mean/temp-mean...
+        res_path : a string. The path where we will store the result. 
+    Rrturn:
+        None.
+    '''
+    print(">> Algo PCA is working! ")
+    start_time = datetime.datetime.now()
+
+    key_word_target = "MASTER_CUBE-center"
+    print(">>> key word of target is:", key_word_target)
+    
+    # 1. get target
+    print(">>> target_path =", target_path)
+    science_target = read_file(target_path, key_word_target)
+    science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), scale)
+    print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+    
+    # 2. get the list of files in library
+    ref_files = get_reference_cubes(ref_path, "MASTER_CUBE-center")
+    
+    # Check if the taget is in the ref files, if true remove it
+    ref_files = remove_target(target_path,ref_files)
+    ref_files = chose_reference_files(ref_files, "H23", "IRD")
+    print(">> what we have in ref_res")
+    for s in ref_files:
+        print(s)
+    print(">> so we have",len(ref_files),"reference stars in total, all of them are on wave_length H23, type IRDIS")
+    
+    # take all reference cubes
+    ref_frames, ref_frames_coords, ref_cube_nb_frames = collect_frames(ref_files, scale)
+    print(">> in total, there are", len(ref_frames_coords), "frames in our reference librarys")
+
+    nb_best_frame = n_corr
+
+    print(">>> we will chose " + str(nb_best_frame) + " best correlated frames for each frame")
+    print(">>> we will use score =" + str(score) + " for selecting the reference frames")
+    ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame, ref_frames, ref_cube_nb_frames, score=score, wave_length=wl, wave_length_target=wl)
+
+    print("ref_frames_selected.shape =", ref_frames_selected.shape)
+    print("target_ref_coords.shape =", target_ref_coords.shape)
+    print("target_ref_coords =", target_ref_coords, " sum=", target_ref_coords.sum())
+    
+    # take ref_files and target_ref_coords, produce a dictionary
+    dict_ref_in_target = get_dict(ref_files, target_ref_coords)
+    print(dict_ref_in_target)
+    d_keys, d_values = list_of_tuple_to_2_list(sorted(dict_ref_in_target.items(),key = lambda r:(r[1],r[0]), reverse=True))
+    plt.bar(d_keys, d_values)
+    plt.xticks(rotation=25)
+    plt.title("How many frames are used for the reference stars " + str(target_ref_coords.sum()), fontsize="18")
+    plt.xlabel("Name of reference star used", fontsize="16")
+    plt.ylabel("Number of frames", fontsize="16")
+    plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
+    #plt.show()
+    # get angles
+    angles = read_file(target_path, "ROTATION")
+
+    # get ref shape
+    nb_fr_ref, w, h = ref_frames_selected.shape
+    # wl_target = 0 -> deal with the raw data
+    # wl_target = 1 -> deal with the fake data
+    #wl_target = wl
+    wl_target = wl
+    number_klips = int((nb_fr_ref//10)*10)
+    
+    # create outer mask
+    r_in = 15
+    r_out = 125
+    outer_mask, n_pxls = create_outer_mask(w,h,r_out)
+    science_target_vip_raw = science_target_croped[0]*outer_mask
+    science_target_vip = science_target_croped[wl_target]*outer_mask
+    
+    print(">>> nb_best_frames =", nb_best_frame, "number_klips =", number_klips)
+    print(">>> We will put our result here:", res_path)
+
+    # non scaling = None
+    res_tmp = vip.pca.pca_fullfr.pca(science_target_vip, -angles, ncomp=number_klips, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
+    path = res_path + "/" + "{0:05d}".format(number_klips) + "_fake.fits"            
+    hdu = fits.PrimaryHDU(res_tmp)
+    hdu.writeto(path)
+    print(">>> = vip scaling is None === fits writed to === path:", path)
+
+    end_time = datetime.datetime.now()
+    print("PCA on RDI frame based ", n_corr," take", end_time - start_time)
+
 if __name__ == "__main__":
     start_and_end_program(True)
     print("vip.version :", vip.__version__)
@@ -1437,6 +1531,9 @@ if __name__ == "__main__":
 
     elif opt == "RDI_SCORES":
         RDI_scores(sys.argv, scale) 
+    
+    elif opt == "ALGO_RDI":
+        Algo_RDI(str(sys.argv[2]), str(sys.argv[3]), float(sys.argv[4]), res_path=str(sys.argv[5]))
 
     else:
         print("No such option")
