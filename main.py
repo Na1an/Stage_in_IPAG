@@ -1267,10 +1267,10 @@ def RDI_scores(argv, scale):
             number_klips.append(i)
         number_klips[0] = 1
         print(">>> nb_best_frames =", nb_best_frame, "number_klips =", number_klips)
-
-        res_path = res_path_fichier + where_to_store + "score_" + "{0:03d}".format() + "/"
+        where_to_store = "disk_close_27pxs/"
+        res_path = res_path_fichier + where_to_store + "score_" + "{0:03d}".format(score) + "/pos2/"
         print(">>> We will put our result here:", res_path)
-        res_path_real = res_path_fichier_real + where_to_store + "score_" + "{0:03d}".format() + "/"
+        res_path_real = res_path_fichier_real + where_to_store + "score_" + "{0:03d}".format(score) + "/pos2/"
         print(">>> We will put our result here:", res_path_real)
 
         for i in number_klips:
@@ -1292,7 +1292,7 @@ def RDI_scores(argv, scale):
 
             # non scale
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
-            path = res_path_real + "{0:05d}".format(i) + "_raw.fits"            
+            path = res_path_real + "{0:05d}".format(i) + "_real.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)

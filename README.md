@@ -81,7 +81,9 @@ I solved the conflict
 
 -------
 
+if RetryHandler(os.path.exists).run(dwh_dir+".sphere_lock"): RetryHandler(os.remove).run(dwh_dir+".sphere_lock") 
 
+with RetryHandler(open).run(dwh_dir+".sphere_error_lock", "w") as f: 
 
 ### 6. 
 
