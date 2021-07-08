@@ -19,7 +19,7 @@ The project will continue to be maintained on github.
 Nothing special, the project should work in all Linux OS. ```Python3``` is needed.
 
 * ```uname -r``` : 5.12.3-arch1-1
-* ```python3 --version``` : Python 3.6.5
+* ```python3 --version``` : Python 3.7.9
   * ```numpy```
   * ```matplotmib```
   * ```astropy```
@@ -59,7 +59,13 @@ It is easy to run the program. We have ```cADI```, ```PCA``` and ```RDI``` three
   * **arg1** : algo mode. 
   * **arg2** : path of target object repository
   * **arg3** : reference object repository
-  * **arg4**: scale, default = 0.125
+  * **arg4**: scale, default = 0.25
+
+* Exemple of execution
+
+  ```
+  python main.py Algo_RDI ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368 ../SPHERE_DC_DATA 0.25 ./tmp                                                                                                 
+  ```
 
   
 
@@ -81,7 +87,7 @@ I solved the conflict
 
 -------
 
-
+"recipes":[ { "name": "^(ird|ifs|zpl)_specal_.*", "presets": [ { "name": "^PCA.*", "min_cores": 2, "memory_ratio": 6 } ] }, { "name": "^(ird|ifs|zpl)_specalcharac_.*", "all_input_size": true, "memory_ratio": 3 }, { "name": "^(ird|ifs|zpl)_paco_test.*", "min_cores": 2 }, { "name": "^(ird|ifs|zpl)_paco_det_only_test.*", "min_cores": 2 }, { "name": "^(ird|ifs|zpl)_convert_.*", "shared": ["GTO/Filters/", "GTO/Lib/", "DC/SPARTA_MASTER_FILES/", "DC/static/"] }, { "name": "^(ird|ifs|zpl)_sortframes_.*", "shared": ["DC/SPARTA_MASTER_FILES/"] }, { "name": "^sparta_.*", "shared": ["DC/SPARTA_MASTER_FILES/"] }, { "name": "^(ird|ifs|zpl)_astrocal_.*", "shared": ["GTO/Lib/", "astrocal/catalogs/"] }, { "name": "^(ird|ifs|zpl)_fake_planet_injection.*", "shared": ["DC/static/"] } ] 
 
 ### 7. Contack
 
