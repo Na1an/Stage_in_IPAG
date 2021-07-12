@@ -537,22 +537,22 @@ def INJECTION(argv, scale):
 
     # make fake companion
     if obj == "PLANETE":
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[wl], psf_template=psfn, angle_list=-angles, flevel=0, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 4)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 40, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 4)
-        fake_comp_2 = vip.metrics.cube_inject_companions(science_target[1], psf_template=psfn, angle_list=-angles, flevel= 1500, plsc=pxscale, rad_dists=[100], theta=160, n_branches = 4)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel=0, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 40, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
+        fake_comp_2 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 1500, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
         print("fake companion 0 shape = ", fake_comp_0.shape)
         fake_comp = np.zeros((3, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
         fake_comp[2] = fake_comp_2
-        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/fake_comp_100px.fits"
+        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/Wolf_fake_comp_27px.fits"
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp) 
     
     elif obj == "DISK":
         # far 100 pxs = 32, close 20 pxs = 145, close2 27 pxs = 115
-        dstar = 32 # distance to the star in pc, the bigger the disk if more small and more close to star
+        dstar = 115 # distance to the star in pc, the bigger the disk if more small and more close to star
         nx = 256 # number of pixels of your image in X
         ny = 256 # number of pixels of your image in Y
         # itilt = 60, ok, 0 pole-on
@@ -574,8 +574,8 @@ def INJECTION(argv, scale):
         # add fake disk to science target
         scaling_factor = float(argv[7])
         cube_fakeddisk = vip.metrics.cube_inject_fakedisk(fake_disk1_map*scaling_factor ,angle_list=angles,psf=psfn)
-        ds9 = vip.Ds9Window()
-        ds9.display(cube_fakeddisk[0])
+        #ds9 = vip.Ds9Window()
+        #ds9.display(cube_fakeddisk[0])
         #print(">>>> cube fake disk :", cube_fakeddisk[0:50, 0:50])
         # only want center
         start = int(w*(1-scale)/2)
@@ -1017,7 +1017,10 @@ def RDI_frame_bis(argv, scale):
     ref_files = get_reference_cubes(str(argv[3]), "MASTER_CUBE-center")
     
     # Check if the taget is in the ref files, if true remove it
-    ref_files = remove_target(str(argv[2]),ref_files)
+    # we should remove the last '/'
+    if target_path[-1] == '/':
+        target_path = target_path[:-1]
+    ref_files = remove_target(target_path, ref_files)
     ref_files = chose_reference_files(ref_files, "H23", "IRD")
     print(">> what we have in ref_res")
     for s in ref_files:
@@ -1033,18 +1036,18 @@ def RDI_frame_bis(argv, scale):
     # nb_best_frame = 100, we have 281 frames in our reference library
     # nb_best_frame = 200, we have 440 frames in our reference library
     #nb_best_frame = [50, 100, 150, 200, 250]
-    nb_best_frame = [500, 1000]
+    nb_best_frame = [50, 100, 150, 200, 250, 500, 1000]
 
     # store the results
-    res_path_fichier = "./K_kilp_ADI_RDI/res_0907_presentation/"
+    res_path_fichier = "./K_kilp_ADI_RDI/res_Wolf/res_more_targets/"
     print(">> We will put our result here:", res_path_fichier)
-    res_path_fichier_real = "./K_kilp_ADI_RDI/res_0907_presentation_real/"
+    res_path_fichier_real = "./K_kilp_ADI_RDI/res_Wolf/res_more_targets_real/"
     
     sc_target_for_sam = []
 
     for nb in range(len(nb_best_frame)):
         print(">>> we will chose " + str(nb_best_frame[nb]) + " best correlated frames for each frame")
-        ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame[nb], ref_frames, ref_cube_nb_frames, 0, wave_length=0, wave_length_target=1)
+        ref_frames_selected, target_ref_coords = selection_frame_based_score(science_target_croped, nb_best_frame[nb], ref_frames, ref_cube_nb_frames, 1, wave_length=0, wave_length_target=1)
 
         print("ref_frames_selected.shape =", ref_frames_selected.shape)
         print("target_ref_coords.shape =", target_ref_coords.shape)
@@ -1087,12 +1090,14 @@ def RDI_frame_bis(argv, scale):
         number_klips[0] = 1
         print(">>> nb_best_frames =", nb_best_frame[nb], "number_klips =", number_klips)
 
-        res_path = res_path_fichier + "frame_" + "{0:03d}".format(nb_best_frame[nb]) + "/"
-        print(">>> We will put our result here:", res_path)
-        res_path_real = res_path_fichier_real + "frame_" + "{0:03d}".format(nb_best_frame[nb]) + "/"
-        print(">>> We will put our result here, real copy:", res_path_real)
+        # need to modify
+        where_to_store = "companion_close_27pxs/"
+        #where_to_store = "disk_close_pole_on_27pxs/"
 
-        where_to_store = "/disk_close_27pxs/pos2/"
+        res_path = res_path_fichier + "frame_" + "{0:04d}".format(nb_best_frame[nb]) + "/" + where_to_store
+        print(">>> We will put our result here:", res_path)
+        res_path_real = res_path_fichier_real + "frame_" + "{0:04d}".format(nb_best_frame[nb]) + "/" + where_to_store
+        print(">>> We will put our result here, real copy:", res_path_real)
 
         for i in number_klips:
             
@@ -1102,7 +1107,7 @@ def RDI_frame_bis(argv, scale):
 
             # non scale
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
-            path = res_path+"no_scale" + where_to_store +"{0:05d}".format(i) + "_fake.fits"            
+            path = res_path +"{0:05d}".format(i) + "_fake.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
@@ -1121,7 +1126,7 @@ def RDI_frame_bis(argv, scale):
 
             # non scale
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling=None)
-            path = res_path_real+"no_scale" + where_to_store +"{0:05d}".format(i) + "_real.fits"            
+            path = res_path_real +"{0:05d}".format(i) + "_real.fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)

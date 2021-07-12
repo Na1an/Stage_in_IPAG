@@ -190,7 +190,9 @@ def remove_target(target, refs):
     '''
     #res = refs
     for s in refs:
-        if s.split('/')[-2] == target.split('/')[-1]:
+        last_nb_ref = (s.split('/')[-2]).split('_')[-1]
+        last_nb_tar = target.split('_')[-1]
+        if s.split('/')[-2] == target.split('/')[-1] or last_nb_ref == last_nb_tar:
             refs.remove(s)
             break
     return refs
@@ -627,7 +629,6 @@ def get_histogram_of_ref_stars_score(ref_star_scores, ref_cube_nb_frames):
         res : a ndarray list of integer. The number of integer for each reference star we use. 
     '''
     l = len(ref_cube_nb_frames)
-    print("l =", l)
     res = np.zeros(l)
     for i in ref_star_scores:
         # indice plus 1, then we can deal with it with the length of 
