@@ -538,14 +538,14 @@ def INJECTION(argv, scale):
     # make fake companion
     if obj == "PLANETE":
         fake_comp_0 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel=0, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 40, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
-        fake_comp_2 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 1500, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 40*7, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
+        fake_comp_2 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 2000, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
         print("fake companion 0 shape = ", fake_comp_0.shape)
         fake_comp = np.zeros((3, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
         fake_comp[2] = fake_comp_2
-        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/Wolf_fake_comp_27px.fits"
+        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/Wolf_fake_comp_27px_bis.fits"
 
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp) 
@@ -1036,7 +1036,7 @@ def RDI_frame_bis(argv, scale):
     # nb_best_frame = 100, we have 281 frames in our reference library
     # nb_best_frame = 200, we have 440 frames in our reference library
     #nb_best_frame = [50, 100, 150, 200, 250]
-    nb_best_frame = [50, 100, 150, 200, 250, 500, 1000]
+    nb_best_frame = [50, 100, 150, 200, 250]
 
     # store the results
     res_path_fichier = "./K_kilp_ADI_RDI/res_Wolf/res_more_targets/"
@@ -1091,7 +1091,7 @@ def RDI_frame_bis(argv, scale):
         print(">>> nb_best_frames =", nb_best_frame[nb], "number_klips =", number_klips)
 
         # need to modify
-        where_to_store = "companion_close_27pxs/"
+        where_to_store = "companion_close_27pxs_bis/"
         #where_to_store = "disk_close_pole_on_27pxs/"
 
         res_path = res_path_fichier + "frame_" + "{0:04d}".format(nb_best_frame[nb]) + "/" + where_to_store
