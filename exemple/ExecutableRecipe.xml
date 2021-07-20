@@ -51,7 +51,7 @@
     <!-- Extra outputs are used to set the frame types of all outputs not known
       by filenames. The extra_output_frame tags are used in appearing order. -->
     <outputs use_filename_parameter="false">
-        <output_frame format="IRD_RDI_CORRELATION_MATRIX">
+        <output_frame format="FITS[Im(1)]">
             <frame_type value="IRD_TEMPORARY"/>
             <default_name value="pcc_matrix.csv"/>
             <filename_parameter value=""/>
