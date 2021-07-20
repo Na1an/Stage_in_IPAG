@@ -119,13 +119,15 @@ tmp_cube = fits.getdata(reference_cube_names[0])
 border_l = ny//2-crop_size//2
 border_r = ny//2+crop_size//2+1
 ref_frames = tmp_cube[...,border_l:border_r, border_l:border_r]
+print("1-> ref_frames.shape =", ref_frames.shape)
 ref_nb_frames = []
 ref_nb_frames.append(len(tmp_cube[1]))
 for name in reference_cube_names[1:]:
     tmp_cube = fits.getdata(name)
-    ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r])
-
-print("ref_frames.shape =", ref_frames.shape)
+    print("* tmp_cube.shape =", tmp_cube.shape)
+    ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
+    print("1.x-> ref_frames.shape =", ref_frames.shape)
+print("2-> ref_frames.shape =", ref_frames.shape)
 wl_ref,nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
 # correlation matrix

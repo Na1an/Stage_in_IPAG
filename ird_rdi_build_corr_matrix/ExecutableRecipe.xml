@@ -4,17 +4,17 @@
         xsi:noNamespaceSchemaLocation="ExecutableRecipe.xsd">
     <!-- The frame types declared here will be created
     in the datacenter. -->
-    <sphere pipeline="test" user="julien.milli@univ-grenoble-alpes.fr"/>
+    <sphere pipeline="test" user="yuchen.bai@univ-grenoble-alpes.fr"/>
     <frame_types>
         <frame_type name="IRD_TEMPORARY" description="RDI reduced image for channel 0"/>
         <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE" description="Science and reference master cubes to reduce"/>
         <frame_type name="IRD_SCIENCE_PARA_ROTATION_CUBE" description="Derotation angles"/>
     </frame_types>
     <!-- ==Recipe== -->
-    <recipe name="ird_rdi_vip_hci" instrument="IRDIS">
-        <synopsis value="ird_rdi_vip_hci"/>
-        <description short="Apply the rdi method of vip_hci to produce a final reduced image" full=""/>
-        <author email="julien.milli@univ-grenoble-alpes.fr" name="Julien Milli"/>
+    <recipe name="ird_rdi_build_corr_matrix" instrument="IRDIS">
+        <synopsis value="ird_rdi_build_corr_matrix"/>
+        <description short="Calculate the Pearson Correlation Coeffient Matrix for the next step of RDI " full=""/>
+        <author email="yuchen.bai@univ-grenoble-alpes.fr" name="Yuchen BAI"/>
         <license value="GPL"/>
     </recipe>
     <!-- ==Executable== -->
@@ -22,7 +22,7 @@
     is in path (or the script extension is sufficient). -->
     <executable>
        <binary value="/dwh/sphere-exec-env/python3/.env/bin/python"/>
-       <script value="ird_rdi_vip_hci.py"/>
+       <script value="ird_rdi_build_corr_matrix.py"/>
        <includes>
             <include regex=".*\.py"/>
         </includes>
@@ -33,12 +33,12 @@
     filename_parameter (can be $1, $2... for inline parameter ).
      -->
     <inputs use_sof="true">
-        <input_frame min="1" max="500">
+        <input_frame min="1" max="1000">
             <frame_type value="IRD_SCIENCE_REDUCED_MASTER_CUBE"/>
             <!--filename_parameter value="$1"/-->
             <description value="Science and reference master cubes to reduce"/>
         </input_frame>
-        <input_frame min="1" max="500">
+        <input_frame min="1" max="1000">
             <frame_type value="IRD_SCIENCE_PARA_ROTATION_CUBE"/>
             <!--filename_parameter value="$1"/-->
             <description value="Derotation angles of the science master cube to align the North vertically"/>
@@ -53,9 +53,9 @@
     <outputs use_filename_parameter="false">
         <output_frame format="FITS[Im(1)]">
             <frame_type value="IRD_TEMPORARY"/>
-            <default_name value="rdi_image_median.fits"/>
+            <default_name value="pcc_matrix.csv"/>
             <filename_parameter value=""/>
-            <description value="RDI reduced image for channel 0"/>
+            <description value="csv file for the Pearson Correlation Coeffient Matrix"/>
         </output_frame>
     </outputs>
     <!-- ==Parameters== -->

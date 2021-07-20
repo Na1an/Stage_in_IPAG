@@ -1,0 +1,2 @@
+#!/bin/sh
+/dwh/sphere-exec-env/python3/.env/bin/python /dwh/sphere-exec/test/ird_rdi_build_corr_matrix/ird_rdi_build_corr_matrix.py --mask_center_px=10 --crop_size=201 --wl_channels=0 --scaling=0 --ncomp=20 --science_object="GJ 667C" ird_rdi_build_corr_matrix.sof >./ird_rdi_build_corr_matrix_executable.log 2>&1
