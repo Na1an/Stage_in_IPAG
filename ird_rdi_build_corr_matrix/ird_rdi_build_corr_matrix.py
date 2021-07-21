@@ -7,13 +7,48 @@ Reduce a IRD_SCIENCE_REDUCED_MASTER_CUBE
 """
 
 import argparse
+import warnings
 import numpy as np
 import vip_hci as vip
-import warnings
+import pandas as pd
 from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning
+###########
+# setting #
+###########
+
 warnings.simplefilter('ignore', category=AstropyWarning)
 
+############
+# function #
+############
+
+def convert_np_to_df(pcc_matrix, reference_cube_names, ref_nb_frames, wl):
+    '''
+    This function works for converting a variable type numpy.ndarray to pandas.DataFrame 
+    Args:
+        pcc_matrix : a 2D numpy.ndarray. Store all the pearson correlation coefficient values.
+        reference_cube_names : a list of reference cube names.
+        ref_nb_frames : a list of number of cubes.
+        wl : a integer. The wave length.
+    Return:
+        res : a dataframe. A 2D-dimensions table.
+    '''
+    ind = 0
+    res = {} 
+    for n in range(len(ref_nb_frames)):
+        nb_frames = ref_nb_frames[n]
+        nth_name = reference_cube_names[n]
+        for i in range(nb_frames):
+            col_tmp = nth_name + '+' + str(wl) + '+' + str(i)
+            res[col_tmp] = pcc_matrix[:, ind+i]
+        ind = ind + nb_frames
+
+    return pd.DataFrame(res)
+
+#############
+# main code #
+#############
 parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
 parser.add_argument("sof", help="file name of the sof file",type=str)
 parser.add_argument("--ncomp",help="number of principal components to remove (5 by default)", type=int, default=5)
@@ -137,9 +172,12 @@ wl_ref,nb_ref_frames, ref_x, ref_y = ref_frames.shape
 res = np.zeros((nb_wl,nb_science_frames, nb_ref_frames))
 science_cube_croped = science_cube[..., border_l:border_r, border_l:border_r]
 for w in range(nb_wl):
+    wl = wl_channels
     for i in range(nb_science_frames):
         for j in range(nb_ref_frames):
             res[wl_channels[w], i, j] = np.corrcoef(np.reshape(science_cube_croped[wl_channels[w], i], ref_x*ref_y), np.reshape(ref_frames[wl_channels[w], j], ref_x*ref_y))[0,1]
     file_name = "correlation_matrix_"+str(wl_channels[w])+".csv"
     print(file_name)
+    df = convert_np_to_df(res[wl_channels[w]], reference_cube_names, ref_nb_frames, wl_channels[w])
+    df.to_csv(file_name, sep='\t', encoding='utf-8')
     #np.savetxt(file_name, res[wl_channels[w]], delimiter=",")
