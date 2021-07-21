@@ -74,7 +74,6 @@ datatypes=data[:,1]
 
 cube_names = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
 nb_cubes = len(cube_names)
-print('\nIRD_SCIENCE_REDUCED_MASTER_CUBE files:\n'.join(cube_names))
 
 if nb_cubes < 2: 
     raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
@@ -103,6 +102,9 @@ else:
     science_cube_name = cube_names[0]
     reference_cube_names = cube_names[1:]
 
+print("> science cube :", science_cube_name)
+print("> reference cuebs :", reference_cube_names)
+
 # take science cube
 science_cube = fits.getdata(science_cube_name)
 science_header = fits.getheader(science_cube_name)
@@ -119,22 +121,25 @@ tmp_cube = fits.getdata(reference_cube_names[0])
 border_l = ny//2-crop_size//2
 border_r = ny//2+crop_size//2+1
 ref_frames = tmp_cube[...,border_l:border_r, border_l:border_r]
-print("1-> ref_frames.shape =", ref_frames.shape)
 ref_nb_frames = []
-ref_nb_frames.append(len(tmp_cube[1]))
+ref_nb_frames.append(len(tmp_cube[0]))
+
 for name in reference_cube_names[1:]:
     tmp_cube = fits.getdata(name)
-    print("* tmp_cube.shape =", tmp_cube.shape)
+    ref_nb_frames.append(len(tmp_cube[0]))
     ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
-    print("1.x-> ref_frames.shape =", ref_frames.shape)
-print("2-> ref_frames.shape =", ref_frames.shape)
+
+print("> ref_frames.shape =", ref_frames.shape)
+print("> ref_nb_frames =", ref_nb_frames)
 wl_ref,nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
 # correlation matrix
 res = np.zeros((nb_wl,nb_science_frames, nb_ref_frames))
+science_cube_croped = science_cube[..., border_l:border_r, border_l:border_r]
 for w in range(nb_wl):
     for i in range(nb_science_frames):
         for j in range(nb_ref_frames):
-            res[w, i, j] = np.corrcoef(np.reshape(science_cube[wl_channels[w], i], ny*nx), np.reshape(ref_frames[wl_channels[w], j], ny*nx))[0,1]
-    file_name = "correlation_matrix_"+ science_cube_name +"_"+str(wl_channels[w])+".csv"
-    np.savetext(file_name, res[wl_channels[w]], delimiter=",")
+            res[wl_channels[w], i, j] = np.corrcoef(np.reshape(science_cube_croped[wl_channels[w], i], ref_x*ref_y), np.reshape(ref_frames[wl_channels[w], j], ref_x*ref_y))[0,1]
+    file_name = "correlation_matrix_"+str(wl_channels[w])+".csv"
+    print(file_name)
+    #np.savetxt(file_name, res[wl_channels[w]], delimiter=",")
