@@ -37,11 +37,6 @@
             <!--filename_parameter value="$1"/-->
             <description value="Science and reference master cubes to reduce"/>
         </input_frame>
-        <input_frame min="1" max="1000">
-            <frame_type value="IRD_SCIENCE_PARA_ROTATION_CUBE"/>
-            <!--filename_parameter value="$1"/-->
-            <description value="Derotation angles of the science master cube to align the North vertically"/>
-        </input_frame>
     </inputs>
     <!-- ==Outputs== -->
     <!-- Set use_filename_parameter="false" for static output filenames.
