@@ -23,49 +23,71 @@ warnings.simplefilter('ignore', category=AstropyWarning)
 # function #
 ############
 
-def complete_header(science_header, reference_cube_names, ref_nb_frames):
+# frame based version selection but with score system
+def selection_frame_based_score(target, nb_best_frame, ref_frames, ref_cube_nb_frames, score, wave_length):
     '''
-    This function is for adding some additional information on science header.
-    Useful for the next stage.  
     Args:
-        science_header : a fits.header. The science header.
-        reference_cube_names : a list of reference cube names.
-        ref_nb_frames : a list of number of cubes.
-    Return:
-        None.   
+        target : a numpy.ndarray, 4 dims. The science target cube, (wavelengths, nb_frames, x, y).
+        nb_best : a integer. How many best frames fo the references stars array we want for each target frame.
+        ref_frames : a numpy.ndarry, 4 dims. The reference stars data we have.
+        ref_cube_nb_frames : a list of integer. Each element is the frame number of a reference star.
+        score : a integer. We will pick all the reference stars which has higher or equal score.
+        wave_length : a integer. Wave length of the reference cube.
+    Rrturn:
+        res : a ndarray, 3 dimensions. Return (nb_frames, x, y).
     '''
-    nb_ref_cube = len(reference_cube_names)
-    science_header["NB_REF_CUBES"] = nb_ref_cube
-    ind = 0
-    for i in range(nb_ref_cube):
-        nb_str = "{0:06d}".format(i)
-        science_header["RN"+nb_str] = reference_cube_names[i]
-        science_header["RF"+nb_str] = ref_nb_frames[i]
-        science_header["RS"+nb_str] = ind
-        ind = ind + ref_nb_frames[i]
+    # target shape
+    wl_t, nb_fr_t, w, h = target.shape
+    wl_ref, nb_fr_ref, w_ref, h_ref = ref_frames.shape
+
+    # score_system
+    ref_scores = np.zeros((nb_fr_ref))
+
+    for i in range(nb_fr_t):
+        tmp = {}
+        for j in range(nb_fr_ref):
+            # tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
+            tmp[j] = np.corrcoef(np.reshape(target[wave_length, i], w*h), np.reshape(ref_frames[wave_length, j], w*h))[0,1]
+        
+        if nb_best_frame > len(tmp):
+            raise Exception("!!! inside the function selection_frame_based, tmp", len(tmp),"is samller than nb_best_frame", nb_best_frame)
+        
+        res_tmp = sorted(tmp.items(),key = lambda r:(r[1],r[0]), reverse=True)[0:nb_best_frame]
+        
+        for (ind, pcc) in res_tmp:
+            ref_scores[ind] = ref_scores[ind] + 1
+
+    res_coords = np.where(ref_scores>=score)
+    print("res_coords.shape =", res_coords[0].shape, "res_coords.type = ", type(res_coords), " res_coords =", res_coords)
+    res = ref_frames[wave_length][res_coords]
+    print("res.shape =", res.shape)
+    
+    return res
 
 #############
 # main code #
 #############
+print("######### Start program : ird_rdi_reduce.py #########")
 parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
-parser.add_argument("sof", help="file name of the sof file",type=str)
-parser.add_argument("--mask_center_px",help="inner radius where the reduction starts", type=int, default=10)
-parser.add_argument("--crop_size", help="size of the output image (201 by default, safer to use an odd value, and smaller than 1024 in any case)", type=int, default=201)
-parser.add_argument("--science_object", help="the OBJECT keyword of the science target", type=str, default='unspecified')
+# file .sof whille contain the CORRELATION_MATRIX, SCIENCE TARGET, PARALLACTIC ANGLE
+parser.add_argument("sof", help="file name of the sof file", type=str)
+parser.add_argument("--score", help="which decide how we choose the reference frame (>=1)", type=int, default=1)
+parser.add_argument("--n_corr", help="the number of best correalted frames for each frame of science target", type=int, default=150)
+parser.add_argument("--ncomp",help="number of principal components to remove (5 by default)", type=int, default=5)
 parser.add_argument("--wl_channels", help="Spectral channel to use (to choose between 0 for channel 0, 1 for channel 1, 2 for both channels)", type=int, choices=[0,1,2], default=0)
-
+parser.add_argument("--scaling", help="scaling for the PCA (to choose between 0 for spat-mean, 1 for spat-standard, 2 for temp-mean, 3 for temp-standard or 4 for None)",\
+                    type=int, choices=[0,1,2,3,4], default=0)
 # handle args
 args = parser.parse_args()
 
 # sof
 sofname=args.sof
 
-# --crop_size and --mask_center_px
-crop_size = args.crop_size
-mask_center_px = args.mask_center_px
+# --score
+score = args.score
 
-# --science_object
-science_object = args.science_object
+# --n_corr
+n_corr = args.n_corr
 
 # --wl_channels
 dico_conversion_wl_channels = {0 : [0], 1 : [1], 2 : [0,1]}
@@ -162,6 +184,7 @@ for w in range(nb_wl):
 
 file_name = "pcc_matrix.fits"
 print("> The result will be stored in :", file_name)
-complete_header(science_header, reference_cube_names, ref_nb_frames)
 hdu = fits.PrimaryHDU(data=res, header=science_header)
 hdu.writeto(file_name)
+
+print("######### End #########")

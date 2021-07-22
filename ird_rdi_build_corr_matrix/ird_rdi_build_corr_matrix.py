@@ -49,7 +49,8 @@ def complete_header(science_header, reference_cube_names, ref_nb_frames):
 #############
 parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
 parser.add_argument("sof", help="file name of the sof file",type=str)
-parser.add_argument("--mask_center_px",help="inner radius where the reduction starts", type=int, default=10)
+parser.add_argument("--inner_radius",help="inner radius where the reduction starts", type=int, default=10)
+parser.add_argument("--outer_radius",help="outer radius where the reduction starts", type=int, default=100)
 parser.add_argument("--crop_size", help="size of the output image (201 by default, safer to use an odd value, and smaller than 1024 in any case)", type=int, default=201)
 parser.add_argument("--science_object", help="the OBJECT keyword of the science target", type=str, default='unspecified')
 parser.add_argument("--wl_channels", help="Spectral channel to use (to choose between 0 for channel 0, 1 for channel 1, 2 for both channels)", type=int, choices=[0,1,2], default=0)
@@ -60,9 +61,10 @@ args = parser.parse_args()
 # sof
 sofname=args.sof
 
-# --crop_size and --mask_center_px
+# --crop_size and inner/outer radius
 crop_size = args.crop_size
-mask_center_px = args.mask_center_px
+inner_radius = args.inner_radius
+outer_radius = args.outer_radius
 
 # --science_object
 science_object = args.science_object
@@ -81,8 +83,15 @@ elif crop_size<=21:
     crop_size=21
     print('Warning cropsize<=21 ! Value set to {0:d}'.format(crop_size))
 
+if inner_radius >= crop_size//2:
+    inner_radius = (crop_size//2) - 1
+    print("Warning inner_radius >= crop_size//2! Value set to {0:d}".format(inner_radius))
+
+if outer_radius <= inner_radius:
+    print("Warning outer_radius <= inner_radisu! Value set to {0:d}".format(inner_radius+1))
+
 # Reading the sof file
-data=np.loadtxt(sofname,dtype=str)
+data=np.loadtxt(sofname, dtype=str)
 filenames=data[:,0]
 datatypes=data[:,1]
 
@@ -162,6 +171,12 @@ for w in range(nb_wl):
 
 file_name = "pcc_matrix.fits"
 print("> The result will be stored in :", file_name)
+
+# compelte header
+science_header["CROPSIZE"] = crop_size
+science_header["INNER_R"] = inner_radius
+science_header["OUTER_R"] = outer_radius
+
 complete_header(science_header, reference_cube_names, ref_nb_frames)
 hdu = fits.PrimaryHDU(data=res, header=science_header)
 hdu.writeto(file_name)
