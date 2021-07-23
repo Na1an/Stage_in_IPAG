@@ -56,7 +56,6 @@ def distance(x1, y1, x2, y2):
     Return:
         res : an integer. The distance between two points.
     '''
-
     return ((x1-x2)**2+(y1-y2)**2)**0.5
 
 # use inner mask and outer mask to calculate the pcc(pearson correlation coeffient)
@@ -119,7 +118,7 @@ if crop_size<=21:
     print('Warning cropsize<=21, too small! Value set to 21')
 
 if outer_radius <= inner_radius:
-    print("Warning outer_radius <= inner_radisu! Value set to {0:d}".format(inner_radius+1))
+    print("Warning outer_radius <= inner_radius! Value set to {0:d}".format(inner_radius+1))
 
 # Reading the sof file
 data=np.loadtxt(sofname, dtype=str)
@@ -131,12 +130,6 @@ nb_cubes = len(cube_names)
 
 if nb_cubes < 2: 
     raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
-
-'''
-anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
-if len(anglenames) != 1: 
-    raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
-'''
 
 # except one science cube, the rest are reference cubes
 nb_reference_cubes = nb_cubes - 1 
@@ -159,23 +152,17 @@ else:
     reference_cube_names = cube_names[1:]
 
 print("> science cube :", science_cube_name)
-print("> reference cuebs :", reference_cube_names)
 
 # take science cube
 science_cube = fits.getdata(science_cube_name)
 science_header = fits.getheader(science_cube_name)
 nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
 
-'''
-derotation_angles = fits.getdata(anglenames[0])
-if len(derotation_angles) != nb_science_frames:
-    raise Exception('The science cube IRD_SCIENCE_REDUCED_MASTER_CUBE contains {0:d} frames while the list IRD_SCIENCE_PARA_ROTATION_CUBE contains {1:d} angles'.format(nb_science_frames,len(derotation_angles)))
-'''
 # sort reference cube names
 reference_cube_names.sort()
-tmp_cube = fits.getdata(reference_cube_names[0])
 
 # collect data, then we have reference frames
+tmp_cube = fits.getdata(reference_cube_names[0])
 border_l = ny//2 - crop_size//2
 border_r = ny//2 + crop_size//2 + 1
 ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
@@ -188,7 +175,6 @@ for name in reference_cube_names[1:]:
     ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
 
 print("> ref_frames.shape =", ref_frames.shape)
-print("> ref_nb_frames =", ref_nb_frames)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
 # correlation matrix
@@ -201,16 +187,16 @@ for w in range(nb_wl):
         for j in range(nb_ref_frames):
             res[wl, i, j] = np.corrcoef(np.reshape(science_cube_croped[wl, i]*mask, ref_x*ref_y), np.reshape(ref_frames[wl, j]*mask, ref_x*ref_y))[0,1]
 
-file_name = "pcc_matrix.fits"
-print("> The result will be stored in :", file_name)
-
 # compelte header
 science_header["PATH_TAR"] = science_cube_name
 science_header["CROPSIZE"] = crop_size
 science_header["INNER_R"] = inner_radius
 science_header["OUTER_R"] = outer_radius
-
 complete_header(science_header, reference_cube_names, ref_nb_frames)
+
+file_name = "pcc_matrix.fits"
+print("> The result will be stored in :", file_name)
+
 hdu = fits.PrimaryHDU(data=res, header=science_header)
 hdu.writeto(file_name)
 print("######### End program : no error! #########")
