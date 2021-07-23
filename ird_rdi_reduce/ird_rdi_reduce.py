@@ -81,6 +81,29 @@ def collect_frames(files_path, crop_size, full_output=True):
 
     return ref_frames, ref_frames_coords, ref_cube_nb_frames
 
+# get histogram of reference stars
+def get_histogram_of_ref_stars_score(ref_star_scores, ref_cube_nb_frames):
+    '''
+    This function will count how many frames we use for each star in the reference library. 
+    Args:
+        ref_star_scores : a list of integer. The list of indice, nth frame in the reference frame library.
+        ref_cube_nb_frames : a list of integer. Each element is the frame number of a reference star.
+    Return:
+        res : a ndarray list of integer. The number of integer for each reference star we use. 
+    '''
+    l = len(ref_cube_nb_frames)
+    res = np.zeros(l)
+    for i in ref_star_scores:
+        # indice plus 1, then we can deal with it with the length of 
+        i = i
+        for n in range(l):
+            i = i - ref_cube_nb_frames[n]
+            if i<=0:
+                res[n] = res[n] + 1
+                break
+    
+    return res
+
 # frame based version selection but with score system
 def selection_frame_based_score(corr_matrix, target, nb_best_frame, ref_frames, ref_cube_nb_frames, score, wave_length):
     '''
@@ -120,7 +143,7 @@ def selection_frame_based_score(corr_matrix, target, nb_best_frame, ref_frames, 
     res = ref_frames[wave_length][res_coords]
     print("res.shape =", res.shape)
     
-    return res
+    return res, get_histogram_of_ref_stars_score(res_coords[0], ref_cube_nb_frames)
 
 # make a dictionary from two list
 def get_dict(key, value):
@@ -251,6 +274,9 @@ if len(anglenames) != 1:
     raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
 
 # Step-2 take science cube
+print(">> corr_matrix_path", corr_matrix_path)
+print(">> it's type", type(corr_matrix_path))
+corr_matrix_path = corr_matrix_path[0]
 corr_matrix = fits.getdata(corr_matrix_path)
 corr_matrix_header = fits.getheader(corr_matrix_path)
 science_cube = fits.getdata(corr_matrix_header["PATH_TAR"])
@@ -269,9 +295,9 @@ ref_cube_start = []
 
 for i in range(nb_ref_cube):
     nb_str = "{0:06d}".format(i)
-    ref_cube_path.append(science_header["RN"+nb_str])
-    ref_cube_nb_frames.append(int(science_header["RF"+nb_str]))
-    ref_cube_start.append(int(science_header["RS"+nb_str]))
+    ref_cube_path.append(corr_matrix_header["RN"+nb_str])
+    ref_cube_nb_frames.append(int(corr_matrix_header["RF"+nb_str]))
+    ref_cube_start.append(int(corr_matrix_header["RS"+nb_str]))
 
 # crop_size
 crop_size = int(corr_matrix_header["CROPSIZE"])
