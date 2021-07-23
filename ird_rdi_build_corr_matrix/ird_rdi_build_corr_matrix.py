@@ -88,7 +88,6 @@ parser = argparse.ArgumentParser(description="For build the Pearson Correlation 
 parser.add_argument("sof", help="file name of the sof file",type=str)
 parser.add_argument("--inner_radius",help="inner radius where the reduction starts", type=int, default=10)
 parser.add_argument("--outer_radius",help="outer radius where the reduction starts", type=int, default=100)
-parser.add_argument("--crop_size", help="size of the output image (201 by default, safer to use an odd value, and smaller than 1024 in any case)", type=int, default=201)
 parser.add_argument("--science_object", help="the OBJECT keyword of the science target", type=str, default='unspecified')
 parser.add_argument("--wl_channels", help="Spectral channel to use (to choose between 0 for channel 0, 1 for channel 1, 2 for both channels)", type=int, choices=[0,1,2], default=0)
 
@@ -99,9 +98,9 @@ args = parser.parse_args()
 sofname=args.sof
 
 # --crop_size and inner/outer radius
-crop_size = args.crop_size
 inner_radius = args.inner_radius
 outer_radius = args.outer_radius
+crop_size = 2*outer_radius+1
 
 # --science_object
 science_object = args.science_object
@@ -114,15 +113,10 @@ nb_wl = len(wl_channels)
 # start the program
 if type(crop_size) not in [np.int64,np.int,int]:
     crop_size = int(crop_size)
-if crop_size>1024:
-    crop_size = 1024
-elif crop_size<=21:
-    crop_size=21
-    print('Warning cropsize<=21 ! Value set to {0:d}'.format(crop_size))
 
-if inner_radius >= crop_size//2:
-    inner_radius = (crop_size//2) - 1
-    print("Warning inner_radius >= crop_size//2! Value set to {0:d}".format(inner_radius))
+if crop_size<=21:
+    crop_size=21
+    print('Warning cropsize<=21, too small! Value set to 21')
 
 if outer_radius <= inner_radius:
     print("Warning outer_radius <= inner_radisu! Value set to {0:d}".format(inner_radius+1))
