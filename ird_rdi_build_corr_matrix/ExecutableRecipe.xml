@@ -60,10 +60,15 @@
     <!-- Options without value must have the type "flag" and be used
     as a boolean-->
     <parameters prefix=" ">
-        <parameter name="--mask_center_px" optional="true">
+        <parameter name="--inner_radius" optional="true">
             <default_value value="10"/>
             <type value="int"/>
             <description value="If an integer > 1 then this value is the radius of the circular mask and the pixels inside the mask are ignored. "/>
+        </parameter>
+        <parameter name="--outer_radius" optional="true">
+            <default_value value="100"/>
+            <type value="int"/>
+            <description value="If an integer then this value is the radius of the outer circular mask and the pixels outside the mask are ignored. "/>
         </parameter>
         <parameter name="--crop_size" optional="true">
             <default_value value="201"/>

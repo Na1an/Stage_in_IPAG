@@ -23,6 +23,7 @@ warnings.simplefilter('ignore', category=AstropyWarning)
 # function #
 ############
 
+# add information into the header
 def complete_header(science_header, reference_cube_names, ref_nb_frames):
     '''
     This function is for adding some additional information on science header.
@@ -43,10 +44,46 @@ def complete_header(science_header, reference_cube_names, ref_nb_frames):
         science_header["RF"+nb_str] = ref_nb_frames[i]
         science_header["RS"+nb_str] = ind
         ind = ind + ref_nb_frames[i]
+ 
+# distance between two points
+def distance(x1, y1, x2, y2):
+    '''
+    Args:
+        x1 : an integer. object 1 - coordinate X
+        y1 : an integer. object 1 - coordinate Y
+        x2 : an integer. object 2 - coordinate X
+        y2 : an integer. object 2 - coordinate Y
+    Return:
+        res : an integer. The distance between two points.
+    '''
+
+    return ((x1-x2)**2+(y1-y2)**2)**0.5
+
+# use inner mask and outer mask to calculate the pcc(pearson correlation coeffient)
+def create_mask(crop_size, inner_radius, outer_radius):
+    '''
+    Args:
+        crop_size : an integer. The size of frame/image.
+        inner_radius : an integer.
+        outer_radius : an integer. 
+    Return:
+        res : a numpy.ndarray, 2 dimens. Ex. (256, 256) but the center is all 0.
+    '''
+    count = 0
+    res = np.full((crop_size, crop_size), True)
+    x = crop_size//2
+    y = crop_size//2
+    for i in range(crop_size):
+        for j in range(crop_size):
+            if distance(i, j, x, y) >= outer_radius or distance(i, j, x, y) <= inner_radius:
+                res[i,j] = False
+                count = count + 1
+    return res
 
 #############
 # main code #
 #############
+print("######### Start program : ird_rdi_corr_matrix.py #########")
 parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
 parser.add_argument("sof", help="file name of the sof file",type=str)
 parser.add_argument("--inner_radius",help="inner radius where the reduction starts", type=int, default=10)
@@ -161,18 +198,20 @@ print("> ref_nb_frames =", ref_nb_frames)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
 # correlation matrix
+mask = create_mask(crop_size, inner_radius, outer_radius)
 res = np.zeros((nb_wl, nb_science_frames, nb_ref_frames))
 science_cube_croped = science_cube[..., border_l:border_r, border_l:border_r]
 for w in range(nb_wl):
     wl = wl_channels[w]
     for i in range(nb_science_frames):
         for j in range(nb_ref_frames):
-            res[wl, i, j] = np.corrcoef(np.reshape(science_cube_croped[wl, i], ref_x*ref_y), np.reshape(ref_frames[wl, j], ref_x*ref_y))[0,1]
+            res[wl, i, j] = np.corrcoef(np.reshape(science_cube_croped[wl, i]*mask, ref_x*ref_y), np.reshape(ref_frames[wl, j]*mask, ref_x*ref_y))[0,1]
 
 file_name = "pcc_matrix.fits"
 print("> The result will be stored in :", file_name)
 
 # compelte header
+science_header["PATH_TAR"] = science_cube_name
 science_header["CROPSIZE"] = crop_size
 science_header["INNER_R"] = inner_radius
 science_header["OUTER_R"] = outer_radius
@@ -180,3 +219,4 @@ science_header["OUTER_R"] = outer_radius
 complete_header(science_header, reference_cube_names, ref_nb_frames)
 hdu = fits.PrimaryHDU(data=res, header=science_header)
 hdu.writeto(file_name)
+print("######### End program : no error! #########")

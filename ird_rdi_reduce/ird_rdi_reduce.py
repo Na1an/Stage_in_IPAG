@@ -103,50 +103,35 @@ elif crop_size<=21:
     crop_size=21
     print('Warning cropsize<=21 ! Value set to {0:d}'.format(crop_size))
 
-# Reading the sof file
+# Step-1 Reading the sof file
 data=np.loadtxt(sofname,dtype=str)
 filenames=data[:,0]
 datatypes=data[:,1]
 
-cube_names = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
-nb_cubes = len(cube_names)
+corr_matrix_path = filenames[np.where(datatypes == "IRD_CORR_MATRIX")[0]]
+if len(corr_matrix_path) < 1:
+    raise Exception("The sof file must contain exactly one IRD_CORR_MATRIX file")
 
-if nb_cubes < 2: 
-    raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
-
-'''
 anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
 if len(anglenames) != 1: 
     raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
-'''
 
-# except one science cube, the rest are reference cubes
-nb_reference_cubes = nb_cubes - 1 
+# Step-2 take science cube
+corr_matrix = fits.getdata(corr_matrix_path)
+corr_matrix_header = fits.getheader(corr_matrix_path)
+science_cube = fits.getdata(corr_matrix_header["PATH_TAR"])
+science_header = fits.getheader(corr_matrix_header["PATH_TAR"])
 
-if science_object != 'unspecified':
-    for i,cube_name in enumerate(cube_names):
-        header =fits.getheader(cube_name)
-        if header['OBJECT'].strip() == science_object.strip():
-            science_cube_name = cube_name
-            reference_cube_names = [cube_name for cube_name in cube_names if cube_name != science_cube_name]
-            science_object_final = header['OBJECT']
-    try:
-        print('\nScience OBJECT set to {0:s}'.format(science_object_final))
-    except:
-        print('Unable to detect the science cube from the IRD_SCIENCE_REDUCED_MASTER_CUBE. Using by default option the first cube as science')
-        science_cube_name = cube_names[0]
-        reference_cube_names = cube_names[1:]
-else:
-    science_cube_name = cube_names[0]
-    reference_cube_names = cube_names[1:]
+nb_science_wl, nb_science_frames, ny, nx = science_cube.shape
+
+# the number of reference cube we have
+nb_ref_cubes = int(corr_matrix_header["NB_REF_CUBES"])
+
 
 print("> science cube :", science_cube_name)
 print("> reference cuebs :", reference_cube_names)
 
-# take science cube
-science_cube = fits.getdata(science_cube_name)
-science_header = fits.getheader(science_cube_name)
-nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
+
 
 '''
 derotation_angles = fits.getdata(anglenames[0])
