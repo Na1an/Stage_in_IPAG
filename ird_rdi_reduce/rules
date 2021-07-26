@@ -1,0 +1,10 @@
+<recipe id="ird_rdi_reduce">
+    <frame_type include="IRD_CORR_MATRIX, IRD_SCIENCE_PARA_ROTATION_CUBE">
+	<attribute id="object" restriction="equal"/>
+	<attribute id="obs_date" restriction="equal"/>
+	<attribute id="exp_time" restriction="equal"/>
+	<attribute id="coro" restriction="equal"/>
+	<attribute id="inst_filter" restriction="equal"/>
+    </frame_type>
+</recipe>
+
