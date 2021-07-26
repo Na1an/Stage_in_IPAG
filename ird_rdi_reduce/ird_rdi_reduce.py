@@ -334,11 +334,11 @@ if len(corr_matrix)>1:
 ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix_0 ,science_cube_croped, n_corr, ref_frames, ref_cube_nb_frames, score, wave_length=wl_channels[0])
 dict_ref_in_target = get_dict(ref_cube_path, target_ref_coords)
 print(">> wave_length=0", dict_ref_in_target)
+print(">> ref_frames_selected.shape =", ref_frames_selected.shape)
 res_0 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
 
 file_name = "rdi_res_0.fits"
 print("> The result will be stored in :", file_name)
-
 science_header["RDI_WL"] = 0
 science_header["NB_REF"] = nb_ref_cube
 hdu = fits.PrimaryHDU(data=res_0, header=science_header)
@@ -351,12 +351,12 @@ if nb_wl>1:
     ref_frames_selected_bis, target_ref_coords_bis = selection_frame_based_score(corr_matrix_1 ,science_cube_croped, n_corr, ref_frames, ref_cube_nb_frames, score, wave_length=wl_channels[1])
     dict_ref_in_target_bis = get_dict(ref_cube_path, target_ref_coords_bis)
     print(">> wave_length=1", dict_ref_in_target_bis)
+    print(">> ref_frames_selected_bis.shape =", ref_frames_selected_bis.shape)
     res_1 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
     file_name = "rdi_res_1.fits"
     print("> The result will be stored in :", file_name)
-
     science_header_bis = fits.getheader(corr_matrix_header["PATH_TAR"])
-    science_header_bis["RDI_WL"] = 0
+    science_header_bis["RDI_WL"] = 1
     science_header_bis["NB_REF"] = nb_ref_cube
     
     hdu = fits.PrimaryHDU(data=res_1, header=science_header_bis)
