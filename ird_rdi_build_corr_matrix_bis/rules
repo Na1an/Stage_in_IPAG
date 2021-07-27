@@ -1,0 +1,6 @@
+<recipe id="IRD_RDI_BUILD_CORR_MATRIX">
+    <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE">
+        <attribute id="inst_filter" restriction="equal"/>
+        <attribute id="coro" restriction="equal">
+    </frame_type>
+</recipe>
