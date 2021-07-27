@@ -162,17 +162,26 @@ nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
 reference_cube_names.sort()
 
 # collect data, then we have reference frames
-tmp_cube = fits.getdata(reference_cube_names[0])
 border_l = ny//2 - crop_size//2
 border_r = ny//2 + crop_size//2 + 1
-ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
+ref_frames = None
 ref_nb_frames = []
-ref_nb_frames.append(len(tmp_cube[0]))
-
-for name in reference_cube_names[1:]:
+reference_cube_names_remove_dup = []
+c = 0
+for i in range(len(reference_cube_names)):
+    name = reference_cube_names[i]
     tmp_cube = fits.getdata(name)
-    ref_nb_frames.append(len(tmp_cube[0]))
-    ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
+    tmp_header = fits.getheader(name)
+    if tmp_header["OBJECT"] == science_header["OBJECT"]:
+        c = c+1
+        continue
+    if i==c:
+        ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
+        ref_nb_frames.append(len(tmp_cube[0]))
+    else:
+        ref_nb_frames.append(len(tmp_cube[0]))
+        ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
+    reference_cube_names_remove_dup.append(name)
 
 print("> ref_frames.shape =", ref_frames.shape)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
@@ -192,7 +201,7 @@ science_header["PATH_TAR"] = science_cube_name
 science_header["CROPSIZE"] = crop_size
 science_header["INNER_R"] = inner_radius
 science_header["OUTER_R"] = outer_radius
-complete_header(science_header, reference_cube_names, ref_nb_frames)
+complete_header(science_header, reference_cube_names_remove_dup, ref_nb_frames)
 
 file_name = "pcc_matrix.fits"
 print("> The result will be stored in :", file_name)
