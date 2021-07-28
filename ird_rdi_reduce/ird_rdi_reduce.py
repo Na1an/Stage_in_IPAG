@@ -172,23 +172,6 @@ def get_dict(key, value):
         
     return res
 
-# convert a list of tuple to list 
-def list_of_tuple_to_2_list(l):
-    '''
-    This function will convert a list of double tuple to 2 list. 
-    Args:
-        l : a list of tuple (x,y).
-    Return:
-        res1 : a list of string. The name of reference star.
-        res2 : a list of integer. The value of counting.
-    '''
-    res1 = []
-    res2 = []
-    for (x,y) in l:
-        res1.append(x)
-        res2.append(y)
-    return res1, res2
-
 # distance between two points
 def distance(x1, y1, x2, y2):
     '''

@@ -79,6 +79,16 @@ def create_mask(crop_size, inner_radius, outer_radius):
                 count = count + 1
     return res
 
+# display header
+def display_header(header):
+    '''
+    Args:
+        header : a fits header. Juest for displaying the detail.
+    Return:
+        None.
+    '''
+    print(str(header["OBJECT"])+"\t"+str(header["DATE-OBS"])+'\t'+ str(header["ESO OBS START"]) +'\t'+str(header["NAXIS3"])+"\t  "+str(header["DIT_MIN"]))
+
 #############
 # main code #
 #############
@@ -156,6 +166,10 @@ print("> science cube :", science_cube_name)
 # take science cube
 science_cube = fits.getdata(science_cube_name)
 science_header = fits.getheader(science_cube_name)
+print(">> science cube - info ")
+print("OBJECT\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
+display_header(science_header)
+
 nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
 
 # sort reference cube names
@@ -168,6 +182,8 @@ ref_frames = None
 ref_nb_frames = []
 reference_cube_names_remove_dup = []
 c = 0
+print(">> reference cube - info ")
+print("OBJECT\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
 for i in range(len(reference_cube_names)):
     name = reference_cube_names[i]
     tmp_cube = fits.getdata(name)
@@ -175,6 +191,7 @@ for i in range(len(reference_cube_names)):
     if tmp_header["OBJECT"] == science_header["OBJECT"]:
         c = c+1
         continue
+    display_header(tmp_header)
     if i==c:
         ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
         ref_nb_frames.append(len(tmp_cube[0]))
@@ -201,6 +218,7 @@ science_header["PATH_TAR"] = science_cube_name
 science_header["CROPSIZE"] = crop_size
 science_header["INNER_R"] = inner_radius
 science_header["OUTER_R"] = outer_radius
+
 complete_header(science_header, reference_cube_names_remove_dup, ref_nb_frames)
 
 file_name = "pcc_matrix.fits"
