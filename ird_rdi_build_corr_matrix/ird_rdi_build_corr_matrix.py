@@ -8,6 +8,7 @@ Reduce a IRD_SCIENCE_REDUCED_MASTER_CUBE
 
 import argparse
 import warnings
+import datetime
 import numpy as np
 import vip_hci as vip
 from astropy.io import fits
@@ -87,12 +88,13 @@ def display_header(header):
     Return:
         None.
     '''
-    print(str(header["OBJECT"])+"\t"+str(header["DATE-OBS"])+'\t'+ str(header["ESO OBS START"]) +'\t'+str(header["NAXIS3"])+"\t  "+str(header["DIT_MIN"]))
+    print(str(header["OBJECT"])+"\t\t\t"+str(header["DATE-OBS"])+'\t'+ str(header["ESO OBS START"]) +'\t'+str(header["NAXIS3"])+"\t  "+str(header["DIT_MIN"]))
 
 #############
 # main code #
 #############
 print("######### Start program : ird_rdi_corr_matrix.py #########")
+start_time = datetime.datetime.now()
 parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
 parser.add_argument("sof", help="file name of the sof file",type=str)
 parser.add_argument("--inner_radius",help="inner radius where the reduction starts", type=int, default=10)
@@ -167,7 +169,7 @@ print("> science cube :", science_cube_name)
 science_cube = fits.getdata(science_cube_name)
 science_header = fits.getheader(science_cube_name)
 print(">> science cube - info ")
-print("OBJECT\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
+print("OBJECT\t\t\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
 display_header(science_header)
 
 nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
@@ -183,7 +185,7 @@ ref_nb_frames = []
 reference_cube_names_remove_dup = []
 c = 0
 print(">> reference cube - info ")
-print("OBJECT\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
+print("OBJECT\t\t\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
 for i in range(len(reference_cube_names)):
     name = reference_cube_names[i]
     tmp_cube = fits.getdata(name)
@@ -226,4 +228,5 @@ print("> The result will be stored in :", file_name)
 
 hdu = fits.PrimaryHDU(data=res, header=science_header)
 hdu.writeto(file_name)
-print("######### End program : no error! #########")
+end_time = datetime.datetime.now()
+print("######### End program : no error! Take:", end_time - start_time, "#########")
