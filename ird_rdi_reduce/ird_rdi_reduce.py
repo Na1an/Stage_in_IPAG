@@ -267,10 +267,20 @@ corr_matrix_header = fits.getheader(corr_matrix_path)
 
 science_cube = fits.getdata(corr_matrix_header["PATH_TAR"])
 science_header = fits.getheader(corr_matrix_header["PATH_TAR"])
+print(">> science cube DATE-OBS:", science_header["DATE-OBS"])
+print(">> science cube OBJECT:", science_header["OBJECT"])
+print(">> science cube EXPTIME:", science_header["EXPTIME"])
+print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
+print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
 nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
 derotation_angles = fits.getdata(anglenames[0])
 derotation_angles_header = fits.getheader(anglenames[0])
+print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])
+print(">> para OBJECT:", derotation_angles_header["OBJECT"])
+print(">> para EXPTIME:", derotation_angles_header["EXPTIME"])
+print(">> para ESO INS COMB ICOR:", derotation_angles_header["ESO INS COMB ICOR"])
+print(">> para ESO INS COMB IFLT:", derotation_angles_header["ESO INS COMB IFLT"])
 
 if len(derotation_angles) != nb_science_frames:
     raise Exception('The science cube IRD_SCIENCE_REDUCED_MASTER_CUBE contains {0:d} frames while the list IRD_SCIENCE_PARA_ROTATION_CUBE contains {1:d} angles'.format(nb_science_frames,len(derotation_angles)))
@@ -293,8 +303,8 @@ print("> The name of science cube :", corr_matrix_header["OBJECT"])
 print("> observe date (DATE-OBS) is:", corr_matrix_header["DATE-OBS"])
 print("> The crop_size(region we will investigate) is :", crop_size)
 
-print("> (angles) name of object:", derotation_angles_header["OBJECT"])
-print("> (angles) observe date (DATE-OBS) is:", derotation_angles_header["DATE-OBS"])
+print("> (para angles) name of object:", derotation_angles_header["OBJECT"])
+print("> (para angles) observe date (DATE-OBS) is:", derotation_angles_header["DATE-OBS"])
 
 # collect data
 # TODO(yuchen): it is true there is a smarter way to do it

@@ -173,6 +173,10 @@ print(">> science cube - info ")
 print("OBJECT\t\t\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
 display_header(science_header)
 print(">> science cube DATE-OBS:", science_header["DATE-OBS"])
+print(">> science cube OBJECT:", science_header["OBJECT"])
+print(">> science cube EXPTIME:", science_header["EXPTIME"])
+print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
+print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
 # for test
 anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
@@ -180,6 +184,10 @@ if len(anglenames) != 1:
     raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
 derotation_angles_header = fits.getheader(anglenames[0])
 print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])
+print(">> para OBJECT:", derotation_angles_header["OBJECT"])
+print(">> para EXPTIME:", derotation_angles_header["EXPTIME"])
+print(">> para ESO INS COMB ICOR:", derotation_angles_header["ESO INS COMB ICOR"])
+print(">> para ESO INS COMB IFLT:", derotation_angles_header["ESO INS COMB IFLT"])
 
 nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
 
@@ -192,18 +200,21 @@ border_r = ny//2 + crop_size//2 + 1
 ref_frames = None
 ref_nb_frames = []
 reference_cube_names_remove_dup = []
-c = 0
+
+# indice start
+ind_start = 0
 print(">> reference cube - info ")
 print("OBJECT\t\t\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
+
 for i in range(len(reference_cube_names)):
     name = reference_cube_names[i]
     tmp_cube = fits.getdata(name)
     tmp_header = fits.getheader(name)
     if tmp_header["OBJECT"] == science_header["OBJECT"]:
-        c = c+1
+        ind_start = ind_start+1
         continue
     display_header(tmp_header)
-    if i==c:
+    if i==ind_start:
         ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
         ref_nb_frames.append(len(tmp_cube[0]))
     else:
