@@ -8,6 +8,7 @@ Reduce a IRD_SCIENCE_REDUCED_MASTER_CUBE
 
 import argparse
 import warnings
+import datetime
 import numpy as np
 import vip_hci as vip
 from astropy.io import fits
@@ -210,6 +211,7 @@ def create_mask(crop_size, inner_radius, outer_radius):
 # main code #
 #############
 print("######### Start program : ird_rdi_reduce.py #########")
+start_time = datetime.datetime.now()
 parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
 # file .sof whille contain the CORRELATION_MATRIX, SCIENCE TARGET, PARALLACTIC ANGLE
 parser.add_argument("sof", help="file name of the sof file", type=str)
@@ -351,5 +353,5 @@ if nb_wl>1:
     
     hdu = fits.PrimaryHDU(data=res_1, header=science_header_bis)
     hdu.writeto(file_name)
-
-print("######### End #########")
+end_time = datetime.datetime.now()
+print("######### End program : no error! Take:", end_time - start_time, "#########")
