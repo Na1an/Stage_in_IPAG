@@ -153,6 +153,7 @@ if science_object != 'unspecified':
             science_cube_name = cube_name
             reference_cube_names = [cube_name for cube_name in cube_names if cube_name != science_cube_name]
             science_object_final = header['OBJECT']
+            break
     try:
         print('\nScience OBJECT set to {0:s}'.format(science_object_final))
     except:
@@ -171,6 +172,14 @@ science_header = fits.getheader(science_cube_name)
 print(">> science cube - info ")
 print("OBJECT\t\t\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
 display_header(science_header)
+print(">> science cube DATE-OBS:", science_header["DATE-OBS"])
+
+# for test
+anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
+if len(anglenames) != 1: 
+    raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
+derotation_angles_header = fits.getheader(anglenames[0])
+print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])
 
 nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
 
@@ -227,6 +236,7 @@ file_name = "pcc_matrix.fits"
 print("> The result will be stored in :", file_name)
 
 hdu = fits.PrimaryHDU(data=res, header=science_header)
+
 hdu.writeto(file_name)
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")
