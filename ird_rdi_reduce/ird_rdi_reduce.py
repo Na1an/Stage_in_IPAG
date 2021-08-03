@@ -212,7 +212,7 @@ def create_mask(crop_size, inner_radius, outer_radius):
 #############
 print("######### Start program : ird_rdi_reduce.py #########")
 start_time = datetime.datetime.now()
-parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
+parser = argparse.ArgumentParser(description="Do the RDI reduction with help of big reference library.")
 # file .sof whille contain the CORRELATION_MATRIX, SCIENCE TARGET, PARALLACTIC ANGLE
 parser.add_argument("sof", help="file name of the sof file", type=str)
 parser.add_argument("--score", help="which decide how we choose the reference frame (>=1)", type=int, default=1)
@@ -254,9 +254,11 @@ corr_matrix_path = filenames[np.where(datatypes == "IRD_CORR_MATRIX")[0]]
 if len(corr_matrix_path) < 1:
     raise Exception("The sof file must contain exactly one IRD_CORR_MATRIX file")
 
+'''
 anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
 if len(anglenames) != 1: 
     raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
+'''
 
 # Step-2 take science cube
 print(">> corr_matrix_path", corr_matrix_path)
@@ -274,8 +276,9 @@ print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
 print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
 nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
-derotation_angles = fits.getdata(anglenames[0])
-derotation_angles_header = fits.getheader(anglenames[0])
+anglename = science_header["PA_ANGLE"]
+derotation_angles = fits.getdata(anglename)
+derotation_angles_header = fits.getheader(anglename)
 print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])
 print(">> para OBJECT:", derotation_angles_header["OBJECT"])
 print(">> para EXPTIME:", derotation_angles_header["EXPTIME"])

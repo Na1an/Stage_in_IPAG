@@ -210,10 +210,11 @@ def create_mask(crop_size, inner_radius, outer_radius):
 #############
 # main code #
 #############
-print("######### Start program : ird_rdi_reduce.py #########")
+print("######### Start program : ird_rdi_injection_and_compute_contrast.py #########")
 start_time = datetime.datetime.now()
-parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
-# file .sof whille contain the CORRELATION_MATRIX, SCIENCE TARGET, PARALLACTIC ANGLE
+parser = argparse.ArgumentParser(description="Inject a fake companion and compute the contrast, S/N and flux.")
+
+# file .sof whille contain :
 parser.add_argument("sof", help="file name of the sof file", type=str)
 parser.add_argument("--score", help="which decide how we choose the reference frame (>=1)", type=int, default=1)
 parser.add_argument("--n_corr", help="the number of best correalted frames for each frame of science target", type=int, default=150)

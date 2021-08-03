@@ -36,12 +36,12 @@
         <input_frame min="1" max="1">
             <frame_type value="IRD_CORR_MATRIX"/>
             <!--filename_parameter value="$1"/-->
-            <description value="Science and reference master cubes to reduce"/>
+            <description value="The correlation matrix we will use."/>
         </input_frame>
         <input_frame min="1" max="1">
             <frame_type value="IRD_SCIENCE_PARA_ROTATION_CUBE"/>
             <!--filename_parameter value="$1"/-->
-            <description value="The correlation matrix we will use."/>
+            <description value="PARALACTIC ANGLE WE WILL USE."/>
         </input_frame>
     </inputs>
     <!-- ==Outputs== -->

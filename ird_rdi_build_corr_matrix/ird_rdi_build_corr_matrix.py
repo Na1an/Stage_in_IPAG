@@ -90,6 +90,16 @@ def display_header(header):
     '''
     print(str(header["OBJECT"])+"\t\t\t"+str(header["DATE-OBS"])+'\t'+ str(header["ESO OBS START"]) +'\t'+str(header["NAXIS3"])+"\t  "+str(header["DIT_MIN"]))
 
+# get angle from the science cube path
+def get_para_angle_from_science_cube(path):
+    '''
+    Args:
+        path : a string. Replace the last element after '/', then we can have the parallactic angle path.
+    Return:
+        res : a string. The parallactic angle path.
+    '''
+    return path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","ird_convert_recenter_dc5-IRD_SCIENCE_PARA_ROTATION_CUBE-rotnth.fits")
+
 #############
 # main code #
 #############
@@ -137,11 +147,19 @@ data=np.loadtxt(sofname, dtype=str)
 filenames=data[:,0]
 datatypes=data[:,1]
 
+# Read Data from file .sof
 cube_names = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
 nb_cubes = len(cube_names)
 
 if nb_cubes < 2: 
     raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
+
+'''
+# Read angle
+anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
+if len(anglenames) < 1: 
+    raise Exception('The sof file must contain more than one IRD_SCIENCE_PARA_ROTATION_CUBE file')
+'''
 
 # except one science cube, the rest are reference cubes
 nb_reference_cubes = nb_cubes - 1 
@@ -163,8 +181,8 @@ if science_object != 'unspecified':
 else:
     science_cube_name = cube_names[0]
     reference_cube_names = cube_names[1:]
-
 print("> science cube :", science_cube_name)
+
 
 # take science cube
 science_cube = fits.getdata(science_cube_name)
@@ -172,6 +190,8 @@ science_header = fits.getheader(science_cube_name)
 print(">> science cube - info ")
 print("OBJECT\t\t\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
 display_header(science_header)
+print("=================== science cube and angle =======================")
+print("> start test")
 print(">> science cube DATE-OBS:", science_header["DATE-OBS"])
 print(">> science cube OBJECT:", science_header["OBJECT"])
 print(">> science cube EXPTIME:", science_header["EXPTIME"])
@@ -179,16 +199,15 @@ print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
 print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
 # for test
-anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
-if len(anglenames) != 1: 
-    raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
-derotation_angles_header = fits.getheader(anglenames[0])
+anglename = get_para_angle_from_science_cube(science_cube_name)
+
+derotation_angles_header = fits.getheader(anglename)
+print("> corresponding parallactic angle", anglename)
 print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])
 print(">> para OBJECT:", derotation_angles_header["OBJECT"])
 print(">> para EXPTIME:", derotation_angles_header["EXPTIME"])
 print(">> para ESO INS COMB ICOR:", derotation_angles_header["ESO INS COMB ICOR"])
 print(">> para ESO INS COMB IFLT:", derotation_angles_header["ESO INS COMB IFLT"])
-
 nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
 
 # sort reference cube names
@@ -240,6 +259,7 @@ science_header["PATH_TAR"] = science_cube_name
 science_header["CROPSIZE"] = crop_size
 science_header["INNER_R"] = inner_radius
 science_header["OUTER_R"] = outer_radius
+science_header["PA_ANGLE"] = anglename
 
 complete_header(science_header, reference_cube_names_remove_dup, ref_nb_frames)
 
