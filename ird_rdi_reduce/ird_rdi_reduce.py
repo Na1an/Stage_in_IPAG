@@ -276,7 +276,7 @@ print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
 print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
 nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
-anglename = science_header["PA_ANGLE"]
+anglename = corr_matrix_header["PA_ANGLE"]
 derotation_angles = fits.getdata(anglename)
 derotation_angles_header = fits.getheader(anglename)
 print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])

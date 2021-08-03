@@ -10,6 +10,7 @@ import argparse
 import warnings
 import datetime
 import numpy as np
+import pandas as pd
 import vip_hci as vip
 from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning
@@ -89,6 +90,23 @@ def display_header(header):
         None.
     '''
     print(str(header["OBJECT"])+"\t\t\t"+str(header["DATE-OBS"])+'\t'+ str(header["ESO OBS START"]) +'\t'+str(header["NAXIS3"])+"\t  "+str(header["DIT_MIN"]))
+
+# take data from header
+def take_data_from_header(science_header):
+    '''
+    Args:
+        header : a fits header. Juest for displaying the detail.
+    Return:
+        None.
+    '''
+    res = []
+    res.append(str(header["OBJECT"]))
+    res.append(str(header["DATE-OBS"]))
+    res.append(str(header["ESO OBS START"]))
+    res.append(str(header["NAXIS3"]))
+    res.append(str(header["DIT_MIN"]))
+
+    return res
 
 # get angle from the science cube path
 def get_para_angle_from_science_cube(path):
@@ -187,10 +205,13 @@ print("> science cube :", science_cube_name)
 # take science cube
 science_cube = fits.getdata(science_cube_name)
 science_header = fits.getheader(science_cube_name)
-print(">> science cube - info ")
-print("OBJECT\t\t\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
-display_header(science_header)
-print("=================== science cube and angle =======================")
+print("\n>> science cube - info\n")
+data_sc = []
+data_sc.append(take_data_from_header(science_header))
+df_sc = pd.DataFrame(data=data_sc, columns=["OBJECT","DATE-OBS","OBS_STA","NB_FRAMES","DIT"])
+print(df_sc.to_string())
+
+print("\n=================== science cube and angle =======================")
 print("> start test")
 print(">> science cube DATE-OBS:", science_header["DATE-OBS"])
 print(">> science cube OBJECT:", science_header["OBJECT"])
@@ -222,9 +243,9 @@ reference_cube_names_remove_dup = []
 
 # indice start
 ind_start = 0
-print(">> reference cube - info ")
-print("OBJECT\t\t\tDATE-OBS\t\t\tOBS_STA\t\t\tNB_FRAMES\tDIT")
+print("\n>> reference cube - info \n")
 
+data_ref = []
 for i in range(len(reference_cube_names)):
     name = reference_cube_names[i]
     tmp_cube = fits.getdata(name)
@@ -232,7 +253,7 @@ for i in range(len(reference_cube_names)):
     if tmp_header["OBJECT"] == science_header["OBJECT"]:
         ind_start = ind_start+1
         continue
-    display_header(tmp_header)
+    data_ref.append(take_data_from_header(tmp_header))
     if i==ind_start:
         ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
         ref_nb_frames.append(len(tmp_cube[0]))
@@ -241,7 +262,10 @@ for i in range(len(reference_cube_names)):
         ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
     reference_cube_names_remove_dup.append(name)
 
-print("> ref_frames.shape =", ref_frames.shape)
+df_ref = pd.DataFrame(data=data_ref, columns=["OBJECT","DATE-OBS","OBS_STA","NB_FRAMES","DIT"])
+print(df_ref.to_string())
+
+print("\n> ref_frames.shape =", ref_frames.shape)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
 # correlation matrix
