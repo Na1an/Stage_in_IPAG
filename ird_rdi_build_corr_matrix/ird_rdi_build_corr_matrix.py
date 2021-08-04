@@ -233,7 +233,7 @@ print(">> para EXPTIME:", derotation_angles_header["EXPTIME"])
 print(">> para ESO INS COMB ICOR:", derotation_angles_header["ESO INS COMB ICOR"])
 print(">> para ESO INS COMB IFLT:", derotation_angles_header["ESO INS COMB IFLT"])
 
-nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
+nb_wl_channels, nb_science_frames, ny, nx = science_cube.shape
 # sort reference cube names/paths
 reference_cube_names.sort()
 
