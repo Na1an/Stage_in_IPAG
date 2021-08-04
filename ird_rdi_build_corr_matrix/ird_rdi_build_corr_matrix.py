@@ -122,6 +122,7 @@ def get_para_angle_from_science_cube(path):
 # main code #
 #############
 print("######### Start program : ird_rdi_corr_matrix.py #########")
+print("> [IMPORTANT] This recipe works only for the standard reduction input! \n")
 start_time = datetime.datetime.now()
 parser = argparse.ArgumentParser(description="For build the Pearson Correlation Coefficient matrix for the science target and the reference master cubes, we need the following parameters.")
 parser.add_argument("sof", help="file name of the sof file",type=str)
@@ -190,6 +191,7 @@ if science_object != 'unspecified':
             reference_cube_names = [cube_name for cube_name in cube_names if cube_name != science_cube_name]
             science_object_final = header['OBJECT']
             break
+    
     try:
         print('\nScience OBJECT set to {0:s}'.format(science_object_final))
     except:
@@ -199,8 +201,9 @@ if science_object != 'unspecified':
 else:
     science_cube_name = cube_names[0]
     reference_cube_names = cube_names[1:]
-print("> science cube :", science_cube_name)
 
+print("> science cube :", science_cube_name)
+#print("> reference cube name", reference_cube_names)
 
 # take science cube
 science_cube = fits.getdata(science_cube_name)
@@ -219,7 +222,7 @@ print(">> science cube EXPTIME:", science_header["EXPTIME"])
 print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
 print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
-# for test
+# take anglename
 anglename = get_para_angle_from_science_cube(science_cube_name)
 
 derotation_angles_header = fits.getheader(anglename)
@@ -229,9 +232,9 @@ print(">> para OBJECT:", derotation_angles_header["OBJECT"])
 print(">> para EXPTIME:", derotation_angles_header["EXPTIME"])
 print(">> para ESO INS COMB ICOR:", derotation_angles_header["ESO INS COMB ICOR"])
 print(">> para ESO INS COMB IFLT:", derotation_angles_header["ESO INS COMB IFLT"])
-nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
 
-# sort reference cube names
+nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
+# sort reference cube names/paths
 reference_cube_names.sort()
 
 # collect data, then we have reference frames

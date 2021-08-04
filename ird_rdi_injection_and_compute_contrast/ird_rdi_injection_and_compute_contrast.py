@@ -10,6 +10,7 @@ import argparse
 import warnings
 import datetime
 import numpy as np
+import pandas as pd
 import vip_hci as vip
 from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning
@@ -207,22 +208,57 @@ def create_mask(crop_size, inner_radius, outer_radius):
                 count = count + 1
     return res
 
+# take data from header
+def take_data_from_header(science_header):
+    '''
+    Args:
+        header : a fits header. Juest for displaying the detail.
+    Return:
+        None.
+    '''
+    res = []
+    res.append(str(header["OBJECT"]))
+    res.append(str(header["DATE-OBS"]))
+    res.append(str(header["ESO OBS START"]))
+    res.append(str(header["NAXIS3"]))
+    res.append(str(header["DIT_MIN"]))
+
+    return res
+
+# get angle from the science cube path
+def get_para_angle_from_science_cube(path):
+    '''
+    Args:
+        path : a string. Replace the last element after '/', then we can have the parallactic angle path.
+    Return:
+        res : a string. The parallactic angle path.
+    '''
+    return path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","ird_convert_recenter_dc5-IRD_SCIENCE_PARA_ROTATION_CUBE-rotnth.fits")
+
 #############
 # main code #
 #############
 print("######### Start program : ird_rdi_injection_and_compute_contrast.py #########")
+print("> [IMPORTANT] This recipe works only for the standard reduction! \n")
 start_time = datetime.datetime.now()
 parser = argparse.ArgumentParser(description="Inject a fake companion and compute the contrast, S/N and flux.")
 
 # file .sof whille contain :
 parser.add_argument("sof", help="file name of the sof file", type=str)
+parser.add_argument("--inner_radius",help="inner radius where the reduction starts", type=int, default=10)
+parser.add_argument("--outer_radius",help="outer radius where the reduction starts", type=int, default=100)
+parser.add_argument("--science_object", help="the OBJECT keyword of the science target", type=str, default='unspecified')
+parser.add_argument("--wl_channels", help="Spectral channel to use (to choose between 0 for channel 0, 1 for channel 1, 2 for both channels)", type=int, choices=[0,1,2], default=0)
 parser.add_argument("--score", help="which decide how we choose the reference frame (>=1)", type=int, default=1)
 parser.add_argument("--n_corr", help="the number of best correalted frames for each frame of science target", type=int, default=150)
 parser.add_argument("--ncomp",help="number of principal components to remove (5 by default)", type=int, default=5)
-parser.add_argument("--wl_channels", help="Spectral channel to use (to choose between 0 for channel 0, 1 for channel 1, 2 for both channels)", type=int, choices=[0,1,2], default=0)
 parser.add_argument("--scaling", help="scaling for the PCA (to choose between 0 for spat-mean, 1 for spat-standard, 2 for temp-mean, 3 for temp-standard or 4 for None)",\
                     type=int, choices=[0,1,2,3,4], default=0)
-# handle args
+
+###########################
+# Step-0 Handle arguments #
+###########################
+# all parameters needed are here
 args = parser.parse_args()
 
 # sof
@@ -246,37 +282,95 @@ nb_wl = len(wl_channels)
 scaling_dict = {0 : 'spat-mean', 1 : 'spat-standard', 2 : 'temp-mean', 3 : 'temp-standard', 4 : None}
 scaling = scaling_dict[args.scaling]
 
-# Step-1 Reading the sof file
+# --crop_size and inner/outer radius
+inner_radius = args.inner_radius
+outer_radius = args.outer_radius
+crop_size = 2*outer_radius+1
+
+# --science_object
+science_object = args.science_object
+
+# check crop_size type
+if type(crop_size) not in [np.int64,np.int,int]:
+    crop_size = int(crop_size)
+
+if crop_size<=21:
+    crop_size=21
+    print('Warning cropsize<=21, too small! Value set to 21')
+
+if outer_radius <= inner_radius:
+    print("Warning outer_radius <= inner_radius! Value set to {0:d}".format(inner_radius+1))
+
+# for the fake injection
+# We need to prepare science cube, parallactic angle, psf, fwhm, psfn, pxscale 
+
+###############################
+# Step-1 Reading the sof file #
+###############################
+# Read Data from file .sof
 data=np.loadtxt(sofname,dtype=str)
 filenames=data[:,0]
 datatypes=data[:,1]
+cube_names = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
+nb_cubes = len(cube_names)
 
-corr_matrix_path = filenames[np.where(datatypes == "IRD_CORR_MATRIX")[0]]
-if len(corr_matrix_path) < 1:
-    raise Exception("The sof file must contain exactly one IRD_CORR_MATRIX file")
+if nb_cubes < 2: 
+    raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
 
-anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
-if len(anglenames) != 1: 
-    raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
 
-# Step-2 take science cube
-print(">> corr_matrix_path", corr_matrix_path)
-print(">> it's type", type(corr_matrix_path))
-corr_matrix_path = corr_matrix_path[0]
-corr_matrix = fits.getdata(corr_matrix_path)
-corr_matrix_header = fits.getheader(corr_matrix_path)
+# except one science cube, the rest are reference cubes
+nb_reference_cubes = nb_cubes - 1 
 
-science_cube = fits.getdata(corr_matrix_header["PATH_TAR"])
-science_header = fits.getheader(corr_matrix_header["PATH_TAR"])
+if science_object != 'unspecified':
+    for i,cube_name in enumerate(cube_names):
+        header =fits.getheader(cube_name)
+        if header['OBJECT'].strip() == science_object.strip():
+            science_cube_name = cube_name
+            reference_cube_names = [cube_name for cube_name in cube_names if cube_name != science_cube_name]
+            science_object_final = header['OBJECT']
+            break
+    
+    try:
+        print('\nScience OBJECT set to {0:s}'.format(science_object_final))
+    except:
+        print('Unable to detect the science cube from the IRD_SCIENCE_REDUCED_MASTER_CUBE. Using by default option the first cube as science')
+        science_cube_name = cube_names[0]
+        reference_cube_names = cube_names[1:]
+else:
+    science_cube_name = cube_names[0]
+    reference_cube_names = cube_names[1:]
+
+print("> science cube path:", science_cube_name)
+
+############################
+# Step-2 take science cube #
+############################
+
+# science_cube
+science_cube = fits.getdata(science_cube_name)
+science_header = fits.getheader(science_cube_name)
+
+print("\n>> science cube - info\n")
+data_sc = []
+data_sc.append(take_data_from_header(science_header))
+df_sc = pd.DataFrame(data=data_sc, columns=["OBJECT","DATE-OBS","OBS_STA","NB_FRAMES","DIT"])
+print(df_sc.to_string())
+
+print("\n=================== science cube and angle =======================")
+print("> start test")
 print(">> science cube DATE-OBS:", science_header["DATE-OBS"])
 print(">> science cube OBJECT:", science_header["OBJECT"])
 print(">> science cube EXPTIME:", science_header["EXPTIME"])
 print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
 print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
-
 nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
-derotation_angles = fits.getdata(anglenames[0])
-derotation_angles_header = fits.getheader(anglenames[0])
+
+# take anglename
+anglename = get_para_angle_from_science_cube(science_cube_name)
+
+derotation_angles = fits.getdata(anglename)
+derotation_angles_header = fits.getheader(anglename)
+print("> corresponding parallactic angle", anglename)
 print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])
 print(">> para OBJECT:", derotation_angles_header["OBJECT"])
 print(">> para EXPTIME:", derotation_angles_header["EXPTIME"])
@@ -286,6 +380,9 @@ print(">> para ESO INS COMB IFLT:", derotation_angles_header["ESO INS COMB IFLT"
 if len(derotation_angles) != nb_science_frames:
     raise Exception('The science cube IRD_SCIENCE_REDUCED_MASTER_CUBE contains {0:d} frames while the list IRD_SCIENCE_PARA_ROTATION_CUBE contains {1:d} angles'.format(nb_science_frames,len(derotation_angles)))
 
+##############################
+# Step-3 take reference cube #
+##############################
 # the number of reference cube we have, take the necessary
 nb_ref_cube = int(corr_matrix_header["NB_REF_CUBES"])
 ref_cube_path = []
