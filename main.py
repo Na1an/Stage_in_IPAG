@@ -537,16 +537,16 @@ def INJECTION(argv, scale):
 
     # make fake companion
     if obj == "PLANETE":
-        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel=0, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
-        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 40*7, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
-        fake_comp_2 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 2000, plsc=pxscale, rad_dists=[27], theta=160, n_branches = 4)
+        fake_comp_0 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel=0, plsc=pxscale, rad_dists=[25], theta=160, n_branches = 1)
+        fake_comp_1 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 40*7, plsc=pxscale, rad_dists=[25], theta=160, n_branches = 1)
+        fake_comp_2 = vip.metrics.cube_inject_companions(science_target[0], psf_template=psfn, angle_list=-angles, flevel= 2000, plsc=pxscale, rad_dists=[25], theta=160, n_branches = 1)
         print("fake companion 0 shape = ", fake_comp_0.shape)
         fake_comp = np.zeros((3, nb_fr_ref, w, h))
         fake_comp[0] = fake_comp_0
         fake_comp[1] = fake_comp_1
         fake_comp[2] = fake_comp_2
-        path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/Wolf_fake_comp_27px_bis.fits"
-
+        #path_fake_comp = "./K_kilp_ADI_RDI/fake_planet/Wolf_fake_comp_27px_bis.fits"
+        path_fake_comp = "./find_position.fits"
         hdu = fits.PrimaryHDU(fake_comp)
         hdu.writeto(path_fake_comp) 
     

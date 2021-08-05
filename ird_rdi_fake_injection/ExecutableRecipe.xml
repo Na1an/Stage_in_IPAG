@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<executable_recipe
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="ExecutableRecipe.xsd">
+    <!-- The frame types declared here will be created
+    in the datacenter. -->
+    <sphere pipeline="test" user="yuchen.bai@univ-grenoble-alpes.fr"/>
+    <frame_types>
+        <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE" description="Science and reference master cubes to reduce"/>
+        <frame_type name="IRD_TEMPORARY" description="RDI reduced image for channel 0"/>
+    </frame_types>
+    <!-- ==Recipe== -->
+    <recipe name="ird_rdi_fake_injection" instrument="IRDIS">
+        <synopsis value="ird_rdi_fake_injection"/>
+        <description short="Inject fake companions into a science cube and apply the rdi method of vip_hci to produce a final reduced image" full=""/>
+        <author email="yuchen.bai@univ-grenoble-alpes.fr" name="Yuchen BAI"/>
+        <license value="GPL"/>
+    </recipe>
+    <!-- ==Executable== -->
+    <!-- The binary path (or value) can be empty if the binary
+    is in path (or the script extension is sufficient). -->
+    <executable>
+       <binary value="/dwh/sphere-exec-env/python3/.env_conda/bin/python"/>
+       <script value="ird_rdi_fake_injection.py"/>
+       <includes>
+            <include regex=".*\.py"/>
+        </includes>
+    </executable>
+    <!-- ==Inputs== -->
+    <!-- With sof="false" min & max must be set to 1 (no optional input,
+    no wildcards allowed.). In this case, you must specify the
+    filename_parameter (can be $1, $2... for inline parameter ).
+     -->
+    <inputs use_sof="true">
+        <input_frame min="2" max="100000">
+            <frame_type value="IRD_SCIENCE_REDUCED_MASTER_CUBE"/>
+            <!--filename_parameter value="$1"/-->
+            <description value="Science and reference master cubes to reduce"/>
+        </input_frame>
+    </inputs>
+    <!-- ==Outputs== -->
+    <!-- Set use_filename_parameter="false" for static output filenames.
+    Otherwise fill the filename_parameter with the corresponding parameter
+    name. -->
+    <!-- Extra outputs are used to set the frame types of all outputs not known
+      by filenames. The extra_output_frame tags are used in appearing order. -->
+    <outputs use_filename_parameter="false">
+        <output_frame format="FITS">
+            <frame_type value="IRD_TEMPORARY"/>
+            <default_name value="rdi_res_0.fits"/>
+            <filename_parameter value=""/>
+            <description value="the result of RDI reduction on wave length=0"/>
+        </output_frame>
+        <output_frame format="FITS">
+            <frame_type value="IRD_TEMPORARY"/>
+            <default_name value="rdi_res_1.fits"/>
+            <filename_parameter value=""/>
+            <description value="the result of RDI reduction on wave length=1"/>
+        </output_frame>
+        <output_frame format="FITS">
+            <frame_type value="IRD_TEMPORARY"/>
+            <default_name value="rdi_res_fake_0.fits"/>
+            <filename_parameter value=""/>
+            <description value="the result of RDI reduction with fake companion injection on wave length=0"/>
+        </output_frame>
+        <output_frame format="FITS">
+            <frame_type value="IRD_TEMPORARY"/>
+            <default_name value="rdi_res_fake_1.fits"/>
+            <filename_parameter value=""/>
+            <description value="the result of RDI reduction with fake companion injection on wave length=1"/>
+        </output_frame>
+    </outputs>
+    <!-- ==Parameters== -->
+    <!-- For inline parameters (without name), optional must be "false"
+    , and the parameter name must be $1, $2, etc. -->
+    <!-- If an option description contains "0 = Lorem, 1 = Ipsum" for
+    an integer type, it will be displayed as a combo list. -->
+    <!-- Options without value must have the type "flag" and be used
+    as a boolean-->
+    <parameters prefix=" ">
+        <parameter name="--inner_radius" optional="true">
+            <default_value value="10"/>
+            <type value="int"/>
+            <description value="If an integer > 1 then this value is the radius of the circular mask and the pixels inside the mask are ignored. "/>
+        </parameter>
+        <parameter name="--outer_radius" optional="true">
+            <default_value value="100"/>
+            <type value="int"/>
+            <description value="If an integer then this value is the radius of the outer circular mask and the pixels outside the mask are ignored. "/>
+        </parameter>
+        <parameter name="--psfn_size" optional="true">
+            <default_value value="17"/>
+            <type value="int"/>
+            <description value="this size will be used to calculate psfn"/>
+        </parameter>
+        <parameter name="--science_object" optional="true">
+            <default_value value=""/>
+            <type value="string"/>
+            <description value="OBJECT keyword of the science cube, used to determine which is science cube and which are the reference cubes from IRD_SCIENCE_REDUCED_MASTER_CUBE input. If not provided the routine use the first cube as science and the others as reference (but it might fail if the parallactic angles does not match)."/>
+        </parameter>
+        <parameter name="--flux_level" optional="true">
+            <default_value value="40"/>
+            <type value="int"/>
+            <description value="flux level we will use in the fake injection, default is 40"/>
+        </parameter>
+        <parameter name="--rad_dist" optional="true">
+            <default_value value="25"/>
+            <type value="int"/>
+            <description value="the distance/radius from the fake companion to star, default is 25"/>
+        </parameter>
+        <parameter name="--theta" optional="true">
+            <default_value value="60"/>
+            <type value="int"/>
+            <description value="the theta, default is 60"/>
+        </parameter>
+        <parameter name="--n_branches" optional="true">
+            <default_value value="1"/>
+            <type value="int"/>
+            <description value="how many brances/companions in one direction we want"/>
+        </parameter>
+        <parameter name="--wl_channels" optional="true">
+            <default_value value="0"/>
+            <type value="int"/>
+            <description value="Spectral channel to use. 0=Channel 0, 1=Channel 1, 2=Channel 0 and 1. Default is 0."/>
+        </parameter>
+        <parameter name="--score" optional="true">
+            <default_value value="1"/>
+            <type value="int"/>
+            <description value="Score is used to measure how good a reference frame is."/>
+        </parameter>
+        <parameter name="--n_corr" optional="true">
+            <default_value value="100"/>
+            <type value="int"/>
+            <description value="Number of best correlated frames. Default is 100."/>
+        </parameter>
+        <!-- PCA parameters -->
+        <parameter name="--ncomp" optional="true">
+            <default_value value="10"/>
+            <type value="int"/>
+            <description value="Number of modes used by PCA. Default is 10."/>
+        </parameter>
+        <parameter name="--wl_channels" optional="true">
+            <default_value value="0"/>
+            <type value="int"/>
+            <description value="Spectral channel to use. 0=Channel 0, 1=Channel 1, 2=Channel 0 and 1. Default is 0."/>
+        </parameter>
+        <parameter name="--scaling" optional="true">
+            <default_value value="0"/>
+            <type value="int"/>
+            <description value="Scaling. 0=spat-mean, 1=spat-standard, 2=temp-mean, 3=temp-standard, 4=None. Default is 0."/>
+        </parameter>
+    </parameters>
+</executable_recipe>
+
