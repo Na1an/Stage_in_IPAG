@@ -14,6 +14,7 @@ import pandas as pd
 import vip_hci as vip
 from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning
+from photutils.aperture import CircularAperture, aperture_photometry, CircularAnnulus
 
 ###########
 # setting #
@@ -268,6 +269,34 @@ def get_pxscale():
     #print("In SPHERE IRDIS : pxscale =", res, "arcsec/px")
     return res 
 
+# get contrast and S/N ratio
+def get_contrast_and_SN(res_fake, res_real, positions, fwhm, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus):
+    '''
+    Args:
+        res_fake : a 2D np.array. The path of repository where the files are.
+        res_real : a 2D np.array. The path of another repository where the files are, for calculating snr.
+        positions : a list of tuple (x,y). The coordinates of companions.
+        fwhm : a float. fwhm's diameter.
+        fwhm_flux : a float. The flux of fwhm.
+    Return:
+        contrast : a np.array, 1 dimension. Store the list of each companion's flux.
+        SN : a np.array, 1 dimension. Store the list of each companion's Signal to Noise ratio.
+    '''
+    
+    aperture = CircularAperture(positions, r=r_aperture)
+    annulus = CircularAnnulus(positions, r_in=r_in_annulus, r_out=r_out_annulus)
+    
+    # contrast
+    flux_companion = aperture_photometry(res_fake, [aperture, annulus])
+    flux_companion['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
+    flux = flux_companion['aperture_sum_0'] 
+    contrast = (flux_companion['aperture_sum_0']/aperture.area)/fwhm_flux
+
+    # SN
+    SN = vip.metrics.snr(array=res_fake, source_xy=positions, fwhm=fwhm, plot=False, array2 =res_real, use2alone=True)
+        
+    return contrast, SN, flux
+
 #############
 # main code #
 #############
@@ -292,6 +321,9 @@ parser.add_argument("--n_corr", help="the number of best correalted frames for e
 parser.add_argument("--ncomp",help="number of principal components to remove (5 by default)", type=int, default=5)
 parser.add_argument("--scaling", help="scaling for the PCA (to choose between 0 for spat-mean, 1 for spat-standard, 2 for temp-mean, 3 for temp-standard or 4 for None)",\
                     type=int, choices=[0,1,2,3,4], default=0)
+parser.add_argument("--r_aperture", help="radius to compute the flux/contrast", type=int, default=2)
+parser.add_argument("--r_in_annulus", help="inner radius of annulus around the fake companion", type=int, default=4)
+parser.add_argument("--r_out_annulus", help="outer radius of annulus around the fake companion", type=int, default=6)
 
 ###########################
 # Step-0 Handle arguments #
@@ -342,6 +374,11 @@ theta = args.theta
 
 # --n_branches
 n_branches = args.n_branches
+
+# --r_apperture
+r_aperture = args.r_aperture
+r_in_annulus = args.r_in_annulus
+r_out_annulus = args.r_out_annulus
 
 # check crop_size type
 if type(crop_size) not in [np.int64,np.int,int]:
@@ -442,7 +479,7 @@ psf_0 = psf[wl_final]
 
 # fwhm psfn
 fwhm = get_fwhm_from_psf(psf[wl_final])
-psfn = vip.metrics.normalize_psf(psf[wl_final], fwhm, size=psfn_size)
+psfn, fwhm_flux, fwhm_2 = vip.metrics.normalize_psf(psf[wl_final], fwhm, size=psfn_size, full_output=True)
 print("psfn =", psfn.shape, "psfn.ndim =", psfn.ndim)
 
 if nb_wl >1:
@@ -555,6 +592,19 @@ if nb_wl>1:
     print("> The fake result will be stored in :", file_name_fake)
     hdu = fits.PrimaryHDU(data=res_1_fake, header=science_header)
     hdu.writeto(file_name_fake)
+
+# flux, contrast and S/N
+pos = (10,10)
+
+# diameter is 4 pixels for calculating S/N
+fwhm_for_snr=4
+contrast, sn, flux = get_contrast_and_SN(res_0_fake, res_0, pos, fwhm_for_snr, fwhm_flux[0], r_aperture, r_in_annulus, r_out_annulus)
+res_contrast = {'fake_comp_wl_0':{'contrast':contrast, 'sn':sn, 'flux':flux}}
+if nb_wl>2:
+    contrast_bis, sn_bis, flux_bis = get_contrast_and_SN(res_1_fake, res_1, pos, fwhm_for_snr, fwhm_flux[0], r_aperture, r_in_annulus, r_out_annulus)
+    res_contrast.update({'fake_comp_wl_1':{'contrast':contrast_bis, 'sn':sn_bis, 'flux':flux_bis}})
+df = pd.DataFrame(data=res_contrast)
+df.to_csv(r'ird_rdi_fake_injeciton_res.txt', sep=' ', mode='a')
 
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")

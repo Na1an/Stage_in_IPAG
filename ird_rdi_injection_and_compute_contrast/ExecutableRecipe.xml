@@ -8,6 +8,7 @@
     <frame_types>
         <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE" description="Science and reference master cubes to reduce"/>
         <frame_type name="IRD_TEMPORARY" description="RDI reduced image for channel 0"/>
+        <frame_type name="IRD_RDI_FAKE_INJECTION_RES" description="Flux, contrast and S/N of the fake companion"/>
     </frame_types>
     <!-- ==Recipe== -->
     <recipe name="ird_rdi_injection_and_compute_contrast" instrument="IRDIS">
@@ -68,6 +69,12 @@
             <default_name value="rdi_res_fake_1.fits"/>
             <filename_parameter value=""/>
             <description value="the result of RDI reduction with fake companion injection on wave length=1"/>
+        </output_frame>
+        <output_frame format="TXT">
+            <frame_type value="IRD_RDI_FAKE_INJECTION_RES"/>
+            <default_name value="ird_rdi_fake_injeciton_res.txt"/>
+            <filename_parameter value=""/>
+            <description value="flux, contrast and  S/N of a fake companion"/>
         </output_frame>
     </outputs>
     <!-- ==Parameters== -->
@@ -148,6 +155,21 @@
             <default_value value="0"/>
             <type value="int"/>
             <description value="Scaling. 0=spat-mean, 1=spat-standard, 2=temp-mean, 3=temp-standard, 4=None. Default is 0."/>
+        </parameter>
+        <parameter name="--r_aperture" optional="true">
+            <default_value value="2"/>
+            <type value="int"/>
+            <description value="radius to compute the flux/contrast, default is 2"/>
+        </parameter>
+        <parameter name="--r_in_annulus" optional="true">
+            <default_value value="4"/>
+            <type value="int"/>
+            <description value="inner radius of annulus around the fake companion, default is 4"/>
+        </parameter>
+        <parameter name="--r_out_annulus" optional="true">
+            <default_value value="6"/>
+            <type value="int"/>
+            <description value="outer radius of annulus around the fake companion, default is 6"/>
         </parameter>
     </parameters>
 </executable_recipe>
