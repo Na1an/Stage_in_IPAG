@@ -286,7 +286,6 @@ parser.add_argument("--flux_level", help="flux level we will use in the fake inj
 parser.add_argument("--rad_dist", help="the distance/radius from the fake companion to star, default is 25", type=int, default=25)
 parser.add_argument("--theta", help="the theta, default is 60", type=int, default=60)
 parser.add_argument("--n_branches", help="how many brances we want", type=int, default=1)
-
 parser.add_argument("--wl_channels", help="Spectral channel to use (to choose between 0 for channel 0, 1 for channel 1, 2 for both channels)", type=int, choices=[0,1,2], default=0)
 parser.add_argument("--score", help="which decide how we choose the reference frame (>=1)", type=int, default=1)
 parser.add_argument("--n_corr", help="the number of best correalted frames for each frame of science target", type=int, default=150)
@@ -509,6 +508,8 @@ wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
 mask = create_mask(crop_size, inner_radius, outer_radius)
 corr_matrix = np.zeros((nb_wl, nb_science_frames, nb_ref_frames))
 science_cube_croped = science_cube[..., border_l:border_r, border_l:border_r]
+science_cube_croped_fake = science_cube_fake_comp[..., border_l:border_r, border_l:border_r]
+
 for w in range(nb_wl):
     wl = wl_channels[w]
     for i in range(nb_science_frames):
@@ -522,11 +523,17 @@ dict_ref_in_target = get_dict(reference_cube_names, target_ref_coords)
 print(">> wave_length=0", dict_ref_in_target)
 print(">> ref_frames_selected.shape =", ref_frames_selected.shape)
 res_0 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
+res_0_fake = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
 
 file_name = "rdi_res_0.fits"
 print("> The result will be stored in :", file_name)
 hdu = fits.PrimaryHDU(data=res_0, header=science_header)
 hdu.writeto(file_name)
+
+file_name_fake = "rdi_res_fake_0.fits"
+print("> The result fake will be stored in :", file_name_fake)
+hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header)
+hdu.writeto(file_name_fake)
 
 # if we need two wavelengths
 ref_frames_selected_bis = []
@@ -537,9 +544,17 @@ if nb_wl>1:
     print(">> wave_length=1", dict_ref_in_target_bis)
     print(">> ref_frames_selected_bis.shape =", ref_frames_selected_bis.shape)
     res_1 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
+    res_1_fake = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
+
     file_name = "rdi_res_1.fits"
     print("> The result will be stored in :", file_name)
     hdu = fits.PrimaryHDU(data=res_1, header=science_header)
     hdu.writeto(file_name)
+
+    file_name_fake = "rdi_res_fake_1.fits"
+    print("> The fake result will be stored in :", file_name_fake)
+    hdu = fits.PrimaryHDU(data=res_1_fake, header=science_header)
+    hdu.writeto(file_name_fake)
+
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")
