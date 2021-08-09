@@ -338,13 +338,13 @@ parser.add_argument("--n_corr", help="the number of best correalted frames for e
 parser.add_argument("--ncomp",help="number of principal components to remove (5 by default)", type=int, default=5)
 parser.add_argument("--scaling", help="scaling for the PCA (to choose between 0 for spat-mean, 1 for spat-standard, 2 for temp-mean, 3 for temp-standard or 4 for None)",\
                     type=int, choices=[0,1,2,3,4], default=0)
-parser.add_argument("--r_aperture", help="radius to compute the flux/contrast", type=int, default=2)
-parser.add_argument("--r_in_annulus", help="inner radius of annulus around the fake companion", type=int, default=4)
-parser.add_argument("--r_out_annulus", help="outer radius of annulus around the fake companion", type=int, default=6)
 
 # position
 parser.add_argument("coordinates", help="positions of fake companion, a string", type=str)
 parser.add_argument("--fwhm", help="the diameter for calculating snr", type=int, default=4)
+parser.add_argument("--r_aperture", help="radius to compute the flux/contrast", type=int, default=2)
+parser.add_argument("--r_in_annulus", help="inner radius of annulus around the fake companion", type=int, default=4)
+parser.add_argument("--r_out_annulus", help="outer radius of annulus around the fake companion", type=int, default=6)
 
 ###########################
 # Step-0 Handle arguments #
@@ -361,10 +361,31 @@ coords = get_coords_from_str(args.coordinates)
 # diameter is 4 pixels for calculating S/N
 fwhm_for_snr= args.fwhm
 
-# flux, contrast and S/N
-#pos = (10,10)
+# --r_apperture
+r_aperture = args.r_aperture
+r_in_annulus = args.r_in_annulus
+r_out_annulus = args.r_out_annulus
+
+###############################
+# Step-1 Reading the sof file #
+###############################
+# Read Data from file .sof
+data=np.loadtxt(sofname,dtype=str)
+filenames=data[:,0]
+datatypes=data[:,1]
+cube_names = filenames[np.where(datatypes == "IRD_RDI_RES_FAKE_INJECTION")[0]]
+nb_cubes = len(cube_names)
+
+# get fwhm_flux from header
+fwhm_flux_0 = header["HIERARCH fwhm_flux_0"]
+fwhm_flux_1 = header["HIERARCH fwhm_flux_1"]
 
 # calculating contrast, S/N and flux
+#pos = (10,10)
+for pos in coords:
+    # 
+    print(pos)
+
 contrast, sn, flux = get_contrast_and_SN(res_0_fake, res_0, pos, fwhm_for_snr, fwhm_flux[0], r_aperture, r_in_annulus, r_out_annulus)
 res_contrast = {'fake_comp_wl_0':{'contrast':contrast, 'sn':sn, 'flux':flux}}
 

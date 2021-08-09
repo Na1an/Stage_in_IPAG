@@ -7,7 +7,7 @@
     <sphere pipeline="test" user="yuchen.bai@univ-grenoble-alpes.fr"/>
     <frame_types>
         <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE" description="Science and reference master cubes to reduce"/>
-        <frame_type name="IRD_TEMPORARY" description="RDI reduced image for channel 0"/>
+        <frame_type name="IRD_RDI_RES_FAKE_INJECTION" description="RDI reduced image for channel 0 or 1 with fake injection"/>
     </frame_types>
     <!-- ==Recipe== -->
     <recipe name="ird_rdi_fake_injection" instrument="IRDIS">
@@ -46,25 +46,25 @@
       by filenames. The extra_output_frame tags are used in appearing order. -->
     <outputs use_filename_parameter="false">
         <output_frame format="FITS">
-            <frame_type value="IRD_TEMPORARY"/>
+            <frame_type value="IRD_RDI_RES_FAKE_INJECTION"/>
             <default_name value="rdi_res_0.fits"/>
             <filename_parameter value=""/>
             <description value="the result of RDI reduction on wave length=0"/>
         </output_frame>
         <output_frame format="FITS">
-            <frame_type value="IRD_TEMPORARY"/>
+            <frame_type value="IRD_RDI_RES_FAKE_INJECTION"/>
             <default_name value="rdi_res_1.fits"/>
             <filename_parameter value=""/>
             <description value="the result of RDI reduction on wave length=1"/>
         </output_frame>
         <output_frame format="FITS">
-            <frame_type value="IRD_TEMPORARY"/>
+            <frame_type value="IRD_RDI_RES_FAKE_INJECTION"/>
             <default_name value="rdi_res_fake_0.fits"/>
             <filename_parameter value=""/>
             <description value="the result of RDI reduction with fake companion injection on wave length=0"/>
         </output_frame>
         <output_frame format="FITS">
-            <frame_type value="IRD_TEMPORARY"/>
+            <frame_type value="IRD_RDI_RES_FAKE_INJECTION"/>
             <default_name value="rdi_res_fake_1.fits"/>
             <filename_parameter value=""/>
             <description value="the result of RDI reduction with fake companion injection on wave length=1"/>

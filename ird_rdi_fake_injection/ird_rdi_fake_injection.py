@@ -526,6 +526,10 @@ for w in range(nb_wl):
             corr_matrix[wl, i, j] = np.corrcoef(np.reshape(science_cube_croped[wl, i]*mask, ref_x*ref_y), np.reshape(ref_frames[wl, j]*mask, ref_x*ref_y))[0,1]
 print("> corr_matrix.shape", corr_matrix.shape)
 
+# store the fwhm_flux in to the science header
+science_header["HIERARCH fwhm_flux_0"] = fwhm_flux[0]
+science_header["HIERARCH fwhm_flux_1"] = fwhm_flux[1]
+
 # do the selection
 ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix[wl_final], science_cube_croped, n_corr, ref_frames, ref_nb_frames, score, wave_length=wl_final)
 dict_ref_in_target = get_dict(reference_cube_names, target_ref_coords)
@@ -534,12 +538,12 @@ print(">> ref_frames_selected.shape =", ref_frames_selected.shape)
 res_0 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
 res_0_fake = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
 
-file_name = "rdi_res_0.fits"
+file_name = "rdi_res_"+str(wl_final)+".fits"
 print("> The result will be stored in :", file_name)
 hdu = fits.PrimaryHDU(data=res_0, header=science_header)
 hdu.writeto(file_name)
 
-file_name_fake = "rdi_res_fake_0.fits"
+file_name_fake = "rdi_res_fake_"+str(wl_final)+".fits"
 print("> The result fake will be stored in :", file_name_fake)
 hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header)
 hdu.writeto(file_name_fake)
