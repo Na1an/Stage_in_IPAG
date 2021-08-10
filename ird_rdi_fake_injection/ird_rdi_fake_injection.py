@@ -5,6 +5,7 @@ Injecte a fake companion into a IRD_SCIENCE_REDUCED_MASTER_CUBE
 @Date   : 05/08/2021
 @Contact: yuchenbai@hotmail.com
 """
+import os
 import copy
 import argparse
 import warnings
@@ -25,6 +26,24 @@ warnings.simplefilter('ignore', category=AstropyWarning)
 ############
 # function #
 ############
+# show all
+def show_all_files(repository_path):
+    '''
+    Args:
+        repository_path : a string. The path of SPHERE DC
+        keyword : a string. What kind of files we want (ex. MASTER_CUBE)
+    Rrturn:
+        res : a list of string. Return the path of all related files.
+    '''
+    res = []
+    reps = os.listdir(repository_path)
+
+    for rep in reps:
+        files_sub = os.path.join(repository_path, rep)
+        print(files_sub)
+        if os.path.isdir(files_sub):
+            res = res + show_all_files(files_sub)
+    return res
 
 # generate a list of tuple
 def get_coords_of_ref_frames(nth, nb_frames):
@@ -244,6 +263,8 @@ def get_psf_from_science_cube(path):
     Return:
         res : a string. PSF path.
     '''
+    #print("------------|||||||||||||||||||--------------------")
+    #show_all_files(path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits",""))
     return path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","IRD_SCIENCE_PSF_MASTER_CUBE-median_unsat.fits")
 
 # get full width half maximum
@@ -293,9 +314,6 @@ parser.add_argument("--n_corr", help="the number of best correalted frames for e
 parser.add_argument("--ncomp",help="number of principal components to remove (5 by default)", type=int, default=5)
 parser.add_argument("--scaling", help="scaling for the PCA (to choose between 0 for spat-mean, 1 for spat-standard, 2 for temp-mean, 3 for temp-standard or 4 for None)",\
                     type=int, choices=[0,1,2,3,4], default=0)
-parser.add_argument("--r_aperture", help="radius to compute the flux/contrast", type=int, default=2)
-parser.add_argument("--r_in_annulus", help="inner radius of annulus around the fake companion", type=int, default=4)
-parser.add_argument("--r_out_annulus", help="outer radius of annulus around the fake companion", type=int, default=6)
 
 ########################### 
 # Step-0 Handle arguments #
@@ -347,11 +365,6 @@ theta = args.theta
 # --n_branches
 n_branches = args.n_branches
 
-# --r_apperture
-r_aperture = args.r_aperture
-r_in_annulus = args.r_in_annulus
-r_out_annulus = args.r_out_annulus
-
 # check crop_size type
 if type(crop_size) not in [np.int64,np.int,int]:
     crop_size = int(crop_size)
@@ -375,6 +388,8 @@ filenames=data[:,0]
 datatypes=data[:,1]
 cube_names = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
 nb_cubes = len(cube_names)
+
+psf_name = filenames[np.where(datatypes == 'IRD_SCIENCE_PSF_MASTER_CUBE')[0]]
 
 if nb_cubes < 2: 
     raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
@@ -443,7 +458,9 @@ if len(derotation_angles) != nb_science_frames:
     raise Exception('The science cube IRD_SCIENCE_REDUCED_MASTER_CUBE contains {0:d} frames while the list IRD_SCIENCE_PARA_ROTATION_CUBE contains {1:d} angles'.format(nb_science_frames,len(derotation_angles)))
 
 # take psf
-psf = fits.getdata(get_psf_from_science_cube(science_cube_name))
+#psf = fits.getdata(get_psf_from_science_cube(science_cube_name))
+psf = fits.getdata(psf_name[0])
+
 psf_0 = None
 psf_1 = None
 wl_final = wl_channels[0]
