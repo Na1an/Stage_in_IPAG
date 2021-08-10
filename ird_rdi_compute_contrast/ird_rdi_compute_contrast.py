@@ -25,7 +25,6 @@ warnings.simplefilter('ignore', category=AstropyWarning)
 ############
 # function #
 ############
-
 # get coordinates from a string
 def get_coords_from_str(coords_str):
     '''
@@ -39,7 +38,7 @@ def get_coords_from_str(coords_str):
         if ',' not in c:
             continue
         tmp = i.replace('(','').replace(')','').split(',')
-        res.append(float(tmp[0]), float(tmp[1]))
+        res.append((float(tmp[0]), float(tmp[1])))
 
     return res
 
@@ -80,7 +79,12 @@ def get_real_res_path_from_fake_res_path(path, wl):
     Return:
         res : a string. The parallactic angle path.
     '''
-    return path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","ird_convert_recenter_dc5-IRD_SCIENCE_PARA_ROTATION_CUBE-rotnth.fits")
+    res = ""
+    if wl == 0:
+        res = path.replace("rdi_res_fake_0.fits","rdi_res_0.fits")
+    else:
+        res = path.replace("rdi_res_fake_1.fits","rdi_res_1.fits")
+    return res
 
 #############
 # main code #
