@@ -1,11 +1,10 @@
 """
-Injecte a fake companion into a IRD_SCIENCE_REDUCED_MASTER_CUBE and compute the contrast
+Compute the contrast, flux and S/N of a science cube with fake injection, companion
 
 @Author : Yuchen BAI
-@Date   : 30/07/2021
+@Date   : 09/08/2021
 @Contact: yuchenbai@hotmail.com
 """
-
 import argparse
 import warnings
 import datetime
@@ -158,7 +157,7 @@ for i in cube_names:
     obj = fake_header["OBJECT"]
     for pos in coords:
         contrast, sn, flux = get_contrast_and_SN(fake, real, pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
-        res_final.update({obj+'_'+str(pos):{'contrast':contrast, 'sn':sn, 'flux':flux}})
+        res_final.update({obj+'_wl='+str(wl)+'_'+str(pos):{'contrast':contrast, 'sn':sn, 'flux':flux}})
 
 df = pd.DataFrame(data=res_final)
 df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.txt', sep=' ', mode='a')

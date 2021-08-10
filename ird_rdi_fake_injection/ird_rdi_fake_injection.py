@@ -1,5 +1,5 @@
 """
-Injecte a fake companion into a IRD_SCIENCE_REDUCED_MASTER_CUBE and compute the contrast
+Injecte a fake companion into a IRD_SCIENCE_REDUCED_MASTER_CUBE
 
 @Author : Yuchen BAI
 @Date   : 05/08/2021
