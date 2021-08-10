@@ -97,7 +97,7 @@ parser = argparse.ArgumentParser(description="Inject a fake companion and comput
 # file .sof whille contain :
 parser.add_argument("sof", help="file name of the sof file", type=str)
 # position
-parser.add_argument("coordinates", help="positions of fake companion, a string", type=str)
+parser.add_argument("--coordinates", help="positions of fake companion, a string", type=str, default="empty")
 parser.add_argument("--fwhm", help="the diameter for calculating snr", type=int, default=4)
 parser.add_argument("--r_aperture", help="radius to compute the flux/contrast", type=int, default=2)
 parser.add_argument("--r_in_annulus", help="inner radius of annulus around the fake companion", type=int, default=4)
@@ -113,6 +113,9 @@ args = parser.parse_args()
 sofname=args.sof
 
 # coordinates
+if args.coordinates == "empty":
+    raise Exception("The coordinates can't be empty!!! The programe ends here.")
+
 coords = get_coords_from_str(args.coordinates)
 
 # diameter is 4 pixels for calculating S/N
