@@ -2,10 +2,10 @@
 Injecte a fake companion into a IRD_SCIENCE_REDUCED_MASTER_CUBE and compute the contrast
 
 @Author : Yuchen BAI
-@Date   : 30/07/2021
+@Date   : 05/08/2021
 @Contact: yuchenbai@hotmail.com
 """
-
+import copy
 import argparse
 import warnings
 import datetime
@@ -538,19 +538,24 @@ print(">> ref_frames_selected.shape =", ref_frames_selected.shape)
 res_0 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
 res_0_fake = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
 
+# deep copy science header
+science_header_0 = copy.deepcopy(science_header)
+science_header_0["wave_length"] = wl_final
+
 file_name = "rdi_res_"+str(wl_final)+".fits"
 print("> The result will be stored in :", file_name)
-hdu = fits.PrimaryHDU(data=res_0, header=science_header)
+hdu = fits.PrimaryHDU(data=res_0, header=science_header_0)
 hdu.writeto(file_name)
 
 file_name_fake = "rdi_res_fake_"+str(wl_final)+".fits"
 print("> The result fake will be stored in :", file_name_fake)
-hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header)
+hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header_0)
 hdu.writeto(file_name_fake)
 
 # if we need two wavelengths
 ref_frames_selected_bis = []
 target_ref_coords_bis = []
+
 if nb_wl>1:
     ref_frames_selected_bis, target_ref_coords_bis = selection_frame_based_score(corr_matrix[wl_channels[1]] ,science_cube_croped, n_corr, ref_frames, ref_nb_frames, score, wave_length=wl_channels[1])
     dict_ref_in_target_bis = get_dict(reference_cube_names, target_ref_coords_bis)
@@ -559,14 +564,18 @@ if nb_wl>1:
     res_1 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
     res_1_fake = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
 
+    # deep copy science header
+    science_header_1 = copy.deepcopy(science_header)   
+    science_header_0["wave_length"] = 1
+
     file_name = "rdi_res_1.fits"
     print("> The result will be stored in :", file_name)
-    hdu = fits.PrimaryHDU(data=res_1, header=science_header)
+    hdu = fits.PrimaryHDU(data=res_1, header=science_header_1)
     hdu.writeto(file_name)
 
     file_name_fake = "rdi_res_fake_1.fits"
     print("> The fake result will be stored in :", file_name_fake)
-    hdu = fits.PrimaryHDU(data=res_1_fake, header=science_header)
+    hdu = fits.PrimaryHDU(data=res_1_fake, header=science_header_1)
     hdu.writeto(file_name_fake)
 
 end_time = datetime.datetime.now()
