@@ -59,28 +59,28 @@
     an integer type, it will be displayed as a combo list. -->
     <!-- Options without value must have the type "flag" and be used
     as a boolean-->
-    <parameters prefix=" ">
-        <parameter name="--coordinates" optional="true">
+    <parameters prefix="--">
+        <parameter name="coordinates" optional="true">
             <default_value value="empty"/>
             <type value="string"/>
             <description value="input the position/coordinates of fake companion or the region you want to compute, like (1,2);(3,4);(5,6)"/>
         </parameter>
-        <parameter name="--fwhm" optional="true">
+        <parameter name="fwhm" optional="true">
             <default_value value="4"/>
             <type value="int"/>
             <description value="the diameter for calculating snr, default is 4"/>
         </parameter>
-        <parameter name="--r_aperture" optional="true">
+        <parameter name="r_aperture" optional="true">
             <default_value value="2"/>
             <type value="int"/>
             <description value="radius to compute the flux/contrast, default is 2"/>
         </parameter>
-        <parameter name="--r_in_annulus" optional="true">
+        <parameter name="r_in_annulus" optional="true">
             <default_value value="4"/>
             <type value="int"/>
             <description value="inner radius of annulus around the fake companion, default is 4"/>
         </parameter>
-        <parameter name="--r_out_annulus" optional="true">
+        <parameter name="r_out_annulus" optional="true">
             <default_value value="6"/>
             <type value="int"/>
             <description value="outer radius of annulus around the fake companion, default is 6"/>

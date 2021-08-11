@@ -263,9 +263,12 @@ def get_psf_from_science_cube(path):
     Return:
         res : a string. PSF path.
     '''
-    #print("------------|||||||||||||||||||--------------------")
-    #show_all_files(path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits",""))
-    return path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","IRD_SCIENCE_PSF_MASTER_CUBE-median_unsat.fits")
+    '''
+    print("------------|||||||||||||||||||--------------------\n")
+    show_all_files(path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits",""))
+    print("------------|||||||||||||||||||--------------------\n")
+    '''
+    return path.replace("IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","IRD_SCIENCE_PSF_MASTER_CUBE-median_unsat.fits")
 
 # get full width half maximum
 def get_fwhm_from_psf(psf):
@@ -386,6 +389,7 @@ if outer_radius <= inner_radius:
 data=np.loadtxt(sofname,dtype=str)
 filenames=data[:,0]
 datatypes=data[:,1]
+
 cube_names = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
 nb_cubes = len(cube_names)
 
@@ -431,8 +435,7 @@ data_sc.append(take_data_from_header(science_header))
 df_sc = pd.DataFrame(data=data_sc, columns=["OBJECT","DATE-OBS","OBS_STA","NB_FRAMES","DIT"])
 print(df_sc.to_string())
 
-print("\n=================== science cube and angle =======================")
-print("> start test")
+print("\n=================== science cube, angle and psf =======================")
 print(">> science cube DATE-OBS:", science_header["DATE-OBS"])
 print(">> science cube OBJECT:", science_header["OBJECT"])
 print(">> science cube EXPTIME:", science_header["EXPTIME"])
@@ -447,7 +450,7 @@ anglename = get_para_angle_from_science_cube(science_cube_name)
 
 derotation_angles = fits.getdata(anglename)
 derotation_angles_header = fits.getheader(anglename)
-print("> corresponding parallactic angle", anglename)
+print("\n> corresponding parallactic angle", anglename)
 print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])
 print(">> para OBJECT:", derotation_angles_header["OBJECT"])
 print(">> para EXPTIME:", derotation_angles_header["EXPTIME"])
@@ -460,6 +463,11 @@ if len(derotation_angles) != nb_science_frames:
 # take psf
 #psf = fits.getdata(get_psf_from_science_cube(science_cube_name))
 psf = fits.getdata(psf_name[0])
+psf_header = fits.getheader(psf_name[0])
+print("\n> corresponding psf", psf_name[0])
+print(">> psf DATE-OBS:", psf_header["DATE-OBS"])
+print(">> psf OBJECT:", psf_header["OBJECT"])
+print("\n=================== show info up =======================\n")
 
 psf_0 = None
 psf_1 = None
@@ -544,8 +552,7 @@ for w in range(nb_wl):
 print("> corr_matrix.shape", corr_matrix.shape)
 
 # store the fwhm_flux in to the science header
-science_header["HIERARCH fwhm_flux_0"] = fwhm_flux[0]
-science_header["HIERARCH fwhm_flux_1"] = fwhm_flux[1]
+science_header["HIERARCH fwhm_flux"] = fwhm_flux[0]
 
 # do the selection
 ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix[wl_final], science_cube_croped, n_corr, ref_frames, ref_nb_frames, score, wave_length=wl_final)
@@ -557,7 +564,7 @@ res_0_fake = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -d
 
 # deep copy science header
 science_header_0 = copy.deepcopy(science_header)
-science_header_0["wave_length"] = wl_final
+science_header_0["HIERARCH wave_length"] = wl_final
 
 file_name = "rdi_res_"+str(wl_final)+".fits"
 print("> The result will be stored in :", file_name)
@@ -583,7 +590,7 @@ if nb_wl>1:
 
     # deep copy science header
     science_header_1 = copy.deepcopy(science_header)   
-    science_header_0["wave_length"] = 1
+    science_header_1["HIERARCH wave_length"] = 1
 
     file_name = "rdi_res_1.fits"
     print("> The result will be stored in :", file_name)

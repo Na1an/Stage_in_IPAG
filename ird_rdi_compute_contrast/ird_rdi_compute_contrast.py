@@ -36,7 +36,7 @@ def get_coords_from_str(coords_str):
     for c in coords_str.split(';'):
         if ',' not in c:
             continue
-        tmp = i.replace('(','').replace(')','').split(',')
+        tmp = c.replace('(','').replace(')','').split(',')
         res.append((float(tmp[0]), float(tmp[1])))
 
     return res
@@ -63,11 +63,11 @@ def get_contrast_and_SN(res_fake, res_real, positions, fwhm_for_snr, fwhm_flux, 
     flux_companion['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
     flux = flux_companion['aperture_sum_0'] 
     contrast = (flux_companion['aperture_sum_0']/aperture.area)/fwhm_flux
-
+    
     # SN
     SN = vip.metrics.snr(array=res_fake, source_xy=positions, fwhm=fwhm_for_snr, plot=False, array2 =res_real, use2alone=True)
-        
-    return contrast, SN, flux
+
+    return contrast.data[0], SN, flux.data[0]
 
 # get real res from the fake res path
 def get_real_res_path_from_fake_res_path(path, wl):
@@ -148,19 +148,18 @@ for i in cube_names:
     real = fits.getdata(get_real_res_path_from_fake_res_path(i, wl))
 
     # get fwhm_flux from header
-    if wl == 0:
-        fwhm_flux = fake_header["HIERARCH fwhm_flux_0"]
-    else:    
-        fwhm_flux = fake_header["HIERARCH fwhm_flux_1"]
+    fwhm_flux = fake_header["fwhm_flux"]
 
     # calculating contrast, S/N and flux
     obj = fake_header["OBJECT"]
     for pos in coords:
         contrast, sn, flux = get_contrast_and_SN(fake, real, pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
-        res_final.update({obj+'_wl='+str(wl)+'_'+str(pos):{'contrast':contrast, 'sn':sn, 'flux':flux}})
+        res_final.update({obj+'_wl='+str(wl)+'_'+str(pos):{'ctr':contrast, 'sn':sn, 'flux':flux}})
 
 df = pd.DataFrame(data=res_final)
-df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.txt', sep=' ', mode='a')
+#df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.txt', sep='\t', mode='a', encoding='utf-8')
+with open('ird_rdi_fake_injeciton_contrast_sn_flux.txt','w') as fo:
+    fo.write(df.__repr__())
 
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")
