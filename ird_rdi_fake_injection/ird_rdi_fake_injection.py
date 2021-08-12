@@ -264,7 +264,7 @@ def get_psf_from_science_cube(path):
         res : a string. PSF path.
     '''
     '''
-    print("------------|||||||||||||||||||--------------------\n")
+    print("\n------------what we have there in the same folder of ird master cube--------------------")
     show_all_files(path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits",""))
     print("------------|||||||||||||||||||--------------------\n")
     '''
@@ -395,6 +395,9 @@ nb_cubes = len(cube_names)
 
 psf_name = filenames[np.where(datatypes == 'IRD_SCIENCE_PSF_MASTER_CUBE')[0]]
 
+anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
+anglename = anglenames[0]
+
 if nb_cubes < 2: 
     raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
 
@@ -446,7 +449,7 @@ print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
 
 # take anglename
-anglename = get_para_angle_from_science_cube(science_cube_name)
+#anglename = get_para_angle_from_science_cube(science_cube_name)
 
 derotation_angles = fits.getdata(anglename)
 derotation_angles_header = fits.getheader(anglename)

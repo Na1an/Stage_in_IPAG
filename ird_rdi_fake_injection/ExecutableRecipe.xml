@@ -7,6 +7,7 @@
     <sphere pipeline="test" user="yuchen.bai@univ-grenoble-alpes.fr"/>
     <frame_types>
         <frame_type name="IRD_SCIENCE_PSF_MASTER_CUBE" description="The psf of one science cube"/>
+        <frame_type name="IRD_SCIENCE_PARA_ROTATION_CUBE" description="The parallactic angle of one science cube"/>
         <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE" description="Science and reference master cubes to reduce"/>
         <frame_type name="IRD_RDI_RES_FAKE_INJECTION" description="RDI reduced image for channel 0 or 1 with fake injection"/>
         <frame_type name="IRD_RDI_RES_REAL_INJECTION" description="RDI reduced image for channel 0 or 1 without fake injection"/>
@@ -42,7 +43,12 @@
         <input_frame min="1" max="1">
             <frame_type value="IRD_SCIENCE_PSF_MASTER_CUBE"/>
             <!--filename_parameter value="$1"/-->
-            <description value="PSF of one science cube"/>
+            <description value="PSF of one first one science cube"/>
+        </input_frame>
+        <input_frame min="1" max="1">
+            <frame_type value="IRD_SCIENCE_PARA_ROTATION_CUBE"/>
+            <!--filename_parameter value="$1"/-->
+            <description value="Parallactic angle of the first one science cube"/>
         </input_frame>
     </inputs>
     <!-- ==Outputs== -->

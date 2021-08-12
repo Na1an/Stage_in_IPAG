@@ -223,7 +223,9 @@ print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
 print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
 # take anglename
-anglename = get_para_angle_from_science_cube(science_cube_name)
+#anglename = get_para_angle_from_science_cube(science_cube_name)
+anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
+anglename = anglenames[0]
 
 derotation_angles_header = fits.getheader(anglename)
 print("> corresponding parallactic angle", anglename)
