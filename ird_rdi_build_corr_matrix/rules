@@ -9,5 +9,5 @@
         <attribute id="coro" restriction="equal"/>
         <attribute id="inst_filter" restriction="equal"/>
         <attribute id="parent_process_id" use="equal"/>
-    </frame_type>
+    </frame_type> 
 </recipe>
