@@ -6,6 +6,7 @@
     in the datacenter. -->
     <sphere pipeline="test" user="yuchen.bai@univ-grenoble-alpes.fr"/>
     <frame_types>
+        <frame_type name="IRD_CORR_MATRIX" description="type correlation matrix"/>
         <frame_type name="IRD_SCIENCE_PSF_MASTER_CUBE" description="The psf of one science cube"/>
         <frame_type name="IRD_SCIENCE_PARA_ROTATION_CUBE" description="The parallactic angle of one science cube"/>
         <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE" description="Science and reference master cubes to reduce"/>
@@ -50,6 +51,11 @@
             <!--filename_parameter value="$1"/-->
             <description value="Parallactic angle of the first one science cube"/>
         </input_frame>
+        <input_frame min="1" max="1">
+            <frame_type value="IRD_CORR_MATRIX"/>
+            <!--filename_parameter value="$1"/-->
+            <description value="type correlation matrix"/>
+        </input_frame>
     </inputs>
     <!-- ==Outputs== -->
     <!-- Set use_filename_parameter="false" for static output filenames.
@@ -91,25 +97,10 @@
     <!-- Options without value must have the type "flag" and be used
     as a boolean-->
     <parameters prefix="--">
-        <parameter name="inner_radius" optional="true">
-            <default_value value="10"/>
-            <type value="int"/>
-            <description value="If an integer > 1 then this value is the radius of the circular mask and the pixels inside the mask are ignored. "/>
-        </parameter>
-        <parameter name="outer_radius" optional="true">
-            <default_value value="100"/>
-            <type value="int"/>
-            <description value="If an integer then this value is the radius of the outer circular mask and the pixels outside the mask are ignored. "/>
-        </parameter>
         <parameter name="psfn_size" optional="true">
             <default_value value="17"/>
             <type value="int"/>
             <description value="this size will be used to calculate psfn"/>
-        </parameter>
-        <parameter name="science_object" optional="true">
-            <default_value value=""/>
-            <type value="string"/>
-            <description value="OBJECT keyword of the science cube, used to determine which is science cube and which are the reference cubes from IRD_SCIENCE_REDUCED_MASTER_CUBE input. If not provided the routine use the first cube as science and the others as reference (but it might fail if the parallactic angles does not match)."/>
         </parameter>
         <parameter name="flux_level" optional="true">
             <default_value value="40"/>

@@ -310,7 +310,7 @@ print("> (para angles) name of object:", derotation_angles_header["OBJECT"])
 print("> (para angles) observe date (DATE-OBS) is:", derotation_angles_header["DATE-OBS"])
 
 # collect data
-# TODO(yuchen): it is true there is a smarter way to do it
+# TODO(yuchen): there is a smarter way to do it
 ref_frames, ref_frames_coords, ref_cube_nb_frames_check = collect_frames(ref_cube_path, crop_size)
 if ref_cube_nb_frames != ref_cube_nb_frames:
     print("Worning! There is something wrong about the ref_cube_nb_frames, check it")

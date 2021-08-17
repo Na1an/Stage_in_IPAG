@@ -108,16 +108,6 @@ def take_data_from_header(science_header):
 
     return res
 
-# get angle from the science cube path
-def get_para_angle_from_science_cube(path):
-    '''
-    Args:
-        path : a string. Replace the last element after '/', then we can have the parallactic angle path.
-    Return:
-        res : a string. The parallactic angle path.
-    '''
-    return path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","ird_convert_recenter_dc5-IRD_SCIENCE_PARA_ROTATION_CUBE-rotnth.fits")
-
 #############
 # main code #
 #############
@@ -173,12 +163,10 @@ nb_cubes = len(cube_names)
 if nb_cubes < 2: 
     raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
 
-'''
 # Read angle
 anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
 if len(anglenames) < 1: 
     raise Exception('The sof file must contain more than one IRD_SCIENCE_PARA_ROTATION_CUBE file')
-'''
 
 # except one science cube, the rest are reference cubes
 nb_reference_cubes = nb_cubes - 1 
@@ -223,8 +211,6 @@ print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
 print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
 # take anglename
-#anglename = get_para_angle_from_science_cube(science_cube_name)
-anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
 anglename = anglenames[0]
 
 derotation_angles_header = fits.getheader(anglename)

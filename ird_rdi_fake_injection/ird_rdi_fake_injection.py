@@ -245,31 +245,6 @@ def take_data_from_header(science_header):
 
     return res
 
-# get angle from the science cube path
-def get_para_angle_from_science_cube(path):
-    '''
-    Args:
-        path : a string. Replace the last element after '/', then we can have the parallactic angle path.
-    Return:
-        res : a string. The parallactic angle path.
-    '''
-    return path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","ird_convert_recenter_dc5-IRD_SCIENCE_PARA_ROTATION_CUBE-rotnth.fits")
-
-# get psf from the science cube path
-def get_psf_from_science_cube(path):
-    '''
-    Args:
-        path : a string. Replace the last element after '/', then we can have the PSF path.
-    Return:
-        res : a string. PSF path.
-    '''
-    '''
-    print("\n------------what we have there in the same folder of ird master cube--------------------")
-    show_all_files(path.replace("ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits",""))
-    print("------------|||||||||||||||||||--------------------\n")
-    '''
-    return path.replace("IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits","IRD_SCIENCE_PSF_MASTER_CUBE-median_unsat.fits")
-
 # get full width half maximum
 def get_fwhm_from_psf(psf):
     '''
@@ -303,8 +278,6 @@ parser = argparse.ArgumentParser(description="Inject a fake companion and comput
 
 # file .sof whille contain :
 parser.add_argument("sof", help="file name of the sof file", type=str)
-parser.add_argument("--inner_radius",help="inner radius where the reduction starts", type=int, default=10)
-parser.add_argument("--outer_radius",help="outer radius where the reduction starts", type=int, default=100)
 parser.add_argument("--psfn_size",help="this size will be used to calculate psfn", type=int, default=17)
 parser.add_argument("--science_object", help="the OBJECT keyword of the science target", type=str, default='unspecified')
 parser.add_argument("--flux_level", help="flux level we will use in the fake injection, default is 40", type=int, default=40)
@@ -345,16 +318,8 @@ nb_wl = len(wl_channels)
 scaling_dict = {0 : 'spat-mean', 1 : 'spat-standard', 2 : 'temp-mean', 3 : 'temp-standard', 4 : None}
 scaling = scaling_dict[args.scaling]
 
-# --crop_size and inner/outer radius
-inner_radius = args.inner_radius
-outer_radius = args.outer_radius
-crop_size = 2*outer_radius+1
-
 # --psfn_size
 psfn_size = args.psfn_size
-
-# --science_object
-science_object = args.science_object
 
 # --flux_level
 flux_level = args.flux_level
@@ -367,17 +332,6 @@ theta = args.theta
 
 # --n_branches
 n_branches = args.n_branches
-
-# check crop_size type
-if type(crop_size) not in [np.int64,np.int,int]:
-    crop_size = int(crop_size)
-
-if crop_size<=21:
-    crop_size=21
-    print('Warning cropsize<=21, too small! Value set to 21')
-
-if outer_radius <= inner_radius:
-    print("Warning outer_radius <= inner_radius! Value set to {0:d}".format(inner_radius+1))
 
 # for the fake injection
 # We need to prepare science cube, parallactic angle, psf, fwhm, psfn, pxscale 
@@ -396,11 +350,14 @@ nb_cubes = len(cube_names)
 psf_name = filenames[np.where(datatypes == 'IRD_SCIENCE_PSF_MASTER_CUBE')[0]]
 
 anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
+if len(anglenames) < 1: 
+    raise Exception('The sof file must contain more than one IRD_SCIENCE_PARA_ROTATION_CUBE file')
 anglename = anglenames[0]
 
 if nb_cubes < 2: 
     raise Exception('The sof file must contain at least 2 IRD_SCIENCE_REDUCED_MASTER_CUBE (science and reference)')
 
+'''
 # except one science cube, the rest are reference cubes
 nb_reference_cubes = nb_cubes - 1 
 
@@ -424,13 +381,28 @@ else:
     reference_cube_names = cube_names[1:]
 
 print("> science cube path:", science_cube_name)
+'''
 
 ####################################################
 # Step-2 take science cube, parallactic angle, psf #
 ####################################################
+
+# get correlation matrix
+corr_matrix_paths = filenames[np.where(datatypes == 'IRD_CORR_MATRIX')[0]]
+if len(corr_matrix_paths) < 1: 
+    raise Exception('The sof file must contain more than one IRD_CORR_MATRIX file')
+
+print(">> corr_matrix_path", corr_matrix_paths)
+print(">> it's type", type(corr_matrix_paths))
+corr_matrix_path = corr_matrix_paths[0]
+corr_matrix = fits.getdata(corr_matrix_path)
+corr_matrix_header = fits.getheader(corr_matrix_path)
+
 # science_cube
+science_cube_name = corr_matrix_header["PATH_TAR"]
 science_cube = fits.getdata(science_cube_name)
 science_header = fits.getheader(science_cube_name)
+print("> science cube path:", science_cube_name)
 
 print("\n>> science cube - info\n")
 data_sc = []
@@ -504,62 +476,64 @@ if nb_wl>1:
 ##############################
 # Step-4 take reference cube #
 ##############################
-# sort reference cube names/paths
-reference_cube_names.sort()
 
-# collect data, then we have reference frames
-border_l = ny//2 - crop_size//2
-border_r = ny//2 + crop_size//2 + 1
-ref_frames = None
-ref_nb_frames = []
-reference_cube_names_remove_dup = []
+# the number of reference cube we have, take the necessary
+nb_ref_cube = int(corr_matrix_header["NB_REF_CUBES"])
+ref_cube_path = []
+ref_cube_nb_frames = []
+ref_cube_start = []
 
-# indice start
-ind_start = 0
-print("\n>> reference cube - info \n")
+for i in range(nb_ref_cube):
+    nb_str = "{0:06d}".format(i)
+    ref_cube_path.append(corr_matrix_header["RN"+nb_str])
+    ref_cube_nb_frames.append(int(corr_matrix_header["RF"+nb_str]))
+    ref_cube_start.append(int(corr_matrix_header["RS"+nb_str]))
 
-data_ref = []
-for i in range(len(reference_cube_names)):
-    name = reference_cube_names[i]
-    tmp_cube = fits.getdata(name)
-    tmp_header = fits.getheader(name)
-    if tmp_header["OBJECT"] == science_header["OBJECT"]:
-        ind_start = ind_start+1
-        continue
-    data_ref.append(take_data_from_header(tmp_header))
-    if i==ind_start:
-        ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
-        ref_nb_frames.append(len(tmp_cube[0]))
-    else:
-        ref_nb_frames.append(len(tmp_cube[0]))
-        ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
-    reference_cube_names_remove_dup.append(name)
+# crop_size
+crop_size = int(corr_matrix_header["CROPSIZE"])
+print("> The name of science cube :", corr_matrix_header["OBJECT"])
+print("> observe date (DATE-OBS) is:", corr_matrix_header["DATE-OBS"])
+print("> The crop_size(region we will investigate) is :", crop_size)
 
-df_ref = pd.DataFrame(data=data_ref, columns=["OBJECT","DATE-OBS","OBS_STA","NB_FRAMES","DIT"])
-print(df_ref.to_string())
+print("> (para angles) name of object:", derotation_angles_header["OBJECT"])
+print("> (para angles) observe date (DATE-OBS) is:", derotation_angles_header["DATE-OBS"])
+
+# collect data
+# TODO(yuchen): there is a smarter way to do it
+ref_frames, ref_frames_coords, ref_cube_nb_frames_check = collect_frames(ref_cube_path, crop_size)
+if ref_cube_nb_frames != ref_cube_nb_frames:
+    print("Worning! There is something wrong about the ref_cube_nb_frames, check it")
+
+print("> ref_frames.shape =", ref_frames.shape)
+wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
 print("\n> ref_frames.shape =", ref_frames.shape)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
-# correlation matrix
+# science cube
+inner_radius = int(corr_matrix_header["INNER_R"])
+outer_radius = int(corr_matrix_header["OUTER_R"])
 mask = create_mask(crop_size, inner_radius, outer_radius)
-corr_matrix = np.zeros((nb_wl, nb_science_frames, nb_ref_frames))
-science_cube_croped = science_cube[..., border_l:border_r, border_l:border_r]
-science_cube_croped_fake = science_cube_fake_comp[..., border_l:border_r, border_l:border_r]
 
-for w in range(nb_wl):
-    wl = wl_channels[w]
-    for i in range(nb_science_frames):
-        for j in range(nb_ref_frames):
-            corr_matrix[wl, i, j] = np.corrcoef(np.reshape(science_cube_croped[wl, i]*mask, ref_x*ref_y), np.reshape(ref_frames[wl, j]*mask, ref_x*ref_y))[0,1]
+# science cube croped
+start = int((nx-crop_size)//2)
+end = start + crop_size
+science_cube_croped = science_cube[..., start:end, start:end]
+science_cube_croped_fake = science_cube_fake_comp[..., start:end, start:end]
+
+# corr_matrix
 print("> corr_matrix.shape", corr_matrix.shape)
+corr_matrix_0 = corr_matrix[0]
+corr_matrix_1 = None
+if len(corr_matrix)>1: 
+    corr_matrix_1 = corr_matrix[1]
 
 # store the fwhm_flux in to the science header
 science_header["HIERARCH fwhm_flux"] = fwhm_flux[0]
 
 # do the selection
 ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix[wl_final], science_cube_croped, n_corr, ref_frames, ref_nb_frames, score, wave_length=wl_final)
-dict_ref_in_target = get_dict(reference_cube_names, target_ref_coords)
+dict_ref_in_target = get_dict(ref_cube_path, target_ref_coords)
 print(">> wave_length=0", dict_ref_in_target)
 print(">> ref_frames_selected.shape =", ref_frames_selected.shape)
 res_0 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[0]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
@@ -585,7 +559,7 @@ target_ref_coords_bis = []
 
 if nb_wl>1:
     ref_frames_selected_bis, target_ref_coords_bis = selection_frame_based_score(corr_matrix[wl_channels[1]] ,science_cube_croped, n_corr, ref_frames, ref_nb_frames, score, wave_length=wl_channels[1])
-    dict_ref_in_target_bis = get_dict(reference_cube_names, target_ref_coords_bis)
+    dict_ref_in_target_bis = get_dict(ref_cube_path, target_ref_coords_bis)
     print(">> wave_length=1", dict_ref_in_target_bis)
     print(">> ref_frames_selected_bis.shape =", ref_frames_selected_bis.shape)
     res_1 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
