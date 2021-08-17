@@ -2,19 +2,12 @@
     <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE">
         <attribute id="inst_filter" restriction="equal"/>
         <attribute id="coro" restriction="equal"/>
-        <attribute id="exp_time" use="equal"/>
-        <attribute id="neutral_density" use="equal" allowNull="true"/>
         <attribute id="parent_process_id" use="equal"/>
-        <attribute id="inst_filter" use="equal"/>
     </frame_type>
     <frame_type include="IRD_SCIENCE_PSF_MASTER_CUBE" limit="1">
         <attribute id="parent_process_id" restriction="equal"/>
     </frame_type>
     <frame_type include="IRD_SCIENCE_PARA_ROTATION_CUBE" limit="1">
-        <attribute id="exp_time" restriction="equal"/>
-        <attribute id="neutral_density" restriction="equal" allowNull="true"/>
-        <attribute id="coro" restriction="equal"/>
-        <attribute id="inst_filter" restriction="equal"/>
         <attribute id="parent_process_id" restriction="equal"/>
     </frame_type>
 </recipe>
