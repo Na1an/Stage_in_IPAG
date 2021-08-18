@@ -10,8 +10,8 @@
         <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE" description="Science and reference master cubes to reduce"/>
     </frame_types>
     <!-- ==Recipe== -->
-    <recipe name="ird_rdi_build_corr_matrix" instrument="IRDIS">
-        <synopsis value="ird_rdi_build_corr_matrix"/>
+    <recipe name="ird_rdi_build_corr_matrix_bis" instrument="IRDIS">
+        <synopsis value="ird_rdi_build_corr_matrix_bis"/>
         <description short="Calculate the Pearson Correlation Coeffient Matrix for the next step of RDI " full=""/>
         <author email="yuchen.bai@univ-grenoble-alpes.fr" name="Yuchen BAI"/>
         <license value="GPL"/>
@@ -21,7 +21,7 @@
     is in path (or the script extension is sufficient). -->
     <executable>
        <binary value="/dwh/sphere-exec-env/python3/.env_conda/bin/python"/>
-       <script value="ird_rdi_build_corr_matrix.py"/>
+       <script value="ird_rdi_build_corr_matrix_bis.py"/>
        <includes>
             <include regex=".*\.py"/>
         </includes>
@@ -36,6 +36,11 @@
             <frame_type value="IRD_SCIENCE_REDUCED_MASTER_CUBE"/>
             <!--filename_parameter value="$1"/-->
             <description value="Science and reference master cubes to reduce"/>
+        </input_frame>
+        <input_frame min="1" max="1">
+            <frame_type value="IRD_SCIENCE_PARA_ROTATION_CUBE"/>
+            <!--filename_parameter value="$1"/-->
+            <description value="Parallactic angle of the first one science cube"/>
         </input_frame>
     </inputs>
     <!-- ==Outputs== -->

@@ -36,7 +36,7 @@
     filename_parameter (can be $1, $2... for inline parameter ).
      -->
     <inputs use_sof="true">
-        <input_frame min="2" max="100000">
+        <input_frame min="1" max="1">
             <frame_type value="IRD_SCIENCE_REDUCED_MASTER_CUBE"/>
             <!--filename_parameter value="$1"/-->
             <description value="Science and reference master cubes to reduce"/>

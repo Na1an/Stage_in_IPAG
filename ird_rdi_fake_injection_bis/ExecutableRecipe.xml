@@ -14,8 +14,8 @@
         <frame_type name="IRD_RDI_RES_REAL_INJECTION" description="RDI reduced image for channel 0 or 1 without fake injection"/>
     </frame_types>
     <!-- ==Recipe== -->
-    <recipe name="ird_rdi_fake_injection" instrument="IRDIS">
-        <synopsis value="ird_rdi_fake_injection"/>
+    <recipe name="ird_rdi_fake_injection_bis" instrument="IRDIS">
+        <synopsis value="ird_rdi_fake_injection_bis"/>
         <description short="Inject fake companions into a science cube and apply the rdi method of vip_hci to produce a final reduced image" full=""/>
         <author email="yuchen.bai@univ-grenoble-alpes.fr" name="Yuchen BAI"/>
         <license value="GPL"/>
@@ -25,7 +25,7 @@
     is in path (or the script extension is sufficient). -->
     <executable>
        <binary value="/dwh/sphere-exec-env/python3/.env_conda/bin/python"/>
-       <script value="ird_rdi_fake_injection.py"/>
+       <script value="ird_rdi_fake_injection_bis.py"/>
        <includes>
             <include regex=".*\.py"/>
         </includes>

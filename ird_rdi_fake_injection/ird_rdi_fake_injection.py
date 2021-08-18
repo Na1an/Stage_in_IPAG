@@ -344,9 +344,10 @@ data=np.loadtxt(sofname,dtype=str)
 filenames=data[:,0]
 datatypes=data[:,1]
 
+'''
 cube_names = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
 nb_cubes = len(cube_names)
-
+'''
 psf_name = filenames[np.where(datatypes == 'IRD_SCIENCE_PSF_MASTER_CUBE')[0]]
 if len(psf_name) < 1: 
     raise Exception('The sof file must contain more than one IRD_SCIENCE_PSF_MASTER_CUBE file')
