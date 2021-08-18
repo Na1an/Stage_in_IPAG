@@ -17,6 +17,9 @@ from astropy.io import fits
 from astropy.utils.exceptions import AstropyWarning
 from photutils.aperture import CircularAperture, aperture_photometry, CircularAnnulus
 
+"""
+We have problem about ird_rdi_fake_injectioni_bis input one master_cube not all 
+"""
 ###########
 # setting #
 ###########
@@ -401,6 +404,7 @@ corr_matrix = fits.getdata(corr_matrix_path)
 corr_matrix_header = fits.getheader(corr_matrix_path)
 
 # science_cube
+#science_cube_name = cube_names[0]
 science_cube_name = corr_matrix_header["PATH_TAR"]
 science_cube = fits.getdata(science_cube_name)
 science_header = fits.getheader(science_cube_name)

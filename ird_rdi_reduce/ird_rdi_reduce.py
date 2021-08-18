@@ -254,11 +254,9 @@ corr_matrix_path = filenames[np.where(datatypes == "IRD_CORR_MATRIX")[0]]
 if len(corr_matrix_path) < 1:
     raise Exception("The sof file must contain exactly one IRD_CORR_MATRIX file")
 
-'''
 anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
 if len(anglenames) != 1: 
     raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
-'''
 
 # Step-2 take science cube
 print(">> corr_matrix_path", corr_matrix_path)
@@ -276,7 +274,9 @@ print(">> science cube ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
 print(">> science cube ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
 
 nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
-anglename = corr_matrix_header["PA_ANGLE"]
+# parrallactic angle
+#anglename = corr_matrix_header["PA_ANGLE"]
+anglename = anglenames[0]
 derotation_angles = fits.getdata(anglename)
 derotation_angles_header = fits.getheader(anglename)
 print(">> para DATE-OBS:", derotation_angles_header["DATE-OBS"])

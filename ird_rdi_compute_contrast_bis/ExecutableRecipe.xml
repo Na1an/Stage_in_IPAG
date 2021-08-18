@@ -11,8 +11,8 @@
         <frame_type name="IRD_RDI_RES_REAL_INJECTION" description="RDI reduced image for channel 0 or 1 without fake injection"/>
     </frame_types>
     <!-- ==Recipe== -->
-    <recipe name="ird_rdi_compute_contrast" instrument="IRDIS">
-        <synopsis value="ird_rdi_compute_contrast"/>
+    <recipe name="ird_rdi_compute_contrast_bis" instrument="IRDIS">
+        <synopsis value="ird_rdi_compute_contrast_bis"/>
         <description short="Compute the contrast, flux and sn" full=""/>
         <author email="yuchen.bai@univ-grenoble-alpes.fr" name="Yuchen BAI"/>
         <license value="GPL"/>
@@ -22,7 +22,7 @@
     is in path (or the script extension is sufficient). -->
     <executable>
        <binary value="/dwh/sphere-exec-env/python3/.env_conda/bin/python"/>
-       <script value="ird_rdi_compute_contrast.py"/>
+       <script value="ird_rdi_compute_contrast_bis.py"/>
        <includes>
             <include regex=".*\.py"/>
         </includes>
