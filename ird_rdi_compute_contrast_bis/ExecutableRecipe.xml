@@ -53,7 +53,7 @@
     <outputs use_filename_parameter="false">
         <output_frame format="TXT">
             <frame_type value="IRD_RDI_CONTRAST_RES"/>
-            <default_name value="ird_rdi_fake_injeciton_contrast_sn_flux.txt"/>
+            <default_name value="ird_rdi_fake_injeciton_contrast_sn_flux.csv"/>
             <filename_parameter value=""/>
             <description value="flux, contrast and  S/N of a fake companion"/>
         </output_frame>

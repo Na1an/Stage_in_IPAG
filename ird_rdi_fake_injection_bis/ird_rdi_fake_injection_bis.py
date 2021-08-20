@@ -124,7 +124,7 @@ parser.add_argument("--contrast", help="the contrast we want for our fake compan
 parser.add_argument("--rad_dist", help="the distance/radius from the fake companion to star, default is 25", type=int, default=25)
 parser.add_argument("--theta", help="the theta, default is 60", type=int, default=60)
 parser.add_argument("--n_branches", help="how many brances we want", type=int, default=1)
-parser.add_argument("--wl_channels", help="Spectral channel to use (to choose between 0 for channel 0, 1 for channel 1, 2 for both channels)", type=int, choices=[0,1,2], default=0)
+parser.add_argument("--wl_channels", help="Spectral channel to use (to choose between 0 for channel 0, 1 for channel 1, 2 for both channels), default is 2", type=int, choices=[0,1,2], default=2)
 parser.add_argument("--diameter", help="diameter of the fake companion", type=float, default=4.0)
 
 ########################### 

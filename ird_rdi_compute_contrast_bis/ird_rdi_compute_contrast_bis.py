@@ -126,6 +126,9 @@ nb_cubes_real = len(cube_names_real)
 print("> we have real", nb_cubes_real, "inputs")
 print("> input name =", cube_names_real)
 
+if nb_cubes != nb_cubes_real:
+    raise Exception("Warning: real res and fake res must correspond one-to-one, two input size is different")
+
 # result
 res_final = {}
 
@@ -152,10 +155,11 @@ for i in range(len(cube_names)):
     for pos in coords:
         contrast, sn, flux = get_contrast_and_SN(fake, real, pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
         print(">>> contrast =", contrast, "sn =", sn, "flux =", flux)
-        res_final.update({obj+'_wl='+str(wl)+'_'+str(pos):{'ctr':contrast, 'sn':sn, 'flux':flux}})
+        x,y = pos
+        res_final.update({obj+'_wl='+str(wl)+'_('+str(x)+','+str(y)+')':{'ctr':contrast, 'sn':sn, 'flux':flux}})
 
 df = pd.DataFrame(data=res_final)
-df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8')
+df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
 
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")
