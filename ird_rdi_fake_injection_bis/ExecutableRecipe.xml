@@ -6,12 +6,10 @@
     in the datacenter. -->
     <sphere pipeline="test" user="yuchen.bai@univ-grenoble-alpes.fr"/>
     <frame_types>
-        <frame_type name="IRD_CORR_MATRIX" description="type correlation matrix"/>
         <frame_type name="IRD_SCIENCE_PSF_MASTER_CUBE" description="The psf of one science cube"/>
         <frame_type name="IRD_SCIENCE_PARA_ROTATION_CUBE" description="The parallactic angle of one science cube"/>
         <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE" description="Science and reference master cubes to reduce"/>
-        <frame_type name="IRD_RDI_RES_FAKE_INJECTION" description="RDI reduced image for channel 0 or 1 with fake injection"/>
-        <frame_type name="IRD_RDI_RES_REAL_INJECTION" description="RDI reduced image for channel 0 or 1 without fake injection"/>
+        <frame_type name="IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP" description="Science and reference master cubes with fake injection"/>
     </frame_types>
     <!-- ==Recipe== -->
     <recipe name="ird_rdi_fake_injection_bis" instrument="IRDIS">
@@ -51,11 +49,6 @@
             <!--filename_parameter value="$1"/-->
             <description value="Parallactic angle of the first one science cube"/>
         </input_frame>
-        <input_frame min="1" max="1">
-            <frame_type value="IRD_CORR_MATRIX"/>
-            <!--filename_parameter value="$1"/-->
-            <description value="type correlation matrix"/>
-        </input_frame>
     </inputs>
     <!-- ==Outputs== -->
     <!-- Set use_filename_parameter="false" for static output filenames.
@@ -65,28 +58,10 @@
       by filenames. The extra_output_frame tags are used in appearing order. -->
     <outputs use_filename_parameter="false">
         <output_frame format="FITS">
-            <frame_type value="IRD_RDI_RES_REAL_INJECTION"/>
-            <default_name value="rdi_res_0.fits"/>
+            <frame_type value="IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP"/>
+            <default_name value="science_cube_with_fake_companion.fits"/>
             <filename_parameter value=""/>
-            <description value="the result of RDI reduction on wave length=0"/>
-        </output_frame>
-        <output_frame format="FITS">
-            <frame_type value="IRD_RDI_RES_REAL_INJECTION"/>
-            <default_name value="rdi_res_1.fits"/>
-            <filename_parameter value=""/>
-            <description value="the result of RDI reduction on wave length=1"/>
-        </output_frame>
-        <output_frame format="FITS">
-            <frame_type value="IRD_RDI_RES_FAKE_INJECTION"/>
-            <default_name value="rdi_res_fake_0.fits"/>
-            <filename_parameter value=""/>
-            <description value="the result of RDI reduction with fake companion injection on wave length=0"/>
-        </output_frame>
-        <output_frame format="FITS">
-            <frame_type value="IRD_RDI_RES_FAKE_INJECTION"/>
-            <default_name value="rdi_res_fake_1.fits"/>
-            <filename_parameter value=""/>
-            <description value="the result of RDI reduction with fake companion injection on wave length=1"/>
+            <description value="Science and reference master cubes with fake companion injection"/>
         </output_frame>
     </outputs>
     <!-- ==Parameters== -->
@@ -97,15 +72,10 @@
     <!-- Options without value must have the type "flag" and be used
     as a boolean-->
     <parameters prefix="--">
-        <parameter name="psfn_size" optional="true">
-            <default_value value="17"/>
-            <type value="int"/>
-            <description value="this size will be used to calculate psfn"/>
-        </parameter>
-        <parameter name="flux_level" optional="true">
-            <default_value value="40"/>
-            <type value="int"/>
-            <description value="flux level we will use in the fake injection, default is 40"/>
+        <parameter name="contrast" optional="true">
+            <default_value value="0.000001"/>
+            <type value="float"/>
+            <description value="the contrast we want for our fake companion, the default is factor of 6"/>
         </parameter>
         <parameter name="rad_dist" optional="true">
             <default_value value="25"/>
@@ -127,26 +97,10 @@
             <type value="int"/>
             <description value="Spectral channel to use. 0=Channel 0, 1=Channel 1, 2=Channel 0 and 1. Default is 0."/>
         </parameter>
-        <parameter name="score" optional="true">
-            <default_value value="1"/>
+        <parameter name="diameter" optional="true">
+            <default_value value="4"/>
             <type value="int"/>
-            <description value="Score is used to measure how good a reference frame is."/>
-        </parameter>
-        <parameter name="n_corr" optional="true">
-            <default_value value="100"/>
-            <type value="int"/>
-            <description value="Number of best correlated frames. Default is 100."/>
-        </parameter>
-        <!-- PCA parameters -->
-        <parameter name="ncomp" optional="true">
-            <default_value value="10"/>
-            <type value="int"/>
-            <description value="Number of modes used by PCA. Default is 10."/>
-        </parameter>
-        <parameter name="scaling" optional="true">
-            <default_value value="0"/>
-            <type value="int"/>
-            <description value="Scaling. 0=spat-mean, 1=spat-standard, 2=temp-mean, 3=temp-standard, 4=None. Default is 0."/>
+            <description value="diameter of the fake companion."/>
         </parameter>
     </parameters>
 </executable_recipe>

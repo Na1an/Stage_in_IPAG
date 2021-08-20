@@ -84,8 +84,31 @@ def get_pxscale():
     return res 
 
 # take flux form the contrast
-def get_flux_from_contrast(contrast):
+def get_flux_from_contrast(contrast, ):
+    '''
+    Args:
+        None.
+    Return:
+        res : a float. Return the pxscale of the IRDIS.
+    '''
+    res = 0.1
+    return res
 
+# cropt psf from center
+def crop_psf(psf, side):
+    '''
+    Args:
+        psf : a 2d array. The raw data of psf.
+        side : a int. Should be odd, then wa can have the subimage which has the side equals this number.
+    Return:
+        res : a 2d array. Return the croped psf.
+    '''
+    x, y = psf.shape
+    start = (x//2) - (side//2)
+    end = start + side
+    res = psf[start:end, start:end]
+    
+    return res
 
 #############
 # main code #
@@ -97,7 +120,6 @@ parser = argparse.ArgumentParser(description="Inject a fake companion and comput
 
 # file .sof whille contain :
 parser.add_argument("sof", help="file name of the sof file", type=str)
-parser.add_argument("--psfn_size",help="this size will be used to calculate psfn", type=int, default=17)
 parser.add_argument("--contrast", help="the contrast we want for our fake companion, the unit is factor of 6", type=float, default=0.000001)
 parser.add_argument("--rad_dist", help="the distance/radius from the fake companion to star, default is 25", type=int, default=25)
 parser.add_argument("--theta", help="the theta, default is 60", type=int, default=60)
@@ -118,9 +140,6 @@ sofname=args.sof
 dico_conversion_wl_channels = {0 : [0], 1 : [1], 2 : [0,1]}
 wl_channels = dico_conversion_wl_channels[args.wl_channels]
 nb_wl = len(wl_channels)
-
-# --psfn_size
-psfn_size = args.psfn_size
 
 # --contrast
 contrast = args.contrast
@@ -150,7 +169,8 @@ datatypes=data[:,1]
 
 science_cube_paths = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
 if len(science_cube_paths) != 1: 
-    raise Exception('The sof file must contain only one IRD_SCIENCE_PSF_MASTER_CUBE file')
+    #raise Exception('The sof file must contain only one IRD_SCIENCE_PSF_MASTER_CUBE file')
+    print("> WARNING: the sof file must contain only one IRD_SCIENCE_PSF_MASTER_CUBE file, don't forget to modify Associationrules.xml")
 science_cube_path = science_cube_paths[0]
 
 psf_paths = filenames[np.where(datatypes == 'IRD_SCIENCE_PSF_MASTER_CUBE')[0]]
@@ -202,34 +222,48 @@ print(">> para ESO INS COMB IFLT:", derotation_angles_header["ESO INS COMB IFLT"
 if len(derotation_angles) != nb_science_frames:
     raise Exception('The science cube IRD_SCIENCE_REDUCED_MASTER_CUBE contains {0:d} frames while the list IRD_SCIENCE_PARA_ROTATION_CUBE contains {1:d} angles'.format(nb_science_frames,len(derotation_angles)))
 
+print(">> angles.shape =", derotation_angles.shape)
+
 # take psf
-#psf = fits.getdata(get_psf_from_science_cube(science_cube_name))
 psf = fits.getdata(psf_path)
 psf_header = fits.getheader(psf_path)
 print("\n> corresponding psf", psf_path)
 print(">> psf DATE-OBS:", psf_header["DATE-OBS"])
 print(">> psf OBJECT:", psf_header["OBJECT"])
+
+print("psf.shape =", psf.shape)
 print("\n=================== show info up =======================\n")
 
-psf_0 = None
-psf_1 = None
+# wave length final in the case we have only one wave length to handle
 wl_final = wl_channels[0]
 
 # fwhm psfn
 fwhm = get_fwhm_from_psf(psf[wl_final])
-psfn = vip.metrics.normalize_psf(psf[wl_final], fwhm, size=psfn_size)
-print("psfn =", psfn.shape, "psfn.ndim =", psfn.ndim)
+#psfn = vip.metrics.normalize_psf(psf[wl_final], fwhm, size=psfn_size)
+#print("psfn =", psfn.shape, "psfn.ndim =", psfn.ndim)
+psfn = crop_psf(psf[wl_final], 17)
 
 if nb_wl >1:
     fwhm_bis = get_fwhm_from_psf(psf[1])
-    psfn_bis = vip.metrics.normalize_psf(psf[1], fwhm_bis, size=psfn_size)
+    #psfn_bis = vip.metrics.normalize_psf(psf[1], fwhm_bis, size=psfn_size)
+    psfn_bis = crop_psf(psf[1], 17)
     print("psfn =", psfn_bis.shape, "psfn.ndim =", psfn_bis.ndim)
 
 # pxscale of IRDIS
 pxscale = get_pxscale()
 
 # get flux level
-flux_level = get_flux_from_contrast()
+psf_nx, psf_ny = psf[wl_final].shape
+position = (psf_nx//2, psf_ny//2)
+
+aperture = CircularAperture(position, r=(diameter/2))
+annulus = CircularAnnulus(position, r_in=diameter, r_out=diameter*(3/2))
+flux_psf = aperture_photometry(psf[wl_final], [aperture, annulus])
+flux_psf['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
+flux_level = flux_psf['aperture_sum_0']
+
+print(">> flux of psf in the same aperture is:", flux_psf['aperture_sum_0'][0], "contrast is:", contrast)
+print(">> flux_level =", flux_level)
 
 ################################
 # Step-3 do the fake injection #
@@ -241,41 +275,11 @@ science_cube_fake_comp[wl_final] = vip.metrics.cube_inject_companions(science_cu
 if nb_wl>1:
     science_cube_fake_comp[1] = vip.metrics.cube_inject_companions(science_cube[1], psf_template=psfn_bis, angle_list=-derotation_angles, flevel=flux_level, plsc=pxscale, rad_dists=[rad_dist], theta=theta, n_branches = n_branches)
 
-file_name = "rdi_res_"+str(wl_final)+".fits"
+file_name = "science_cube_with_fake_companion.fits"
 print("> The result will be stored in :", file_name)
-hdu = fits.PrimaryHDU(data=res_0, header=science_header_0)
+science_header["FAKE_COMP"] = 1
+hdu = fits.PrimaryHDU(data=science_cube_fake_comp, header=science_header)
 hdu.writeto(file_name)
-
-file_name_fake = "rdi_res_fake_"+str(wl_final)+".fits"
-print("> The result fake will be stored in :", file_name_fake)
-hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header_0)
-hdu.writeto(file_name_fake)
-
-# if we need two wavelengths
-ref_frames_selected_bis = []
-target_ref_coords_bis = []
-
-if nb_wl>1:
-    ref_frames_selected_bis, target_ref_coords_bis = selection_frame_based_score(corr_matrix[wl_channels[1]] ,science_cube_croped, n_corr, ref_frames, ref_cube_nb_frames, score, wave_length=wl_channels[1])
-    dict_ref_in_target_bis = get_dict(ref_cube_path, target_ref_coords_bis)
-    print(">> wave_length=1", dict_ref_in_target_bis)
-    print(">> ref_frames_selected_bis.shape =", ref_frames_selected_bis.shape)
-    res_1 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
-    res_1_fake = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
-
-    # deep copy science header
-    science_header_1 = copy.deepcopy(science_header)   
-    science_header_1["HIERARCH wave_length"] = 1
-
-    file_name = "rdi_res_1.fits"
-    print("> The result will be stored in :", file_name)
-    hdu = fits.PrimaryHDU(data=res_1, header=science_header_1)
-    hdu.writeto(file_name)
-
-    file_name_fake = "rdi_res_fake_1.fits"
-    print("> The fake result will be stored in :", file_name_fake)
-    hdu = fits.PrimaryHDU(data=res_1_fake, header=science_header_1)
-    hdu.writeto(file_name_fake)
 
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")
