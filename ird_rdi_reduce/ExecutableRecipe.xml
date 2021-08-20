@@ -83,7 +83,7 @@
             <filename_parameter value=""/>
             <description value="the result of RDI reduction on wave length=0"/>
         </output_frame>
-        <output_frame format="FITS">rdi_fake_res_0.fits
+        <output_frame format="FITS">
             <frame_type value="IRD_RDI_RES_FAKE_INJECTION"/>
             <default_name value="rdi_fake_res_1.fits"/>
             <filename_parameter value=""/>

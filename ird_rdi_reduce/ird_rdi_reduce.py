@@ -293,7 +293,7 @@ print("> The corr_matrix.shape=", corr_matrix.shape)
 
 # --wl_channels
 dico_conversion_wl_channels = {0 : [0], 1 : [1], 2 : [0,1]}
-wl_channels = dico_conversion_wl_channels[corr_matrix_header["WAVE_LENGTH"]]
+wl_channels = dico_conversion_wl_channels[corr_matrix_header["WL_CHOSE"]]
 nb_wl = len(wl_channels)
 print("> We will investigate wave length :", wl_channels)
 
@@ -370,7 +370,7 @@ res_0 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_final]*mask, -derotation_a
 
 file_name = "rdi_real_res_0.fits"
 print("> The result will be stored in :", file_name)
-science_header["WAVE_LENGTH"] = wl_final
+science_header["WL_CHOSE"] = wl_final
 science_header["NB_REF"] = nb_ref_cube
 science_header["Fake"] = 0
 hdu = fits.PrimaryHDU(data=res_0, header=science_header)
@@ -385,7 +385,7 @@ res_0_fake = vip.pca.pca_fullfr.pca(science_cube_croped_fake[wl_final]*mask, -de
 
 file_name_fake = "rdi_fake_res_0.fits"
 print("> The result of fake companion injection will be stored in :", file_name_fake)
-science_header_fake["WAVE_LENGTH"] = wl_final
+science_header_fake["WL_CHOSE"] = wl_final
 science_header_fake["NB_REF"] = nb_ref_cube
 science_header_fake["Fake"] = 1
 hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header_fake)
@@ -404,7 +404,7 @@ if nb_wl>1:
     file_name = "rdi_real_res_1.fits"
     print("> The result will be stored in :", file_name)
     science_header_bis = fits.getheader(corr_matrix_header["PATH_TAR"])
-    science_header_bis["WAVE_LENGTH"] = 1
+    science_header_bis["WL_CHOSE"] = 1
     science_header_bis["NB_REF"] = nb_ref_cube
     science_header_bis["Fake"] = 0
     
@@ -419,7 +419,7 @@ if nb_wl>1:
     res_1_fake = vip.pca.pca_fullfr.pca(science_cube_croped_fake[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis_fake*mask, scaling=scaling)
     file_name_fake = "rdi_fake_res_1.fits"
     print("> The result will be stored in :", file_name)
-    science_header_fake["WAVE_LENGTH"] = 1
+    science_header_fake["WL_CHOSE"] = 1
     
     hdu = fits.PrimaryHDU(data=res_1_fake, header=science_header_fake)
     hdu.writeto(file_name_fake)

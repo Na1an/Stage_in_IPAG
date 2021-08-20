@@ -39,7 +39,7 @@
             <description value="Input of fake injection RDI result"/>
         </input_frame>
         <input_frame min="1" max="10000">
-            <frame_type value="IRD_RDI_RES_REAL_INJECTION"/>
+            <frame_type value="IRD_RDI_RES_REAL"/>
             <!--filename_parameter value="$1"/-->
             <description value="RDI reduced image for channel 0 or 1 without fake injection"/>
         </input_frame>

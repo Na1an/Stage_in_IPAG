@@ -222,7 +222,7 @@ science_header["PATH_TAR"] = science_cube_name
 science_header["CROPSIZE"] = crop_size
 science_header["INNER_R"] = inner_radius
 science_header["OUTER_R"] = outer_radius
-science_header["WAVE_LENGTH"] = args.wl_channels
+science_header["WL_CHOSE"] = args.wl_channels
 complete_header(science_header, reference_cube_names, ref_nb_frames)
 
 file_name = "pcc_matrix.fits"

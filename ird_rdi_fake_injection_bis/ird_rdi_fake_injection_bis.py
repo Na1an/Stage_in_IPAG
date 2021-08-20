@@ -244,7 +244,7 @@ print("psfn =", psfn.shape, "psfn.ndim =", psfn.ndim)
 
 if nb_wl >1:
     fwhm_bis = get_fwhm_from_psf(psf[1])
-    psfn_bis = vip.metrics.normalize_psf(psf[1], fwhm_bis, size=psfn_size)
+    psfn_bis = vip.metrics.normalize_psf(psf[1], fwhm_bis, size=17)
     print("psfn =", psfn_bis.shape, "psfn.ndim =", psfn_bis.ndim)
 
 # pxscale of IRDIS
@@ -276,9 +276,9 @@ if nb_wl>1:
 file_name = "science_cube_with_fake_companion.fits"
 print("> The result will be stored in :", file_name)
 print("> The science_header['FAKE_COMP'] = 1")
-print("> The science_header['FWHM_FLUX'] =", flux_psf['aperture_sum_0'][0])
+print("> The science_header['FWHM_F'] =", flux_psf['aperture_sum_0'][0])
 science_header["FAKE_COMP"] = 1
-science_header["FWHM_FLUX"] = flux_psf['aperture_sum_0'][0]
+science_header["FWHM_F"] = flux_psf['aperture_sum_0'][0]
 
 hdu = fits.PrimaryHDU(data=science_cube_fake_comp, header=science_header)
 hdu.writeto(file_name)

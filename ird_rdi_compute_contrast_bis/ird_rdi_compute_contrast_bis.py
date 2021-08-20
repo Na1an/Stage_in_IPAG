@@ -137,18 +137,18 @@ for i in range(len(cube_names)):
     # get res of rdi
     fake = fits.getdata(cube_names[i])
     fake_header = fits.getheader(cube_names[i])
-    wl = fake_header["WAVE_LENGTH"]
+    wl = fake_header["WL_CHOSE"]
     real = fits.getdata(cube_names_real[i])
     real_header = fits.getheader(cube_names_real[i])
 
     # check
     if real_header["OBJECT"] != fake_header["OBJECT"]:
         raise Exception(">>> Traget different!")
-    if real_header["WAVE_LENGTH"] != fake_header["WAVE_LENGTH"]:
+    if real_header["WL_CHOSE"] != fake_header["WL_CHOSE"]:
         raise Exception(">>> Wave_length different!")
 
     # get fwhm_flux from header
-    fwhm_flux = fake_header["FWHM_FLUX"]
+    fwhm_flux = fake_header["FWHM_F"]
 
     # calculating contrast, S/N and flux
     obj = fake_header["OBJECT"]
