@@ -79,6 +79,26 @@ def create_mask(crop_size, inner_radius, outer_radius):
                 count = count + 1
     return res
 
+# print cueb info
+def print_cube_info(science_header, name):
+    '''
+    Arg:
+        science_header: a fits header.
+        name : a string. What we display here.
+    Return:
+        None.
+    '''
+    print("\n------")
+    print("> This is", name)
+    print(">> DATE-OBS:", science_header["DATE-OBS"])
+    print(">> OBJECT:", science_header["OBJECT"])
+    print(">> EXPTIME:", science_header["EXPTIME"])
+    print(">> ESO INS COMB ICOR:", science_header["ESO INS COMB ICOR"])
+    print(">> ESO INS COMB IFLT:", science_header["ESO INS COMB IFLT"])
+    print("------\n")
+    
+    return None
+
 #############
 # main code #
 #############
@@ -141,6 +161,7 @@ if science_object != 'unspecified':
             science_cube_name = cube_name
             reference_cube_names = [cube_name for cube_name in cube_names if cube_name != science_cube_name]
             science_object_final = header['OBJECT']
+            break
     try:
         print('\nScience OBJECT set to {0:s}'.format(science_object_final))
     except:
@@ -156,10 +177,15 @@ print("> science cube :", science_cube_name)
 # take science cube
 science_cube = fits.getdata(science_cube_name)
 science_header = fits.getheader(science_cube_name)
+print_cube_info(science_header, "science cube header")
 nb_wl_channelss, nb_science_frames, ny, nx = science_cube.shape
+
+print(">> science_cube.shape =", science_cube.shape)
 
 # sort reference cube names
 reference_cube_names.sort()
+print("> We have", len(reference_cube_names), "reference cubes in our library")
+print(">> The reference cube library has been sorted")
 
 # collect data, then we have reference frames
 tmp_cube = fits.getdata(reference_cube_names[0])
@@ -174,24 +200,29 @@ for name in reference_cube_names[1:]:
     ref_nb_frames.append(len(tmp_cube[0]))
     ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
 
-print("> ref_frames.shape =", ref_frames.shape)
+print("> ref_frames.shape (after croped)=", ref_frames.shape)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
 # correlation matrix
 mask = create_mask(crop_size, inner_radius, outer_radius)
+print("> The mask has been created, crop_size=", crop_size, "inner_radius=", inner_radius, "outer_radius=", outer_radius)
 res = np.zeros((nb_wl, nb_science_frames, nb_ref_frames))
 science_cube_croped = science_cube[..., border_l:border_r, border_l:border_r]
+
 for w in range(nb_wl):
     wl = wl_channels[w]
+    print("\n>>> Building correlation matrix on wl=", wl)
     for i in range(nb_science_frames):
         for j in range(nb_ref_frames):
             res[wl, i, j] = np.corrcoef(np.reshape(science_cube_croped[wl, i]*mask, ref_x*ref_y), np.reshape(ref_frames[wl, j]*mask, ref_x*ref_y))[0,1]
+    print(">>> End on wl=", wl, '\n')
 
 # compelte header
 science_header["PATH_TAR"] = science_cube_name
 science_header["CROPSIZE"] = crop_size
 science_header["INNER_R"] = inner_radius
 science_header["OUTER_R"] = outer_radius
+science_header["WAVE_LENGTH"] = args.wl_channels
 complete_header(science_header, reference_cube_names, ref_nb_frames)
 
 file_name = "pcc_matrix.fits"

@@ -62,7 +62,7 @@ def get_contrast_and_SN(res_fake, res_real, positions, fwhm_for_snr, fwhm_flux, 
     flux_companion = aperture_photometry(res_fake, [aperture, annulus])
     flux_companion['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
     flux = flux_companion['aperture_sum_0'] 
-    contrast = (flux_companion['aperture_sum_0']/aperture.area)/fwhm_flux
+    contrast = (flux_companion['aperture_sum_0'])/fwhm_flux
     
     # SN
     SN = vip.metrics.snr(array=res_fake, source_xy=positions, fwhm=fwhm_for_snr, plot=False, array2 =res_real, use2alone=True)
@@ -121,7 +121,8 @@ nb_cubes = len(cube_names)
 print("> we have fake", nb_cubes, "inputs")
 print("> input name =", cube_names)
 
-cube_names_real = filenames[np.where(datatypes == "IRD_RDI_RES_REAL_INJECTION")[0]]
+print(">> filenames:", filenames)
+cube_names_real = filenames[np.where(datatypes == "IRD_RDI_RES_REAL")[0]]
 nb_cubes_real = len(cube_names_real)
 print("> we have real", nb_cubes_real, "inputs")
 print("> input name =", cube_names_real)
@@ -130,21 +131,22 @@ print("> input name =", cube_names_real)
 res_final = {}
 
 for i in range(len(cube_names)):
+    print(">> we are processing the cube :", cube_names[i])
     # get res of rdi
     fake = fits.getdata(cube_names[i])
     fake_header = fits.getheader(cube_names[i])
-    wl = fake_header["wave_length"]
+    wl = fake_header["WAVE_LENGTH"]
     real = fits.getdata(cube_names_real[i])
     real_header = fits.getheader(cube_names_real[i])
 
     # check
     if real_header["OBJECT"] != fake_header["OBJECT"]:
         raise Exception(">>> Traget different!")
-    if real_header["wave_length"] != fake_header["wave_length"]:
+    if real_header["WAVE_LENGTH"] != fake_header["WAVE_LENGTH"]:
         raise Exception(">>> Wave_length different!")
 
     # get fwhm_flux from header
-    fwhm_flux = fake_header["fwhm_flux"]
+    fwhm_flux = fake_header["HIERARCH FWHM_FLUX"]
 
     # calculating contrast, S/N and flux
     obj = fake_header["OBJECT"]
@@ -153,9 +155,7 @@ for i in range(len(cube_names)):
         res_final.update({obj+'_wl='+str(wl)+'_'+str(pos):{'ctr':contrast, 'sn':sn, 'flux':flux}})
 
 df = pd.DataFrame(data=res_final)
-#df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.txt', sep='\t', mode='a', encoding='utf-8')
-with open('ird_rdi_fake_injeciton_contrast_sn_flux.txt','w') as fo:
-    fo.write(df.__repr__())
+df.T.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8')
 
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")

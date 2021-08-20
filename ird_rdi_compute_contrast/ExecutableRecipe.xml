@@ -8,7 +8,7 @@
     <frame_types>
         <frame_type name="IRD_RDI_CONTRAST_RES" description="Contrast of result"/>
         <frame_type name="IRD_RDI_RES_FAKE_INJECTION" description="RDI reduced image for channel 0 or 1 with fake injection"/>
-        <frame_type name="IRD_RDI_RES_REAL_INJECTION" description="RDI reduced image for channel 0 or 1 without fake injection"/>
+        <frame_type name="IRD_RDI_RES_REAL" description="RDI reduced image for channel 0 or 1 without fake injection"/>
     </frame_types>
     <!-- ==Recipe== -->
     <recipe name="ird_rdi_compute_contrast" instrument="IRDIS">

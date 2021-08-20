@@ -120,7 +120,7 @@ parser = argparse.ArgumentParser(description="Inject a fake companion and comput
 
 # file .sof whille contain :
 parser.add_argument("sof", help="file name of the sof file", type=str)
-parser.add_argument("--contrast", help="the contrast we want for our fake companion, the unit is factor of 6", type=float, default=0.000001)
+parser.add_argument("--contrast", help="the contrast we want for our fake companion, the unit is factor of 5", type=float, default=0.00001)
 parser.add_argument("--rad_dist", help="the distance/radius from the fake companion to star, default is 25", type=int, default=25)
 parser.add_argument("--theta", help="the theta, default is 60", type=int, default=60)
 parser.add_argument("--n_branches", help="how many brances we want", type=int, default=1)
@@ -239,14 +239,12 @@ wl_final = wl_channels[0]
 
 # fwhm psfn
 fwhm = get_fwhm_from_psf(psf[wl_final])
-#psfn = vip.metrics.normalize_psf(psf[wl_final], fwhm, size=psfn_size)
-#print("psfn =", psfn.shape, "psfn.ndim =", psfn.ndim)
-psfn = crop_psf(psf[wl_final], 17)
+psfn = vip.metrics.normalize_psf(psf[wl_final], fwhm, size=17)
+print("psfn =", psfn.shape, "psfn.ndim =", psfn.ndim)
 
 if nb_wl >1:
     fwhm_bis = get_fwhm_from_psf(psf[1])
-    #psfn_bis = vip.metrics.normalize_psf(psf[1], fwhm_bis, size=psfn_size)
-    psfn_bis = crop_psf(psf[1], 17)
+    psfn_bis = vip.metrics.normalize_psf(psf[1], fwhm_bis, size=psfn_size)
     print("psfn =", psfn_bis.shape, "psfn.ndim =", psfn_bis.ndim)
 
 # pxscale of IRDIS
@@ -260,7 +258,7 @@ aperture = CircularAperture(position, r=(diameter/2))
 annulus = CircularAnnulus(position, r_in=diameter, r_out=diameter*(3/2))
 flux_psf = aperture_photometry(psf[wl_final], [aperture, annulus])
 flux_psf['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
-flux_level = flux_psf['aperture_sum_0']
+flux_level = flux_psf['aperture_sum_0'][0] * contrast
 
 print(">> flux of psf in the same aperture is:", flux_psf['aperture_sum_0'][0], "contrast is:", contrast)
 print(">> flux_level =", flux_level)
@@ -277,7 +275,11 @@ if nb_wl>1:
 
 file_name = "science_cube_with_fake_companion.fits"
 print("> The result will be stored in :", file_name)
+print("> The science_header['FAKE_COMP'] = 1")
+print("> The science_header['FWHM_FLUX'] =", flux_psf['aperture_sum_0'][0])
 science_header["FAKE_COMP"] = 1
+science_header["FWHM_FLUX"] = flux_psf['aperture_sum_0'][0]
+
 hdu = fits.PrimaryHDU(data=science_cube_fake_comp, header=science_header)
 hdu.writeto(file_name)
 
