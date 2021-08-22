@@ -227,19 +227,63 @@ def print_cube_info(science_header, name):
     
     return None
 
+# do rdi
+def do_rdi(corr_matrix_wl, science_cube_croped, pct, n_corr, ref_frames, ref_cube_nb_frames, score, wl, ref_cube_path, derotation_angles, ncomp, inner_radius, mask, scaling, ref_x, ref_y):
+    '''
+    We will do selection and rdi in this function
+    Arg:
+        corr_matrix_wl : a 2d-array. One big matrix which contains pearson correlation coefficient value.
+        science_cube_croped : a 3d-array. A croped science cube.
+        pct : a list of float. See parser.
+        n_corr : a integer. See parser.
+        ncomp : a integer. See parser.
+        ref_frames : a 2d array. The referene frames.
+        ref_cube_nb_frames : a list of integer. Sotre the frame number for each reference target.
+        score : a integer. See parser.
+        wl : a integer. 0 or 1, the wave length we will handle.
+        ref_cube_path : a dictionary.
+        derotation_angles : a fits file.
+        inner_radius : a integer. 
+        mask : a 2-d array. Mask to cover the no-interesting region.
+        scaling : a string. The scaling.
+        ref_x : a integer. Length of ref frame.
+        ref_y : a integer. Length of ref frame.
+    Return:
+        res : a n-darray. The result of algo RDI.
+    '''
+    l_pct = len(pct)
+    l_n_corr = len(n_corr)
+    l_ncomp = len(ncomp)
+    res = np.zeros((l_pct, l_n_corr, l_ncomp, ref_x, ref_y))
+    for i in range(l_pct):
+        nb_ref_frame_tmp = int(nb_ref_frames*pct[i])
+        for j in range(l_n_corr):
+            for k in range(l_ncomp):
+                print(">>> nb_ref_frames =", nb_ref_frame_tmp,"n_corr =", n_corr[j], "ncomp =", ncomp[k])
+                ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix_wl, science_cube_croped, n_corr[j], ref_frames[:,0:nb_ref_frame_tmp], ref_cube_nb_frames, score, wave_length=wl)
+                dict_ref_in_target = get_dict(ref_cube_path, target_ref_coords)
+                print(">>>> fake science cube - wave_length=", wl_final, dict_ref_in_target)
+                print(">>>> ref_frames_selected_fake.shape =", ref_frames_selected.shape)
+                res[i,j,k] = vip.pca.pca_fullfr.pca(science_cube_croped[wl]*mask, -derotation_angles, ncomp=ncomp[k], mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
+
+    return res
+
 #############
 # main code #
 #############
-print("######### Start program : ird_rdi_reduce.py #########")
+
+print("############ recipe : ird_rdi_reduce.py is running ############")
 start_time = datetime.datetime.now()
 parser = argparse.ArgumentParser(description="Do the RDI reduction with help of big reference library.")
 # file .sof whille contain the CORRELATION_MATRIX, SCIENCE TARGET, PARALLACTIC ANGLE
 parser.add_argument("sof", help="file name of the sof file", type=str)
 parser.add_argument("--score", help="which decide how we choose the reference frame (>=1)", type=int, default=1)
-parser.add_argument("--n_corr", help="the number of best correalted frames for each frame of science target", type=int, default=150)
-parser.add_argument("--ncomp",help="number of principal components to remove (5 by default)", type=int, default=5)
+parser.add_argument("--n_corr", help="the number of best correalted frames for each frame of science target, a list of integer", nargs='+', type=int)
+parser.add_argument("--ncomp",help="number of principal components to remove, a list of integer", nargs='+', type=int)
+parser.add_argument("--pct", help="the percentage we want to use the reference library, a list of float", nargs='+', type=float)
 parser.add_argument("--scaling", help="scaling for the PCA (to choose between 0 for spat-mean, 1 for spat-standard, 2 for temp-mean, 3 for temp-standard or 4 for None)",\
                     type=int, choices=[0,1,2,3,4], default=0)
+
 # handle args
 args = parser.parse_args()
 
@@ -249,11 +293,14 @@ sofname=args.sof
 # --score
 score = args.score
 
-# --n_corr
+# --n_corr, a list of integer
 n_corr = args.n_corr
 
-# --ncomp
+# --ncomp, a list of integer
 ncomp = args.ncomp
+
+# --pct, a list of float
+pct = args.pct
 
 # --scaling
 scaling_dict = {0 : 'spat-mean', 1 : 'spat-standard', 2 : 'temp-mean', 3 : 'temp-standard', 4 : None}
@@ -264,23 +311,46 @@ data=np.loadtxt(sofname,dtype=str)
 filenames=data[:,0]
 datatypes=data[:,1]
 
+# sof - master cube, raw science cube
+print("\n------------ reading sof file ------------\n")
 science_cube_paths = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
-if len(science_cube_paths) != 1: 
-    raise Exception('The sof file must contain only one IRD_SCIENCE_PSF_MASTER_CUBE file')
-science_cube_path = science_cube_paths[0]
+sc_exist = False
+if len(science_cube_paths) < 1: 
+    print("> Well, we don't have the raw data/raw science cube this time")
+elif (len(science_cube_paths) == 1):
+    sc_exist = True
+    print("> 1 raw data/raw science master cube - founded")
+    science_cube_path = science_cube_paths[0]
+else:
+    raise Exception('The sof file must contain only one IRD_SCIENCE_PSF_MASTER_CUBE file or none')
 
+# sof - master cube, science cube with fake injection
 science_cube_paths_fake = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP')[0]]
-if len(science_cube_paths_fake) != 1: 
+sc_f_exist = False
+if len(science_cube_paths_fake) < 1:
+    print("> Well, we don't have the science cube with the fake injection this time")
+elif len(science_cube_paths_fake) == 1:
+    sc_f_exist = True
+    print("> 1 science master cube with the fake companion injection cube - founded")
+    science_cube_path_fake = science_cube_paths_fake[0]
+else:
     raise Exception('The sof file must contain only one IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP file')
-science_cube_path_fake = science_cube_paths_fake[0]
 
+
+if not sc_exist and not sc_f_exist:
+    raise Exception('The sof file must contain one IRD_SCIENCE_REDUCED_MASTER_CUBE or one IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP')
+
+# sof - correlation matrix
 corr_matrix_path = filenames[np.where(datatypes == "IRD_CORR_MATRIX")[0]]
-if len(corr_matrix_path) < 1:
+if len(corr_matrix_path) > 1:
     raise Exception("The sof file must contain exactly one IRD_CORR_MATRIX file")
 
+# sof - parallactic angle
 anglenames = filenames[np.where(datatypes == 'IRD_SCIENCE_PARA_ROTATION_CUBE')[0]]
 if len(anglenames) != 1: 
     raise Exception('The sof file must contain exactly one IRD_SCIENCE_PARA_ROTATION_CUBE file')
+
+print("\n------------ reading end ------------\n")
 
 # Step-2 take science cube
 print(">> corr_matrix_path", corr_matrix_path)
@@ -297,19 +367,33 @@ wl_channels = dico_conversion_wl_channels[corr_matrix_header["WL_CHOSE"]]
 nb_wl = len(wl_channels)
 print("> We will investigate wave length :", wl_channels)
 
-science_cube = fits.getdata(science_cube_path)
-science_header = fits.getheader(science_cube_path)
-print_cube_info(science_header, "science cube header")
+if sc_exist:
+    science_cube = fits.getdata(science_cube_path)
+    science_header = fits.getheader(science_cube_path)
+    print_cube_info(science_header, "science cube header")
+    nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
+    print(">> science_cube.shape =", science_cube.shape)
 
-science_cube_fake = fits.getdata(science_cube_path_fake)
-science_header_fake = fits.getheader(science_cube_path_fake)
-print_cube_info(science_header_fake, "science cube with fake injection header")
 
-nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
-print(">> science_cube.shape =", science_cube.shape)
+if sc_f_exist:
+    science_cube_fake = fits.getdata(science_cube_path_fake)
+    science_header_fake = fits.getheader(science_cube_path_fake)
+    print_cube_info(science_header_fake, "science cube with fake injection header")
+    print(">> science_cube_fake.shape =", science_cube_fake.shape)  
+
+# add information to the header
+l_pct = len(pct)
+l_n_corr = len(n_corr)
+l_ncomp = len(ncomp)
+science_header["DIFF_REF_SIZE"] = l_pct
+science_header["DIFF_N_CORR"] = l_n_corr
+science_header["DIFF_NCOMP"] = l_ncomp
+
+science_header_fake["DIFF_REF_SIZE"] = l_pct 
+science_header_fake["DIFF_N_CORR"] = l_n_corr
+science_header_fake["DIFF_NCOMP"] = l_ncomp
 
 # parrallactic angle
-#anglename = corr_matrix_header["PA_ANGLE"]
 anglename = anglenames[0]
 derotation_angles = fits.getdata(anglename)
 derotation_angles_header = fits.getheader(anglename)
@@ -333,7 +417,7 @@ for i in range(nb_ref_cube):
 # crop_size
 crop_size = int(corr_matrix_header["CROPSIZE"])
 
-# collect data
+# collect data, with pct we can use different size ref_frames
 # TODO(yuchen): there is a smarter way to do it
 ref_frames, ref_frames_coords, ref_cube_nb_frames_check = collect_frames(ref_cube_path, crop_size)
 if ref_cube_nb_frames != ref_cube_nb_frames:
@@ -342,11 +426,14 @@ if ref_cube_nb_frames != ref_cube_nb_frames:
 print("> ref_frames.shape =", ref_frames.shape)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
 
-# science cube croped
+# crop science cube
 start = int((nx-crop_size)//2)
 end = start + crop_size
-science_cube_croped = science_cube[..., start:end, start:end]
-science_cube_croped_fake = science_cube_fake[..., start:end, start:end]
+
+if sc_exist:
+    science_cube_croped = science_cube[..., start:end, start:end]
+if sc_f_exist:
+    science_cube_croped_fake = science_cube_fake[..., start:end, start:end]
 
 # correlation matrix
 inner_radius = int(corr_matrix_header["INNER_R"])
@@ -360,69 +447,125 @@ corr_matrix_1 = None
 if len(wl_channels)>1: 
     corr_matrix_1 = corr_matrix[1]
 
+# set values
 wl_final = wl_channels[0]
-# real science cube - do the selection
-ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix_0 ,science_cube_croped, n_corr, ref_frames, ref_cube_nb_frames, score, wave_length=wl_final)
-dict_ref_in_target = get_dict(ref_cube_path, target_ref_coords)
-print(">> real science cube - wave_length=", wl_final, dict_ref_in_target)
-print(">> ref_frames_selected.shape =", ref_frames_selected.shape)
-res_0 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_final]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
 
-file_name = "rdi_real_res_0.fits"
-print("> The result will be stored in :", file_name)
-science_header["WL_CHOSE"] = wl_final
-science_header["NB_REF"] = nb_ref_cube
-science_header["Fake"] = 0
-hdu = fits.PrimaryHDU(data=res_0, header=science_header)
-hdu.writeto(file_name)
+if sc_exist:
+    print("------------ raw data type IRD_SCIENCE_REDUCED_MASTER_CUBE exists, do RDI on wl=", wl_final," ------------")
+    res_0 = do_rdi(
+        corr_matrix_wl=corr_matrix_0,\
+        science_cube_croped=science_cube_croped,\
+        ref_frames=ref_frames,\
+        pct=pct,\
+        n_corr=n_corr,\
+        ncomp=ncomp,\
+        ref_cube_nb_frames=ref_cube_nb_frames,\
+        score=score,\
+        wl=wl_final,\
+        ref_cube_path=ref_cube_path,\
+        derotation_angles=derotation_angles,\
+        inner_radius=inner_radius,\
+        mask=mask,\
+        scaling=scaling,\
+        ref_x=ref_x,\
+        ref_y= ref_y)
 
-# science cube with fake comp injection on wl_final
-ref_frames_selected_fake, target_ref_coords_fake = selection_frame_based_score(corr_matrix_0 ,science_cube_croped_fake, n_corr, ref_frames, ref_cube_nb_frames, score, wave_length=wl_final)
-dict_ref_in_target_fake = get_dict(ref_cube_path, target_ref_coords_fake)
-print(">> fake science cube - wave_length=", wl_final, dict_ref_in_target_fake)
-print(">> ref_frames_selected_fake.shape =", ref_frames_selected_fake.shape)
-res_0_fake = vip.pca.pca_fullfr.pca(science_cube_croped_fake[wl_final]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_fake*mask, scaling=scaling)
+    file_name = "rdi_real_res_0.fits"
+    print("> The result will be stored in :", file_name)
+    science_header["WL_CHOSE"] = wl_final
+    science_header["NB_REF"] = nb_ref_cube
+    science_header["Fake"] = 0
+    hdu = fits.PrimaryHDU(data=res_0, header=science_header)
+    hdu.writeto(file_name)
 
-file_name_fake = "rdi_fake_res_0.fits"
-print("> The result of fake companion injection will be stored in :", file_name_fake)
-science_header_fake["WL_CHOSE"] = wl_final
-science_header_fake["NB_REF"] = nb_ref_cube
-science_header_fake["Fake"] = 1
-hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header_fake)
-hdu.writeto(file_name_fake)
+if sc_f_exist:
+    print("------------ data type IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP exists, do RDI on wl=", wl_final," ------------")
+    res_0_fake = do_rdi(
+        corr_matrix_wl=corr_matrix_0,\
+        science_cube_croped=science_cube_croped_fake,\
+        ref_frames=ref_frames,\
+        pct=pct,\
+        n_corr=n_corr,\
+        ncomp=ncomp,\
+        ref_cube_nb_frames=ref_cube_nb_frames,\
+        score=score,\
+        wl=wl_final,\
+        ref_cube_path=ref_cube_path,\
+        derotation_angles=derotation_angles,\
+        inner_radius=inner_radius,\
+        mask=mask,\
+        scaling=scaling,\
+        ref_x=ref_x,\
+        ref_y=ref_y)
+
+    file_name_fake = "rdi_fake_res_0.fits"
+    print("> The result of fake companion injection will be stored in :", file_name_fake)
+    science_header_fake["Fake"] = 1
+    hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header_fake)
+    hdu.writeto(file_name_fake)
 
 ref_frames_selected_bis = []
 target_ref_coords_bis = []
 
 if nb_wl>1:
-    # real science cube on wl=1
-    ref_frames_selected_bis, target_ref_coords_bis = selection_frame_based_score(corr_matrix_1 ,science_cube_croped, n_corr, ref_frames, ref_cube_nb_frames, score, wave_length=wl_channels[1])
-    dict_ref_in_target_bis = get_dict(ref_cube_path, target_ref_coords_bis)
-    print(">> real science cube - wave_length=1", dict_ref_in_target_bis)
-    print(">> ref_frames_selected_bis.shape =", ref_frames_selected_bis.shape)
-    res_1 = vip.pca.pca_fullfr.pca(science_cube_croped[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis*mask, scaling=scaling)
-    file_name = "rdi_real_res_1.fits"
-    print("> The result will be stored in :", file_name)
-    science_header_bis = fits.getheader(corr_matrix_header["PATH_TAR"])
-    science_header_bis["WL_CHOSE"] = 1
-    science_header_bis["NB_REF"] = nb_ref_cube
-    science_header_bis["Fake"] = 0
-    
-    hdu = fits.PrimaryHDU(data=res_1, header=science_header_bis)
-    hdu.writeto(file_name)
+    if sc_exist:
+        print("------------ raw data type IRD_SCIENCE_REDUCED_MASTER_CUBE exists, do RDI on wl=1 ------------")
+        # real science cube on wl=1
+        res_1 = do_rdi(
+            corr_matrix_wl=corr_matrix_1,\
+            science_cube_croped=science_cube_croped,\
+            ref_frames=ref_frames,\
+            pct=pct,\
+            n_corr=n_corr,\
+            ncomp=ncomp,\
+            ref_cube_nb_frames=ref_cube_nb_frames,\
+            score=score,\
+            wl=wl_channels[1],\
+            ref_cube_path=ref_cube_path,\
+            derotation_angles=derotation_angles,\
+            inner_radius=inner_radius,\
+            mask=mask,\
+            scaling=scaling,\
+            ref_x=ref_x,\
+            ref_y= ref_y)
 
-    # science cube with fake comp injection on wl=1
-    ref_frames_selected_bis_fake, target_ref_coords_bis_fake = selection_frame_based_score(corr_matrix_1 ,science_cube_croped_fake, n_corr, ref_frames, ref_cube_nb_frames, score, wave_length=wl_channels[1])
-    dict_ref_in_target_bis_fake = get_dict(ref_cube_path, target_ref_coords_bis_fake)
-    print(">> real science cube - wave_length=1", dict_ref_in_target_bis_fake)
-    print(">> ref_frames_selected_bis_fake.shape =", ref_frames_selected_bis_fake.shape)
-    res_1_fake = vip.pca.pca_fullfr.pca(science_cube_croped_fake[wl_channels[1]]*mask, -derotation_angles, ncomp=ncomp, mask_center_px=inner_radius, cube_ref=ref_frames_selected_bis_fake*mask, scaling=scaling)
-    file_name_fake = "rdi_fake_res_1.fits"
-    print("> The result will be stored in :", file_name)
-    science_header_fake["WL_CHOSE"] = 1
-    
-    hdu = fits.PrimaryHDU(data=res_1_fake, header=science_header_fake)
-    hdu.writeto(file_name_fake)
+        file_name = "rdi_real_res_1.fits"
+        print("> The result will be stored in :", file_name)
+        science_header_bis = fits.getheader(corr_matrix_header["PATH_TAR"])
+        science_header_bis["WL_CHOSE"] = 1
+        science_header_bis["NB_REF"] = nb_ref_cube
+        science_header_bis["Fake"] = 0
+        
+        hdu = fits.PrimaryHDU(data=res_1, header=science_header_bis)
+        hdu.writeto(file_name)
+
+    if sc_f_exist:
+        print("------------ data type IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP exists, do RDI on wl=1 ------------")
+        # science cube with fake comp injection on wl=1
+        res_1_fake = do_rdi(
+            corr_matrix_wl=corr_matrix_1,\
+            science_cube_croped=science_cube_croped_fake,\
+            ref_frames=ref_frames,\
+            pct=pct,\
+            n_corr=n_corr,\
+            ncomp=ncomp,\
+            ref_cube_nb_frames=ref_cube_nb_frames,\
+            score=score,\
+            wl=wl_channels[1],\
+            ref_cube_path=ref_cube_path,\
+            derotation_angles=derotation_angles,\
+            inner_radius=inner_radius,\
+            mask=mask,\
+            scaling=scaling,\
+            ref_x=ref_x,\
+            ref_y= ref_y)
+
+        file_name_fake = "rdi_fake_res_1.fits"
+        print("> The result will be stored in :", file_name)
+        science_header_fake["WL_CHOSE"] = 1
+        
+        hdu = fits.PrimaryHDU(data=res_1_fake, header=science_header_fake)
+        hdu.writeto(file_name_fake)
 
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")

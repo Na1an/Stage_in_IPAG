@@ -37,12 +37,12 @@
     filename_parameter (can be $1, $2... for inline parameter ).
      -->
     <inputs use_sof="true">
-        <input_frame min="1" max="1">
+        <input_frame min="0" max="1">
             <frame_type value="IRD_SCIENCE_REDUCED_MASTER_CUBE"/>
             <!--filename_parameter value="$1"/-->
             <description value="Science and reference master cubes to reduce"/>
         </input_frame>
-        <input_frame min="1" max="1">
+        <input_frame min="0" max="1">
             <frame_type value="IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP"/>
             <!--filename_parameter value="$1"/-->
             <description value="Science and reference master cubes with fake injection"/>
@@ -104,15 +104,20 @@
             <description value="Score is used to measure how good a reference frame is."/>
         </parameter>
         <parameter name="n_corr" optional="true">
-            <default_value value="100"/>
-            <type value="int"/>
-            <description value="Number of best correlated frames. Default is 100."/>
+            <default_value value=""/>
+            <type value="array"/>
+            <description value="Number of best correlated frames."/>
         </parameter>
         <!-- PCA parameters -->
         <parameter name="ncomp" optional="true">
-            <default_value value="10"/>
-            <type value="int"/>
-            <description value="Number of modes used by PCA. Default is 10."/>
+            <default_value value=""/>
+            <type value="array"/>
+            <description value="Number of modes used by PCA."/>
+        </parameter>
+        <parameter name="pct" optional="true">
+            <default_value value=""/>
+            <type value="array"/>
+            <description value="Number of modes used by PCA."/>
         </parameter>
         <parameter name="scaling" optional="true">
             <default_value value="0"/>
