@@ -500,6 +500,8 @@ if sc_f_exist:
 
     file_name_fake = "rdi_fake_res_0.fits"
     print("> The result of fake companion injection will be stored in :", file_name_fake)
+    science_header_fake["WL_CHOSE"] = wl_final
+    science_header_fake["NB_REF"] = nb_ref_cube
     science_header_fake["Fake"] = 1
     hdu = fits.PrimaryHDU(data=res_0_fake, header=science_header_fake)
     hdu.writeto(file_name_fake)
@@ -531,12 +533,9 @@ if nb_wl>1:
 
         file_name = "rdi_real_res_1.fits"
         print("> The result will be stored in :", file_name)
-        science_header_bis = fits.getheader(corr_matrix_header["PATH_TAR"])
-        science_header_bis["WL_CHOSE"] = 1
-        science_header_bis["NB_REF"] = nb_ref_cube
-        science_header_bis["Fake"] = 0
+        science_header["WL_CHOSE"] = wl_channels[1]
         
-        hdu = fits.PrimaryHDU(data=res_1, header=science_header_bis)
+        hdu = fits.PrimaryHDU(data=res_1, header=science_header)
         hdu.writeto(file_name)
 
     if sc_f_exist:
