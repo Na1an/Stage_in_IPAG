@@ -258,12 +258,13 @@ def do_rdi(corr_matrix_wl, science_cube_croped, pct, n_corr, ref_frames, ref_cub
     for i in range(l_pct):
         nb_ref_frame_tmp = int(nb_ref_frames*pct[i])
         for j in range(l_n_corr):
+            print(">> nb_ref_frames =", nb_ref_frame_tmp,"n_corr =", n_corr[j])
+            ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix_wl, science_cube_croped, n_corr[j], ref_frames[:,0:nb_ref_frame_tmp], ref_cube_nb_frames, score, wave_length=wl)
+            dict_ref_in_target = get_dict(ref_cube_path, target_ref_coords)
+            print(">>> fake science cube - wave_length=", wl_final, dict_ref_in_target)
+            print(">>> ref_frames_selected_fake.shape =", ref_frames_selected.shape)
             for k in range(l_ncomp):
-                print(">>> nb_ref_frames =", nb_ref_frame_tmp,"n_corr =", n_corr[j], "ncomp =", ncomp[k])
-                ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix_wl, science_cube_croped, n_corr[j], ref_frames[:,0:nb_ref_frame_tmp], ref_cube_nb_frames, score, wave_length=wl)
-                dict_ref_in_target = get_dict(ref_cube_path, target_ref_coords)
-                print(">>>> fake science cube - wave_length=", wl_final, dict_ref_in_target)
-                print(">>>> ref_frames_selected_fake.shape =", ref_frames_selected.shape)
+                print(">>>> ncomp =", ncomp[k])
                 res[i,j,k] = vip.pca.pca_fullfr.pca(science_cube_croped[wl]*mask, -derotation_angles, ncomp=ncomp[k], mask_center_px=inner_radius, cube_ref=ref_frames_selected*mask, scaling=scaling)
 
     return res
@@ -278,9 +279,9 @@ parser = argparse.ArgumentParser(description="Do the RDI reduction with help of 
 # file .sof whille contain the CORRELATION_MATRIX, SCIENCE TARGET, PARALLACTIC ANGLE
 parser.add_argument("sof", help="file name of the sof file", type=str)
 parser.add_argument("--score", help="which decide how we choose the reference frame (>=1)", type=int, default=1)
-parser.add_argument("--n_corr", help="the number of best correalted frames for each frame of science target, a list of integer", nargs='+', type=int)
-parser.add_argument("--ncomp",help="number of principal components to remove, a list of integer", nargs='+', type=int)
-parser.add_argument("--pct", help="the percentage we want to use the reference library, a list of float", nargs='+', type=float)
+parser.add_argument("--n_corr", help="the number of best correalted frames for each frame of science target, a list of integer", type=str, default="empty")
+parser.add_argument("--ncomp",help="number of principal components to remove, a list of integer", type=str, default="empty")
+parser.add_argument("--pct", help="the percentage we want to use the reference library, a list of float", type=str, default="empty")
 parser.add_argument("--scaling", help="scaling for the PCA (to choose between 0 for spat-mean, 1 for spat-standard, 2 for temp-mean, 3 for temp-standard or 4 for None)",\
                     type=int, choices=[0,1,2,3,4], default=0)
 
@@ -294,13 +295,13 @@ sofname=args.sof
 score = args.score
 
 # --n_corr, a list of integer
-n_corr = args.n_corr
+n_corr = [int(e) for e in args.n_corr.split(' ')]
 
 # --ncomp, a list of integer
-ncomp = args.ncomp
+ncomp = [int(e) for e in args.ncomp.split(' ')]
 
 # --pct, a list of float
-pct = args.pct
+pct = [float(e) for e in args.pct.split(' ')] 
 
 # --scaling
 scaling_dict = {0 : 'spat-mean', 1 : 'spat-standard', 2 : 'temp-mean', 3 : 'temp-standard', 4 : None}
@@ -381,18 +382,6 @@ if sc_f_exist:
     print_cube_info(science_header_fake, "science cube with fake injection header")
     print(">> science_cube_fake.shape =", science_cube_fake.shape)  
 
-# add information to the header
-l_pct = len(pct)
-l_n_corr = len(n_corr)
-l_ncomp = len(ncomp)
-science_header["DIFF_REF_SIZE"] = l_pct
-science_header["DIFF_N_CORR"] = l_n_corr
-science_header["DIFF_NCOMP"] = l_ncomp
-
-science_header_fake["DIFF_REF_SIZE"] = l_pct 
-science_header_fake["DIFF_N_CORR"] = l_n_corr
-science_header_fake["DIFF_NCOMP"] = l_ncomp
-
 # parrallactic angle
 anglename = anglenames[0]
 derotation_angles = fits.getdata(anglename)
@@ -425,6 +414,23 @@ if ref_cube_nb_frames != ref_cube_nb_frames:
 
 print("> ref_frames.shape =", ref_frames.shape)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
+
+# add information to the header
+pct_str = ' '.join(str(int(e*nb_ref_frames)) for e in pct)
+n_corr_str = ' '.join(str(e) for e in n_corr)
+ncomp_str = ' '.join(str(e) for e in ncomp)
+
+science_header["D_PCT"] = pct_str
+science_header["D_N_COR"] = n_corr_str
+science_header["D_NCOMP"] = ncomp_str
+
+science_header_fake["D_PCT"] = pct_str
+science_header_fake["D_N_COR"] = n_corr_str
+science_header_fake["D_NCOMP"] = ncomp_str
+
+print(">> pct_str :", pct_str)
+print(">> n_corr_str :", n_corr_str)
+print(">> ncomp_str :", ncomp_str)
 
 # crop science cube
 start = int((nx-crop_size)//2)

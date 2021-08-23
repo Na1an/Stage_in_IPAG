@@ -103,20 +103,20 @@
             <type value="int"/>
             <description value="Score is used to measure how good a reference frame is."/>
         </parameter>
+        <parameter name="pct" optional="true">
+            <default_value value="empty"/>
+            <type value="string"/>
+            <description value="Number of modes used by PCA."/>
+        </parameter>
         <parameter name="n_corr" optional="true">
-            <default_value value=""/>
-            <type value="array"/>
+            <default_value value="empty"/>
+            <type value="string"/>
             <description value="Number of best correlated frames."/>
         </parameter>
         <!-- PCA parameters -->
         <parameter name="ncomp" optional="true">
-            <default_value value=""/>
-            <type value="array"/>
-            <description value="Number of modes used by PCA."/>
-        </parameter>
-        <parameter name="pct" optional="true">
-            <default_value value=""/>
-            <type value="array"/>
+            <default_value value="empty"/>
+            <type value="string"/>
             <description value="Number of modes used by PCA."/>
         </parameter>
         <parameter name="scaling" optional="true">

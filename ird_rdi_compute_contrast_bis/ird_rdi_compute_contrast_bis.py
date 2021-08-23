@@ -72,8 +72,8 @@ def get_contrast_and_SN(res_fake, res_real, positions, fwhm_for_snr, fwhm_flux, 
 #############
 # main code #
 #############
+
 print("######### Start program : ird_rdi_compute_contrast.py #########")
-print("> [IMPORTANT] This recipe works only for the standard reduction! \n")
 start_time = datetime.datetime.now()
 parser = argparse.ArgumentParser(description="Inject a fake companion and compute the contrast, S/N and flux.")
 
@@ -116,6 +116,7 @@ r_out_annulus = args.r_out_annulus
 data=np.loadtxt(sofname,dtype=str)
 filenames=data[:,0]
 datatypes=data[:,1]
+
 cube_names = filenames[np.where(datatypes == "IRD_RDI_RES_FAKE_INJECTION")[0]]
 nb_cubes = len(cube_names)
 print("> we have fake", nb_cubes, "inputs")
@@ -152,14 +153,81 @@ for i in range(len(cube_names)):
 
     # calculating contrast, S/N and flux
     obj = fake_header["OBJECT"]
-    for pos in coords:
-        contrast, sn, flux = get_contrast_and_SN(fake, real, pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
-        print(">>> contrast =", contrast, "sn =", sn, "flux =", flux)
-        x,y = pos
-        res_final.update({obj+'_wl='+str(wl)+'_('+str(x)+','+str(y)+')':{'ctr':contrast, 'sn':sn, 'flux':flux}})
+    pct = [int(e) for e in fake_header["D_PCT"].split(' ')] 
+    n_corr = [int(e) for e in fake_header["D_N_COR"].split(' ')]
+    ncomp = [int(e) for e in fake_header["D_NCOMP"].split(' ')]
 
-df = pd.DataFrame(data=res_final)
-df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
+    for i in range(len(pct)):
+        for j in range(len(n_corr)):
+            res_final = {}
+            for k in range(len(ncomp)):
+                contrast = 0
+                sn = 0
+                flux = 0
+                # the average of contrast, sn, flux from position
+                for pos in coords:
+                    ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    contrast = contrast + ct_tmp
+                    sn = sn + sn_tmp
+                    flux = flux + flux_tmp
 
+                contrast = contrast/len(pos)
+                sn = sn/len(pos)
+                flux = flux/len(pos)
+                print(">>> object =", obj, "pos =", pos, "contrast =", contrast, "sn =", sn, "flux =", flux)
+                res_final.update({str(ncomp[k]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
+            # write data to file
+            df = pd.DataFrame(data=res_final)
+            df.columns = pd.MultiIndex.from_product([["pct_"+str(pct[i])+"_ncorr_"+str(n_corr[j])], df.columns])
+            df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
+
+    for i in range(len(pct)):
+        for k in range(len(ncomp)):
+            res_final = {}
+            for j in range(len(n_corr)):    
+                contrast = 0
+                sn = 0
+                flux = 0
+                # the average of contrast, sn, flux from position
+                for pos in coords:
+                    ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    contrast = contrast + ct_tmp
+                    sn = sn + sn_tmp
+                    flux = flux + flux_tmp
+
+                contrast = contrast/len(pos)
+                sn = sn/len(pos)
+                flux = flux/len(pos)
+                print(">>> object =", obj, "pos =", pos, "contrast =", contrast, "sn =", sn, "flux =", flux)
+                res_final.update({str(n_corr[j]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
+            # write data to file
+            df = pd.DataFrame(data=res_final)
+            df.columns = pd.MultiIndex.from_product([["pct_"+str(pct[i])+"_ncomp_"+str(ncomp[k])], df.columns])
+            df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')    
+
+    
+    for j in range(len(n_corr)):
+        for k in range(len(ncomp)):
+            res_final = {}
+            for i in range(len(pct)):
+                contrast = 0
+                sn = 0
+                flux = 0
+                # the average of contrast, sn, flux from position
+                for pos in coords:
+                    ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    contrast = contrast + ct_tmp
+                    sn = sn + sn_tmp
+                    flux = flux + flux_tmp
+
+                contrast = contrast/len(pos)
+                sn = sn/len(pos)
+                flux = flux/len(pos)
+                print(">>> object =", obj, "pos =", pos, "contrast =", contrast, "sn =", sn, "flux =", flux)
+                res_final.update({str(pct[i]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
+            # write data to file
+            df = pd.DataFrame(data=res_final)
+            df.columns = pd.MultiIndex.from_product([["ncorr_"+str(n_corr[j])+"_ncomp_"+str(ncomp[k])], df.columns])
+            df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")
