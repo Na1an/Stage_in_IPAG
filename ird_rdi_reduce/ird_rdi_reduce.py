@@ -125,6 +125,7 @@ def selection_frame_based_score(corr_matrix, target, nb_best_frame, ref_frames, 
 
     # score_system
     ref_scores = np.zeros((nb_fr_ref))
+    res_take_pcc = {}
 
     for i in range(nb_fr_t):
         tmp = {}
@@ -135,14 +136,15 @@ def selection_frame_based_score(corr_matrix, target, nb_best_frame, ref_frames, 
             raise Exception("!!! inside the function selection_frame_based, tmp", len(tmp),"is samller than nb_best_frame", nb_best_frame)
         
         res_tmp = sorted(tmp.items(),key = lambda r:(r[1],r[0]), reverse=True)[0:nb_best_frame]
-        
+        res_take_pcc.update(res_tmp)
         for (ind, pcc) in res_tmp:
             ref_scores[ind] = ref_scores[ind] + 1
 
+    print(">>>[selection] pcc median = ", np.median([res_take_pcc[k] for k in res_take_pcc]), "pcc minimum =", np.amin([res_take_pcc[k] for k in res_take_pcc]))
     res_coords = np.where(ref_scores>=score)
-    print("res_coords.shape =", res_coords[0].shape, "res_coords.type = ", type(res_coords), " res_coords =", res_coords)
+    print(">>>[selection] res_coords.shape =", res_coords[0].shape, "res_coords.type = ", type(res_coords), " res_coords =", res_coords)
     res = ref_frames[wave_length][res_coords]
-    print("res.shape =", res.shape)
+    print(">>>[selection] res.shape =", res.shape)
     
     return res, get_histogram_of_ref_stars_score(res_coords[0], ref_cube_nb_frames)
 
@@ -258,7 +260,7 @@ def do_rdi(corr_matrix_wl, science_cube_croped, pct, n_corr, ref_frames, ref_cub
     for i in range(l_pct):
         nb_ref_frame_tmp = int(nb_ref_frames*pct[i])
         for j in range(l_n_corr):
-            print(">> nb_ref_frames =", nb_ref_frame_tmp,"n_corr =", n_corr[j])
+            print(">> nb_ref_frames =", nb_ref_frame_tmp, "n_corr =", n_corr[j])
             ref_frames_selected, target_ref_coords = selection_frame_based_score(corr_matrix_wl, science_cube_croped, n_corr[j], ref_frames[:,0:nb_ref_frame_tmp], ref_cube_nb_frames, score, wave_length=wl)
             dict_ref_in_target = get_dict(ref_cube_path, target_ref_coords)
             print(">>> fake science cube - wave_length=", wl_final, dict_ref_in_target)
@@ -337,7 +339,6 @@ elif len(science_cube_paths_fake) == 1:
 else:
     raise Exception('The sof file must contain only one IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP file')
 
-
 if not sc_exist and not sc_f_exist:
     raise Exception('The sof file must contain one IRD_SCIENCE_REDUCED_MASTER_CUBE or one IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP')
 
@@ -355,7 +356,6 @@ print("\n------------ reading end ------------\n")
 
 # Step-2 take science cube
 print(">> corr_matrix_path", corr_matrix_path)
-print(">> it's type", type(corr_matrix_path))
 corr_matrix_path = corr_matrix_path[0]
 corr_matrix = fits.getdata(corr_matrix_path)
 corr_matrix_header = fits.getheader(corr_matrix_path)
@@ -366,6 +366,7 @@ print("> The corr_matrix.shape=", corr_matrix.shape)
 dico_conversion_wl_channels = {0 : [0], 1 : [1], 2 : [0,1]}
 wl_channels = dico_conversion_wl_channels[corr_matrix_header["WL_CHOSE"]]
 nb_wl = len(wl_channels)
+
 print("> We will investigate wave length :", wl_channels)
 
 if sc_exist:
