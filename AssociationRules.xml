@@ -1,0 +1,76 @@
+<!-- ird_rdi_build_corr_matrix_bis -->
+<recipe id="ird_rdi_compute_contrast.*">
+    <frame_type include="IRD_RDI_RES_FAKE_INJECTION">
+        <attribute id="obs_night" restriction="equal"/>
+        <attribute id="object" restriction="equalOrValue"/>
+    </frame_type>
+</recipe>
+
+<!-- ird_rdi_fake_injection_bis -->
+<recipe id="ird_rdi_fake_injection.*">
+    <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE">
+        <attribute id="inst_filter" restriction="equal"/>
+        <attribute id="coro" restriction="equal"/>
+        <attribute id="parent_process_id" use="equal"/>
+    </frame_type>
+    <frame_type include="IRD_SCIENCE_PSF_MASTER_CUBE" limit="1">
+        <attribute id="parent_process_id" restriction="equal"/>
+    </frame_type>
+    <frame_type include="IRD_SCIENCE_PARA_ROTATION_CUBE" limit="1">
+        <attribute id="parent_process_id" restriction="equal"/>
+    </frame_type>
+</recipe>
+
+<!-- ird_rdi_reduce -->
+<recipe id="ird_rdi_reduce.*">
+    <frame_type include="IRD_CORR_MATRIX,IRD_SCIENCE_PARA_ROTATION_CUBE">
+	<attribute id="object" restriction="equal"/>
+	<attribute id="obs_date" restriction="equal"/>
+	<attribute id="exp_time" restriction="equal"/>
+	<attribute id="coro" restriction="equal"/>
+	<attribute id="inst_filter" restriction="equal"/>
+    </frame_type>
+</recipe>
+
+(or)
+
+<recipe id="ird_rdi_reduce.*">
+    <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE">
+	<attribute id="object" use="equal"/>
+	<attribute id="obs_date" use="equal"/>
+	<attribute id="exp_time" use="equal"/>
+	<attribute id="inst_filter" use="equal"/>
+        <attribute id="coro" use="equal"/>
+        <attribute id="parent_process_id" use="equal"/>
+    </frame_type>
+    <frame_type include="IRD_SCIENCE_PARA_ROTATION_CUBE" limit="1">
+        <attribute id="parent_process_id" restriction="equal"/>
+    </frame_type>
+    <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE_FAKE_COMP" limit="1">
+	<attribute id="object" restriction="equal"/>
+	<attribute id="obs_date" restriction="equal"/>
+	<attribute id="exp_time" restriction="equal"/>
+	<attribute id="coro" restriction="equal"/>
+	<attribute id="inst_filter" restriction="equal"/>
+    </frame_type>
+    <frame_type include="IRD_CORR_MATRIX" limit="1">
+	<attribute id="object" restriction="equal"/>
+	<attribute id="obs_date" restriction="equal"/>
+	<attribute id="exp_time" restriction="equal"/>
+	<attribute id="coro" restriction="equal"/>
+	<attribute id="inst_filter" restriction="equal"/>
+    </frame_type>
+</recipe>
+
+<!-- ird_rdi_comput_contrast_bis -->
+<recipe id="ird_rdi_compute_contrast.*">
+    <frame_type include="IRD_RDI_RES_FAKE_INJECTION,IRD_RDI_RES_REAL">
+        <attribute id="object" restriction="equalOrValue"/>
+	<attribute id="obs_date" restriction="equal"/>
+	<attribute id="exp_time" restriction="equal"/>
+	<attribute id="coro" restriction="equal"/>
+	<attribute id="inst_filter" restriction="equal"/>
+	<attribute id="parent_process_id" restriction="equal"/>
+    </frame_type>
+</recipe>
+
