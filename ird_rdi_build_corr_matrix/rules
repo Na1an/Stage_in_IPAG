@@ -1,5 +1,5 @@
 <recipe id="ird_rdi_build_corr_matrix.*">
-    <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE">
+    <frame_type include="IRD_RDI_SCIENCE_REDUCED_MASTER_CUBE,IRD_SCIENCE_REDUCED_MASTER_CUBE">
         <attribute id="inst_filter" restriction="equal"/>
         <attribute id="coro" restriction="equal"/>
     </frame_type>

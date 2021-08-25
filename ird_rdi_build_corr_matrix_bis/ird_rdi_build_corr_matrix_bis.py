@@ -8,6 +8,7 @@ Reduce a IRD_SCIENCE_REDUCED_MASTER_CUBE
 
 import argparse
 import warnings
+import pandas as pd
 import numpy as np
 import vip_hci as vip
 from astropy.io import fits
@@ -99,6 +100,39 @@ def print_cube_info(science_header, name):
     
     return None
 
+# percentile statistique
+def print_percentile(res, percentile):
+    '''
+    Arg:
+        res: a list of float. All elements are pcc.
+        percentile : a list of float. All elements are percentiles.
+    Return:
+        None.
+    '''
+
+    print("> We will see statistics on the correlation just below:")
+    for p in percentile:
+        print(">> percentage is", p," np.percentile =", np.percentile(res, p))
+    
+    return None
+
+# take data from header
+def take_data_from_header(science_header):
+    '''
+    Args:
+        header : a fits header. Juest for displaying the detail.
+    Return:
+        None.
+    '''
+    res = []
+    res.append(str(header["OBJECT"]))
+    res.append(str(header["DATE-OBS"]))
+    res.append(str(header["ESO OBS START"]))
+    res.append(str(header["NAXIS3"]))
+    res.append(str(header["DIT_MIN"]))
+
+    return res
+
 #############
 # main code #
 #############
@@ -142,8 +176,8 @@ if outer_radius <= inner_radius:
 
 # Reading the sof file
 data=np.loadtxt(sofname, dtype=str)
-filenames=data[:,0]
-datatypes=data[:,1]
+filenames=data[:,0][::-1]
+datatypes=data[:,1][::-1]
 
 cube_names = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
 nb_cubes = len(cube_names)
@@ -154,6 +188,7 @@ if nb_cubes < 2:
 # except one science cube, the rest are reference cubes
 nb_reference_cubes = nb_cubes - 1 
 
+data_ref = []
 if science_object != 'unspecified':
     for i,cube_name in enumerate(cube_names):
         header =fits.getheader(cube_name)
@@ -193,12 +228,43 @@ border_l = ny//2 - crop_size//2
 border_r = ny//2 + crop_size//2 + 1
 ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
 ref_nb_frames = []
+'''
 ref_nb_frames.append(len(tmp_cube[0]))
-
 for name in reference_cube_names[1:]:
     tmp_cube = fits.getdata(name)
     ref_nb_frames.append(len(tmp_cube[0]))
     ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
+'''
+
+# indice start
+ind_start = 0
+print("\n>> reference cube - info \n")
+
+data_ref = []
+reference_cube_names_remove_dup = []
+
+for i in range(len(reference_cube_names)):
+    name = reference_cube_names[i]
+    tmp_cube = fits.getdata(name)
+    tmp_header = fits.getheader(name)
+    if tmp_header["OBJECT"] == science_header["OBJECT"]:
+        ind_start = ind_start+1
+        continue
+    
+    # TODO: compare the ext_time and keep the longer one
+    if tmp_header["OBJECT"] in reference_cube_names_remove_dup:
+        continue
+
+    data_ref.append(take_data_from_header(tmp_header))
+    if i==ind_start:
+        ref_frames = tmp_cube[..., border_l:border_r, border_l:border_r]
+        ref_nb_frames.append(len(tmp_cube[0]))
+    else:
+        ref_nb_frames.append(len(tmp_cube[0]))
+        ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
+    reference_cube_names_remove_dup.append(name)
+    print(">>> len(reference_cube_names_remove_dup) =", len(reference_cube_names_remove_dup))
+    print(">>> len(ref_nb_frames) = ", len(ref_nb_frames))
 
 print("> ref_frames.shape (after croped)=", ref_frames.shape)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape
@@ -209,13 +275,20 @@ print("> The mask has been created, crop_size=", crop_size, "inner_radius=", inn
 res = np.zeros((nb_wl, nb_science_frames, nb_ref_frames))
 science_cube_croped = science_cube[..., border_l:border_r, border_l:border_r]
 
+res_sta = []
 for w in range(nb_wl):
     wl = wl_channels[w]
     print("\n>>> Building correlation matrix on wl=", wl)
     for i in range(nb_science_frames):
         for j in range(nb_ref_frames):
             res[wl, i, j] = np.corrcoef(np.reshape(science_cube_croped[wl, i]*mask, ref_x*ref_y), np.reshape(ref_frames[wl, j]*mask, ref_x*ref_y))[0,1]
+            res_sta.append(res[wl, i, j])
     print(">>> End on wl=", wl, '\n')
+
+# display information
+print_percentile(res_sta, [0, 1, 5, 10, 25, 50, 75, 90, 95, 99, 100])
+df_ref = pd.DataFrame(data=data_ref, columns=["OBJECT","DATE-OBS","OBS_STA","NB_FRAMES","DIT"])
+print(df_ref.to_string())
 
 # compelte header
 science_header["PATH_TAR"] = science_cube_name
@@ -223,7 +296,13 @@ science_header["CROPSIZE"] = crop_size
 science_header["INNER_R"] = inner_radius
 science_header["OUTER_R"] = outer_radius
 science_header["WL_CHOSE"] = args.wl_channels
-complete_header(science_header, reference_cube_names, ref_nb_frames)
+
+if(len(reference_cube_names_remove_dup) != len(ref_nb_frames)):
+    print(">>> len(reference_cube_names_remove_dup) =", len(reference_cube_names_remove_dup))
+    print(">>> len(ref_nb_frames) = ", len(ref_nb_frames))
+    raise Exception("> Warning! len(reference_cube_names_remove_dup) != len(ref_nb_frames)")
+
+complete_header(science_header, reference_cube_names_remove_dup, ref_nb_frames)
 
 file_name = "pcc_matrix.fits"
 print("> The result will be stored in :", file_name)

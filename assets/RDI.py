@@ -286,7 +286,7 @@ def process_ADI(science_frames, rotations):
     for wl in range(wave_length):
         for n in range(sc_fr_nb):
             res[wl] = res[wl] + rotate((science_frames[wl, n] - f_median[wl]), rotations[n])
-            #res[wl] = res[wl] + rotate(science_frames[wl, n], rotations[n])
+    
     return res 
 
 def origin_flux_companion(science_frames, rotations):
@@ -465,6 +465,7 @@ def PCA_track(science_frames, ref_frames, K, wl=0):
         ref_frames_vector[f_r] = (ref_frames_vector[f_r] - mean_r)*m_reshape/np.std(ref_frames_vector[f_r]) 
         #print("---", f_r+1, "of", rf_fr_nb,"--- substract mean from rf_frames")
     print("------ substract mean done ------")
+    
     # 2 compute the Karhunen-Loève transform of the set of reference PSFs Rk(N)? 
     # inner product for each frame of target and each frame of references
     # K = rf_fr_nb
@@ -497,6 +498,7 @@ def PCA_track(science_frames, ref_frames, K, wl=0):
             # res[f] stock the PSF image
             res[f] = res[f] + inner_product*(Z_KL_chosen[:,k])
         res[f] = science_frames_vector[f] - res[f] 
+    
     print("------ substracut res from science_frames done ------")
 
     return res.reshape((sc_fr_nb, w, h))
@@ -538,6 +540,7 @@ def process_RDI(science_frames, ref_frames):
 
             print("---", i+1, "of", sc_fr_nb,"---")
         print("<< wavelength = ", wl, "end process")
+    
     return res
 
 def process_RDI_ssim(science_frames, ref_frames):

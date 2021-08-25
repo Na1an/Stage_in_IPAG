@@ -8,15 +8,7 @@
 
 <!-- ird_rdi_fake_injection_bis -->
 <recipe id="ird_rdi_fake_injection.*">
-    <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE">
-        <attribute id="inst_filter" restriction="equal"/>
-        <attribute id="coro" restriction="equal"/>
-        <attribute id="parent_process_id" use="equal"/>
-    </frame_type>
-    <frame_type include="IRD_SCIENCE_PSF_MASTER_CUBE" limit="1">
-        <attribute id="parent_process_id" restriction="equal"/>
-    </frame_type>
-    <frame_type include="IRD_SCIENCE_PARA_ROTATION_CUBE" limit="1">
+    <frame_type include="all" limit="1">
         <attribute id="parent_process_id" restriction="equal"/>
     </frame_type>
 </recipe>
@@ -55,7 +47,6 @@
     </frame_type>
     <frame_type include="IRD_CORR_MATRIX" limit="1">
 	<attribute id="object" restriction="equal"/>
-	<attribute id="obs_date" restriction="equal"/>
 	<attribute id="exp_time" restriction="equal"/>
 	<attribute id="coro" restriction="equal"/>
 	<attribute id="inst_filter" restriction="equal"/>
@@ -74,3 +65,14 @@
     </frame_type>
 </recipe>
 
+<recipe id="ird_specalcharac_dc"> 
+    <frame_type include="IRD_SPECAL_MISC_TARGZ,IRD_SPECAL_ALLCOMB_TARGZ,IRD_SPECAL_CONTRAST_CURVES_TARGZ"> 
+	<attribute id="parent_process_id" restriction="equal"/> 
+	<attribute id="any_reduction_id" use="variable" value="parent_process_id"/> 
+    </frame_type> 
+    <frame_type include="all" exclude="IRD_SPECAL_MISC_TARGZ,IRD_SPECAL_ALLCOMB_TARGZ,IRD_SPECAL_CONTRAST_CURVES_TARGZ"> 
+	<attribute id="any_reduction_id" restriction="equal"/> 
+    </frame_type> 
+    <frame_type include="IRD_SPECALCARAC_INPUT_DETECTIONS" limit="0" optional="true"/> 
+    <frame_type include="IRD_FRAME_SELECTION_VECTOR" optional="true"/> 
+    <frame_type include="IRD_SPECAL_AL
