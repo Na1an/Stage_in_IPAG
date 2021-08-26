@@ -425,9 +425,10 @@ science_header["D_PCT"] = pct_str
 science_header["D_N_COR"] = n_corr_str
 science_header["D_NCOMP"] = ncomp_str
 
-science_header_fake["D_PCT"] = pct_str
-science_header_fake["D_N_COR"] = n_corr_str
-science_header_fake["D_NCOMP"] = ncomp_str
+if sc_f_exist:
+    science_header_fake["D_PCT"] = pct_str
+    science_header_fake["D_N_COR"] = n_corr_str
+    science_header_fake["D_NCOMP"] = ncomp_str
 
 print(">> pct_str :", pct_str)
 print(">> n_corr_str :", n_corr_str)

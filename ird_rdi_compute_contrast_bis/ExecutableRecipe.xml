@@ -6,6 +6,7 @@
     in the datacenter. -->
     <sphere pipeline="test" user="yuchen.bai@univ-grenoble-alpes.fr"/>
     <frame_types>
+        <frame_type name="IRD_SCIENCE_PSF_MASTER_CUBE" description="The psf of one science cube"/>
         <frame_type name="IRD_RDI_CONTRAST_RES" description="Contrast of result"/>
         <frame_type name="IRD_RDI_RES_FAKE_INJECTION" description="RDI reduced image for channel 0 or 1 with fake injection"/>
         <frame_type name="IRD_RDI_RES_REAL" description="RDI reduced image for channel 0 or 1 without fake injection"/>
@@ -33,15 +34,20 @@
     filename_parameter (can be $1, $2... for inline parameter ).
      -->
     <inputs use_sof="true">
-        <input_frame min="1" max="10000">
+        <input_frame min="0" max="1000">
             <frame_type value="IRD_RDI_RES_FAKE_INJECTION"/>
             <!--filename_parameter value="$1"/-->
             <description value="Input of fake injection RDI result"/>
         </input_frame>
-        <input_frame min="1" max="10000">
+        <input_frame min="1" max="1000">
             <frame_type value="IRD_RDI_RES_REAL"/>
             <!--filename_parameter value="$1"/-->
             <description value="RDI reduced image for channel 0 or 1 without fake injection"/>
+        </input_frame>
+        <input_frame min="1" max="1000">
+            <frame_type value="IRD_SCIENCE_PSF_MASTER_CUBE"/>
+            <!--filename_parameter value="$1"/-->
+            <description value="PSF of one first one science cube"/>
         </input_frame>
     </inputs>
     <!-- ==Outputs== -->
@@ -53,7 +59,7 @@
     <outputs use_filename_parameter="false">
         <output_frame format="TXT">
             <frame_type value="IRD_RDI_CONTRAST_RES"/>
-            <default_name value="ird_rdi_fake_injeciton_contrast_sn_flux.csv"/>
+            <default_name value="ird_rdi_res_contrast_sn_flux.csv"/>
             <filename_parameter value=""/>
             <description value="flux, contrast and  S/N of a fake companion"/>
         </output_frame>
@@ -72,23 +78,23 @@
             <description value="input the position/coordinates of fake companion or the region you want to compute, like (1,2);(3,4);(5,6)"/>
         </parameter>
         <parameter name="fwhm" optional="true">
-            <default_value value="4"/>
-            <type value="int"/>
+            <default_value value="4.0"/>
+            <type value="float"/>
             <description value="the diameter for calculating snr, default is 4"/>
         </parameter>
         <parameter name="r_aperture" optional="true">
-            <default_value value="2"/>
-            <type value="int"/>
+            <default_value value="2.0"/>
+            <type value="float"/>
             <description value="radius to compute the flux/contrast, default is 2"/>
         </parameter>
         <parameter name="r_in_annulus" optional="true">
-            <default_value value="4"/>
-            <type value="int"/>
+            <default_value value="4.0"/>
+            <type value="float"/>
             <description value="inner radius of annulus around the fake companion, default is 4"/>
         </parameter>
         <parameter name="r_out_annulus" optional="true">
-            <default_value value="6"/>
-            <type value="int"/>
+            <default_value value="6.0"/>
+            <type value="float"/>
             <description value="outer radius of annulus around the fake companion, default is 6"/>
         </parameter>
     </parameters>

@@ -119,10 +119,10 @@ parser = argparse.ArgumentParser(description="Inject a fake companion and comput
 parser.add_argument("sof", help="file name of the sof file", type=str)
 # position
 parser.add_argument("--coordinates", help="positions of fake companion, a string", type=str, default="empty")
-parser.add_argument("--fwhm", help="the diameter for calculating snr", type=int, default=4)
-parser.add_argument("--r_aperture", help="radius to compute the flux/contrast", type=int, default=2)
-parser.add_argument("--r_in_annulus", help="inner radius of annulus around the fake companion", type=int, default=4)
-parser.add_argument("--r_out_annulus", help="outer radius of annulus around the fake companion", type=int, default=6)
+parser.add_argument("--fwhm", help="the diameter for calculating snr", type=float, default=4.0)
+parser.add_argument("--r_aperture", help="radius to compute the flux/contrast", type=float, default=2.0)
+parser.add_argument("--r_in_annulus", help="inner radius of annulus around the fake companion", type=float, default=4.0)
+parser.add_argument("--r_out_annulus", help="outer radius of annulus around the fake companion", type=float, default=6.0)
 
 ###########################
 # Step-0 Handle arguments #
@@ -188,7 +188,7 @@ if (not fake_exist) and len(psf_paths) < 1:
 # get psf
 print("> Process only science data without fake injection")
 psf_path = psf_paths[0]
-psf = fits.getdata(psf_path)
+psf = fits.getdata(psf_path)[0]
 psf_header = fits.getheader(psf_path)
 print("\n> corresponding psf", psf_path)
 print(">> psf DATE-OBS:", psf_header["DATE-OBS"])
@@ -231,7 +231,8 @@ for i in range(len(cube_names_real)):
 
     for i in range(len(pct)):
         for j in range(len(n_corr)):
-            res_final = {}
+            res_final, ctr_all, sn_all, flux_all = {}, [], [], []
+
             for k in range(len(ncomp)):
                 contrast = 0
                 sn = 0
@@ -252,19 +253,25 @@ for i in range(len(cube_names_real)):
                     sn = sn + sn_tmp
                     flux = flux + flux_tmp
 
-                contrast = contrast/len(pos)
-                sn = sn/len(pos)
-                flux = flux/len(pos)
-                print(">>> object =", obj, "pos =", pos, "contrast =", contrast, "sn =", sn, "flux =", flux)
+                contrast, sn, flux = contrast/len(pos), sn/len(pos), flux/len(pos)
+                ctr_all.append(contrast)
+                sn_all.append(sn)
+                flux_all.append(flux)
                 res_final.update({str(ncomp[k]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
+
             # write data to file
+            print("\n>> obj =", obj, "pct =", pct[i], "ncomp =", ncomp[k])
+            print(">>> contrast =", ctr_all)
+            print(">>> sn =", sn_all)
+            print(">>> flux =", flux_all)
             df = pd.DataFrame(data=res_final)
-            df.columns = pd.MultiIndex.from_product([["pct_"+str(pct[i])+"_ncorr_"+str(n_corr[j])], df.columns])
-            df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
+            df.columns = pd.MultiIndex.from_product([["pct_"+str(pct[i])+"_ncorr_"+str(n_corr[j])+"_pos_"+str(pos)], df.columns])
+            df.to_csv(r'ird_rdi_res_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
 
     for i in range(len(pct)):
         for k in range(len(ncomp)):
-            res_final = {}
+            res_final, ctr_all, sn_all, flux_all = {}, [], [], []
+            
             for j in range(len(n_corr)):    
                 contrast = 0
                 sn = 0
@@ -285,20 +292,26 @@ for i in range(len(cube_names_real)):
                     sn = sn + sn_tmp
                     flux = flux + flux_tmp
 
-                contrast = contrast/len(pos)
-                sn = sn/len(pos)
-                flux = flux/len(pos)
-                print(">>> object =", obj, "pos =", pos, "contrast =", contrast, "sn =", sn, "flux =", flux)
+                contrast, sn, flux = contrast/len(pos), sn/len(pos), flux/len(pos)
+                ctr_all.append(contrast)
+                sn_all.append(sn)
+                flux_all.append(flux)
                 res_final.update({str(n_corr[j]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
+            
             # write data to file
+            print("\n>> obj =", obj, "pct =", pct[i], "ncomp =", ncomp[k])
+            print(">>> contrast =", ctr_all)
+            print(">>> sn =", sn_all)
+            print(">>> flux =", flux_all)
             df = pd.DataFrame(data=res_final)
-            df.columns = pd.MultiIndex.from_product([["pct_"+str(pct[i])+"_ncomp_"+str(ncomp[k])], df.columns])
-            df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')    
+            df.columns = pd.MultiIndex.from_product([["pct_"+str(pct[i])+"_ncomp_"+str(ncomp[k])+"_pos_"+str(pos)], df.columns])
+            df.to_csv(r'ird_rdi_res_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')    
 
     
     for j in range(len(n_corr)):
         for k in range(len(ncomp)):
-            res_final = {}
+            res_final, ctr_all, sn_all, flux_all = {}, [], [], []
+
             for i in range(len(pct)):
                 contrast = 0
                 sn = 0
@@ -318,17 +331,20 @@ for i in range(len(cube_names_real)):
                     contrast = contrast + ct_tmp
                     sn = sn + sn_tmp
                     flux = flux + flux_tmp
-
-                contrast = contrast/len(pos)
-                sn = sn/len(pos)
-                flux = flux/len(pos)
-                print(">>> object =", obj, "pos =", pos, "contrast =", contrast, "sn =", sn, "flux =", flux)
+                contrast, sn, flux = contrast/len(pos), sn/len(pos), flux/len(pos)
+                ctr_all.append(contrast)
+                sn_all.append(sn)
+                flux_all.append(flux)
                 res_final.update({str(pct[i]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
             
             # write data to file
+            print("\n>> obj =", obj, "pct =", pct[i], "ncomp =", ncomp[k])
+            print(">>> contrast =", ctr_all)
+            print(">>> sn =", sn_all)
+            print(">>> flux =", flux_all)
             df = pd.DataFrame(data=res_final)
-            df.columns = pd.MultiIndex.from_product([["ncorr_"+str(n_corr[j])+"_ncomp_"+str(ncomp[k])], df.columns])
-            df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
+            df.columns = pd.MultiIndex.from_product([["ncorr_"+str(n_corr[j])+"_ncomp_"+str(ncomp[k])+"_pos_"+str(pos)], df.columns])
+            df.to_csv(r'ird_rdi_res_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
 
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")
