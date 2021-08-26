@@ -188,7 +188,8 @@ if (not fake_exist) and len(psf_paths) < 1:
 # get psf
 print("> Process only science data without fake injection")
 psf_path = psf_paths[0]
-psf = fits.getdata(psf_path)[0]
+psf = fits.getdata(psf_path)
+
 psf_header = fits.getheader(psf_path)
 print("\n> corresponding psf", psf_path)
 print(">> psf DATE-OBS:", psf_header["DATE-OBS"])
@@ -209,6 +210,12 @@ for i in range(len(cube_names_real)):
         wl = fake_header["WL_CHOSE"]
     real = fits.getdata(cube_names_real[i])
     real_header = fits.getheader(cube_names_real[i])
+
+    while psf.ndim > 3:
+        if psf.ndim == 4:
+            psf = psf[real_header["WL_CHOSE"]]
+        else:
+            psf = psf[0]
 
     # check
     if fake_exist:
@@ -260,7 +267,7 @@ for i in range(len(cube_names_real)):
                 res_final.update({str(ncomp[k]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
 
             # write data to file
-            print("\n>> obj =", obj, "pct =", pct[i], "ncomp =", ncomp[k])
+            print("\n>> obj =", obj, "pct =", pct[i], "n_corr =", n_corr[j])
             print(">>> contrast =", ctr_all)
             print(">>> sn =", sn_all)
             print(">>> flux =", flux_all)
@@ -338,7 +345,7 @@ for i in range(len(cube_names_real)):
                 res_final.update({str(pct[i]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
             
             # write data to file
-            print("\n>> obj =", obj, "pct =", pct[i], "ncomp =", ncomp[k])
+            print("\n>> obj =", obj, "n_corr =", n_corr[j], "ncomp =", ncomp[k])
             print(">>> contrast =", ctr_all)
             print(">>> sn =", sn_all)
             print(">>> flux =", flux_all)
