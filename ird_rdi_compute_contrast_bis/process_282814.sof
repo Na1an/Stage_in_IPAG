@@ -4,5 +4,3 @@
 rdi_real_res_0.fits IRD_RDI_RES_REAL
 rdi_real_res_1.fits IRD_RDI_RES_REAL
 /home/yuchen/Documents/IPAG/SPHERE_DC_DATA/BD-12_4523b_DB_H23_2017-07-28_ird_convert_recenter_dc5_PUBLIC_209689/ird_convert_recenter_dc5-IRD_SCIENCE_REDUCED_MASTER_CUBE-center_im.fits IRD_SCIENCE_REDUCED_MASTER_CUBE
-rdi_fake_res_0.fits IRD_RDI_RES_FAKE_INJECTION
-rdi_fake_res_1.fits IRD_RDI_RES_FAKE_INJECTION

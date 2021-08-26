@@ -69,6 +69,44 @@ def get_contrast_and_SN(res_fake, res_real, positions, fwhm_for_snr, fwhm_flux, 
 
     return contrast.data[0], SN, flux.data[0]
 
+# get contrast and S/N ratio
+def get_contrast_and_SN_only_real(res_real, positions, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus):
+    '''
+    Args:
+        res_real : a 2D np.array. The path of another repository where the files are, for calculating snr.
+        positions : a list of tuple (x,y). The coordinates of companions.
+        fwhm : a float. fwhm's diameter.
+        fwhm_flux : a float. The flux of fwhm.
+    Return:
+        contrast : a np.array, 1 dimension. Store the list of each companion's flux.
+        SN : a np.array, 1 dimension. Store the list of each companion's Signal to Noise ratio.
+    '''
+    
+    aperture = CircularAperture(positions, r=r_aperture)
+    annulus = CircularAnnulus(positions, r_in=r_in_annulus, r_out=r_out_annulus)
+    
+    # contrast
+    flux_companion = aperture_photometry(res_real, [aperture, annulus])
+    flux_companion['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
+    flux = flux_companion['aperture_sum_0'] 
+    contrast = (flux_companion['aperture_sum_0'])/fwhm_flux
+    
+    # SN
+    SN = vip.metrics.snr(array=res_real, source_xy=positions, fwhm=fwhm_for_snr, plot=False)
+
+    return contrast.data[0], SN, flux.data[0]
+
+# get full width half maximum
+def get_fwhm_from_psf(psf):
+    '''
+    Args:
+        psf : a 2D np.ndarray. The PSF in one wavelength. 
+    Return:
+        res : a float. The one fwhm of the psf.
+    ''' 
+    fwhm = vip.var.fit_2dgaussian(psf, crop=True, cropsize=9, debug=False)
+    return np.mean([fwhm.loc[0,'fwhm_y'], fwhm.loc[0,'fwhm_x']])
+
 #############
 # main code #
 #############
@@ -119,43 +157,77 @@ datatypes=data[:,1]
 
 cube_names = filenames[np.where(datatypes == "IRD_RDI_RES_FAKE_INJECTION")[0]]
 nb_cubes = len(cube_names)
+fake_exist = False
+if nb_cubes < 1:
+    print("> Well, we don't have the fake injection this time")
+else:
+    fake_exist = True
+    
 print("> we have fake", nb_cubes, "inputs")
 print("> input name =", cube_names)
 
 cube_names_real = filenames[np.where(datatypes == "IRD_RDI_RES_REAL")[0]]
 nb_cubes_real = len(cube_names_real)
+real_exist = False
+if nb_cubes_real < 1:
+    raise Exception("> Well, we don't have the real data this time, but the real data is necessary, so end program!")
+else:
+    real_exist = True
+
 print("> we have real", nb_cubes_real, "inputs")
 print("> input name =", cube_names_real)
 
-if nb_cubes != nb_cubes_real:
+if nb_cubes != nb_cubes_real and fake_exist:
     raise Exception("Warning: real res and fake res must correspond one-to-one, two input size is different")
+
+# take psf
+psf_paths = filenames[np.where(datatypes == 'IRD_SCIENCE_PSF_MASTER_CUBE')[0]]
+if (not fake_exist) and len(psf_paths) < 1: 
+    raise Exception('The sof file must contain IRD_SCIENCE_PSF_MASTER_CUBE file when we only process the original')
+
+# get psf
+print("> Process only science data without fake injection")
+psf_path = psf_paths[0]
+psf = fits.getdata(psf_path)
+psf_header = fits.getheader(psf_path)
+print("\n> corresponding psf", psf_path)
+print(">> psf DATE-OBS:", psf_header["DATE-OBS"])
+print(">> psf OBJECT:", psf_header["OBJECT"])
+print("psf.shape =", psf.shape)
 
 # result
 res_final = {}
 
-for i in range(len(cube_names)):
-    print(">> we are processing the cube :", cube_names[i])
+for i in range(len(cube_names_real)):
+    if fake_exist:
+        print(">> we are processing the data :", cube_names[i])
+    print(">> we are processing the data :", cube_names_real[i])
     # get res of rdi
-    fake = fits.getdata(cube_names[i])
-    fake_header = fits.getheader(cube_names[i])
-    wl = fake_header["WL_CHOSE"]
+    if fake_exist:
+        fake = fits.getdata(cube_names[i])
+        fake_header = fits.getheader(cube_names[i])
+        wl = fake_header["WL_CHOSE"]
     real = fits.getdata(cube_names_real[i])
     real_header = fits.getheader(cube_names_real[i])
 
     # check
-    if real_header["OBJECT"] != fake_header["OBJECT"]:
-        raise Exception(">>> Traget different!")
-    if real_header["WL_CHOSE"] != fake_header["WL_CHOSE"]:
-        raise Exception(">>> Wave_length different!")
+    if fake_exist:
+        if real_header["OBJECT"] != fake_header["OBJECT"]:
+            raise Exception(">>> Traget different!")
+        if real_header["WL_CHOSE"] != fake_header["WL_CHOSE"]:
+            raise Exception(">>> Wave_length different!")
 
     # get fwhm_flux from header
-    fwhm_flux = fake_header["FWHM_F"]
-
+    if fake_exist:
+        fwhm_flux = fake_header["FWHM_F"]
+    else:
+        wl = real_header["WL_CHOSE"]
+        
     # calculating contrast, S/N and flux
-    obj = fake_header["OBJECT"]
-    pct = [int(e) for e in fake_header["D_PCT"].split(' ')] 
-    n_corr = [int(e) for e in fake_header["D_N_COR"].split(' ')]
-    ncomp = [int(e) for e in fake_header["D_NCOMP"].split(' ')]
+    obj = real_header["OBJECT"]
+    pct = [int(e) for e in real_header["D_PCT"].split(' ')] 
+    n_corr = [int(e) for e in real_header["D_N_COR"].split(' ')]
+    ncomp = [int(e) for e in real_header["D_NCOMP"].split(' ')]
 
     for i in range(len(pct)):
         for j in range(len(n_corr)):
@@ -166,7 +238,16 @@ for i in range(len(cube_names)):
                 flux = 0
                 # the average of contrast, sn, flux from position
                 for pos in coords:
-                    ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    if fake_exist:
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    else:
+                        aperture = CircularAperture(pos, r=(fwhm_for_snr/2))
+                        annulus = CircularAnnulus(pos, r_in=fwhm_for_snr, r_out=fwhm_for_snr*(3/2))
+                        flux_psf = aperture_photometry(psf[wl], [aperture, annulus])
+                        flux_psf['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
+                        fwhm_flux = flux_psf['aperture_sum_0'][0]
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    
                     contrast = contrast + ct_tmp
                     sn = sn + sn_tmp
                     flux = flux + flux_tmp
@@ -190,7 +271,16 @@ for i in range(len(cube_names)):
                 flux = 0
                 # the average of contrast, sn, flux from position
                 for pos in coords:
-                    ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    if fake_exist:
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    else:
+                        aperture = CircularAperture(pos, r=(fwhm_for_snr/2))
+                        annulus = CircularAnnulus(pos, r_in=fwhm_for_snr, r_out=fwhm_for_snr*(3/2))
+                        flux_psf = aperture_photometry(psf[wl], [aperture, annulus])
+                        flux_psf['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
+                        fwhm_flux = flux_psf['aperture_sum_0'][0]
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    
                     contrast = contrast + ct_tmp
                     sn = sn + sn_tmp
                     flux = flux + flux_tmp
@@ -215,7 +305,16 @@ for i in range(len(cube_names)):
                 flux = 0
                 # the average of contrast, sn, flux from position
                 for pos in coords:
-                    ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    if fake_exist:
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                    else:
+                        aperture = CircularAperture(pos, r=(fwhm_for_snr/2))
+                        annulus = CircularAnnulus(pos, r_in=fwhm_for_snr, r_out=fwhm_for_snr*(3/2))
+                        flux_psf = aperture_photometry(psf[wl], [aperture, annulus])
+                        flux_psf['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
+                        fwhm_flux = flux_psf['aperture_sum_0'][0]
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+
                     contrast = contrast + ct_tmp
                     sn = sn + sn_tmp
                     flux = flux + flux_tmp
@@ -225,9 +324,11 @@ for i in range(len(cube_names)):
                 flux = flux/len(pos)
                 print(">>> object =", obj, "pos =", pos, "contrast =", contrast, "sn =", sn, "flux =", flux)
                 res_final.update({str(pct[i]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
+            
             # write data to file
             df = pd.DataFrame(data=res_final)
             df.columns = pd.MultiIndex.from_product([["ncorr_"+str(n_corr[j])+"_ncomp_"+str(ncomp[k])], df.columns])
             df.to_csv(r'ird_rdi_fake_injeciton_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
+
 end_time = datetime.datetime.now()
 print("######### End program : no error! Take:", end_time - start_time, "#########")

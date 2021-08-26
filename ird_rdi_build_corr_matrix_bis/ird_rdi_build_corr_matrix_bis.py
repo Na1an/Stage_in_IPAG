@@ -117,7 +117,7 @@ def print_percentile(res, percentile):
     return None
 
 # take data from header
-def take_data_from_header(science_header):
+def take_data_from_header(header):
     '''
     Args:
         header : a fits header. Juest for displaying the detail.
@@ -263,8 +263,6 @@ for i in range(len(reference_cube_names)):
         ref_nb_frames.append(len(tmp_cube[0]))
         ref_frames = np.append(ref_frames, tmp_cube[..., border_l:border_r, border_l:border_r], axis=1)
     reference_cube_names_remove_dup.append(name)
-    print(">>> len(reference_cube_names_remove_dup) =", len(reference_cube_names_remove_dup))
-    print(">>> len(ref_nb_frames) = ", len(ref_nb_frames))
 
 print("> ref_frames.shape (after croped)=", ref_frames.shape)
 wl_ref, nb_ref_frames, ref_x, ref_y = ref_frames.shape

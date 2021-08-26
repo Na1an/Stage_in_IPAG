@@ -169,8 +169,7 @@ datatypes=data[:,1]
 
 science_cube_paths = filenames[np.where(datatypes == 'IRD_SCIENCE_REDUCED_MASTER_CUBE')[0]]
 if len(science_cube_paths) != 1: 
-    #raise Exception('The sof file must contain only one IRD_SCIENCE_PSF_MASTER_CUBE file')
-    print("> WARNING: the sof file must contain only one IRD_SCIENCE_PSF_MASTER_CUBE file, don't forget to modify Associationrules.xml")
+    print("> WARNING: the sof file must contain only one IRD_SCIENCE_REDUCED_MASTER_CUBE file, don't forget to modify Associationrules.xml")
 science_cube_path = science_cube_paths[0]
 
 psf_paths = filenames[np.where(datatypes == 'IRD_SCIENCE_PSF_MASTER_CUBE')[0]]
