@@ -1,6 +1,0 @@
-<recipe id="ird_rdi_compute_contrast.*">
-    <frame_type include="IRD_RDI_RES_FAKE_INJECTION">
-        <attribute id="obs_night" restriction="equal"/>
-        <attribute id="object" restriction="equalOrValue"/>
-    </frame_type>
-</recipe>

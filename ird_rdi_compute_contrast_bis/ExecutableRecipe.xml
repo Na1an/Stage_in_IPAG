@@ -77,7 +77,7 @@
             <type value="string"/>
             <description value="input the position/coordinates of fake companion or the region you want to compute, like (1,2);(3,4);(5,6)"/>
         </parameter>
-        <parameter name="fwhm" optional="true">
+        <parameter name="diam" optional="true">
             <default_value value="4.0"/>
             <type value="float"/>
             <description value="the diameter for calculating snr, default is 4"/>

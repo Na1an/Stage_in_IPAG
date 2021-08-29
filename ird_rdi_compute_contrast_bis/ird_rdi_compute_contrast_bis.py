@@ -70,13 +70,14 @@ def get_contrast_and_SN(res_fake, res_real, positions, fwhm_for_snr, fwhm_flux, 
     return contrast.data[0], SN, flux.data[0]
 
 # get contrast and S/N ratio
-def get_contrast_and_SN_only_real(res_real, positions, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus):
+def get_contrast_and_SN_only_real(res_real, positions, fwhm_for_snr, psf, r_aperture, r_in_annulus, r_out_annulus):
     '''
     Args:
         res_real : a 2D np.array. The path of another repository where the files are, for calculating snr.
         positions : a list of tuple (x,y). The coordinates of companions.
-        fwhm : a float. fwhm's diameter.
+        psf : a 2D np.array. The image of flux.
         fwhm_flux : a float. The flux of fwhm.
+        r_aperture, r_in_annulus, r_out_annulus : see args.
     Return:
         contrast : a np.array, 1 dimension. Store the list of each companion's flux.
         SN : a np.array, 1 dimension. Store the list of each companion's Signal to Noise ratio.
@@ -89,8 +90,14 @@ def get_contrast_and_SN_only_real(res_real, positions, fwhm_for_snr, fwhm_flux, 
     flux_companion = aperture_photometry(res_real, [aperture, annulus])
     flux_companion['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
     flux = flux_companion['aperture_sum_0'] 
-    contrast = (flux_companion['aperture_sum_0'])/fwhm_flux
-    
+
+    x, y = psf.shape
+    aperture_psf = CircularAperture((x//2,y//2), r=r_aperture)
+    flux_psf = aperture_photometry(psf, aperture_psf)
+    flux_psf['aperture_sum'].info.format = '%.8g'
+
+    contrast = (flux_companion['aperture_sum_0'])/flux_psf['aperture_sum']
+
     # SN
     SN = vip.metrics.snr(array=res_real, source_xy=positions, fwhm=fwhm_for_snr, plot=False)
 
@@ -119,7 +126,7 @@ parser = argparse.ArgumentParser(description="Inject a fake companion and comput
 parser.add_argument("sof", help="file name of the sof file", type=str)
 # position
 parser.add_argument("--coordinates", help="positions of fake companion, a string", type=str, default="empty")
-parser.add_argument("--fwhm", help="the diameter for calculating snr", type=float, default=4.0)
+parser.add_argument("--diam", help="the diameter for calculating snr", type=float, default=4.0)
 parser.add_argument("--r_aperture", help="radius to compute the flux/contrast", type=float, default=2.0)
 parser.add_argument("--r_in_annulus", help="inner radius of annulus around the fake companion", type=float, default=4.0)
 parser.add_argument("--r_out_annulus", help="outer radius of annulus around the fake companion", type=float, default=6.0)
@@ -140,7 +147,7 @@ if args.coordinates == "empty":
 coords = get_coords_from_str(args.coordinates)
 
 # diameter is 4 pixels for calculating S/N
-fwhm_for_snr= args.fwhm
+fwhm_for_snr= args.diam
 
 # --r_apperture
 r_aperture = args.r_aperture
@@ -212,10 +219,10 @@ for i in range(len(cube_names_real)):
     real_header = fits.getheader(cube_names_real[i])
 
     while psf.ndim > 3:
-        if psf.ndim == 4:
-            psf = psf[real_header["WL_CHOSE"]]
-        else:
-            psf = psf[0]
+        psf = psf[0]
+    
+    psf = psf[real_header["WL_CHOSE"]]
+    print("now, psf.shape =", psf.shape)
 
     # check
     if fake_exist:
@@ -247,14 +254,9 @@ for i in range(len(cube_names_real)):
                 # the average of contrast, sn, flux from position
                 for pos in coords:
                     if fake_exist:
-                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, psf, r_aperture, r_in_annulus, r_out_annulus)
                     else:
-                        aperture = CircularAperture(pos, r=(fwhm_for_snr/2))
-                        annulus = CircularAnnulus(pos, r_in=fwhm_for_snr, r_out=fwhm_for_snr*(3/2))
-                        flux_psf = aperture_photometry(psf[wl], [aperture, annulus])
-                        flux_psf['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
-                        fwhm_flux = flux_psf['aperture_sum_0'][0]
-                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, psf, r_aperture, r_in_annulus, r_out_annulus)
                     
                     contrast = contrast + ct_tmp
                     sn = sn + sn_tmp
@@ -286,14 +288,9 @@ for i in range(len(cube_names_real)):
                 # the average of contrast, sn, flux from position
                 for pos in coords:
                     if fake_exist:
-                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, psf, r_aperture, r_in_annulus, r_out_annulus)
                     else:
-                        aperture = CircularAperture(pos, r=(fwhm_for_snr/2))
-                        annulus = CircularAnnulus(pos, r_in=fwhm_for_snr, r_out=fwhm_for_snr*(3/2))
-                        flux_psf = aperture_photometry(psf[wl], [aperture, annulus])
-                        flux_psf['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
-                        fwhm_flux = flux_psf['aperture_sum_0'][0]
-                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, psf, r_aperture, r_in_annulus, r_out_annulus)
                     
                     contrast = contrast + ct_tmp
                     sn = sn + sn_tmp
@@ -326,14 +323,9 @@ for i in range(len(cube_names_real)):
                 # the average of contrast, sn, flux from position
                 for pos in coords:
                     if fake_exist:
-                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN(fake[i,j,k], real[i,j,k], pos, fwhm_for_snr, psf, r_aperture, r_in_annulus, r_out_annulus)
                     else:
-                        aperture = CircularAperture(pos, r=(fwhm_for_snr/2))
-                        annulus = CircularAnnulus(pos, r_in=fwhm_for_snr, r_out=fwhm_for_snr*(3/2))
-                        flux_psf = aperture_photometry(psf[wl], [aperture, annulus])
-                        flux_psf['aperture_sum_0','aperture_sum_1'].info.format = '%.8g'
-                        fwhm_flux = flux_psf['aperture_sum_0'][0]
-                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, fwhm_flux, r_aperture, r_in_annulus, r_out_annulus)
+                        ct_tmp, sn_tmp, flux_tmp = get_contrast_and_SN_only_real(real[i,j,k], pos, fwhm_for_snr, psf, r_aperture, r_in_annulus, r_out_annulus)
 
                     contrast = contrast + ct_tmp
                     sn = sn + sn_tmp

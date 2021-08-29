@@ -148,6 +148,49 @@ def selection_frame_based_score(corr_matrix, target, nb_best_frame, ref_frames, 
     
     return res, get_histogram_of_ref_stars_score(res_coords[0], ref_cube_nb_frames)
 
+# frame based version selection but with score system
+def selection_frame_library_fixed_size(corr_matrix, target, nb_best_frame, ref_frames, ref_cube_nb_frames, score, wave_length):
+    '''
+    Args:
+        corr_matrix : a numpy.ndarray, 2 dims. The correlation matrix.
+        target : a numpy.ndarray, 4 dims. The science target cube, (wavelengths, nb_frames, x, y).
+        nb_best : a integer. How many best frames fo the references stars array we want for each target frame.
+        ref_frames : a numpy.ndarry, 4 dims. The reference stars data we have.
+        ref_cube_nb_frames : a list of integer. Each element is the frame number of a reference star.
+        score : a integer. We will pick all the reference stars which has higher or equal score.
+        wave_length : a integer. Wave length of the reference cube.
+    Rrturn:
+        res : a ndarray, 3 dimensions. Return (nb_frames, x, y).
+    '''
+    # target shape
+    wl_t, nb_fr_t, w, h = target.shape
+    wl_ref, nb_fr_ref, w_ref, h_ref = ref_frames.shape
+
+    # score_system
+    ref_scores = np.zeros((nb_fr_ref))
+    res_take_pcc = {}
+
+    for i in range(nb_fr_t):
+        tmp = {}
+        for j in range(nb_fr_ref):
+            tmp[j] = corr_matrix[i,j]
+        
+        if nb_best_frame > len(tmp):
+            raise Exception("!!! inside the function selection_frame_based, tmp", len(tmp),"is samller than nb_best_frame", nb_best_frame)
+        
+        res_tmp = sorted(tmp.items(),key = lambda r:(r[1],r[0]), reverse=True)[0:nb_best_frame]
+        res_take_pcc.update(res_tmp)
+        for (ind, pcc) in res_tmp:
+            ref_scores[ind] = ref_scores[ind] + 1
+
+    print(">>>[selection] pcc median = ", np.median([res_take_pcc[k] for k in res_take_pcc]), "pcc minimum =", np.amin([res_take_pcc[k] for k in res_take_pcc]))
+    res_coords = np.where(ref_scores>=score)
+    print(">>>[selection] res_coords.shape =", res_coords[0].shape, "res_coords.type = ", type(res_coords), " res_coords =", res_coords)
+    res = ref_frames[wave_length][res_coords]
+    print(">>>[selection] res.shape =", res.shape)
+    
+    return res, get_histogram_of_ref_stars_score(res_coords[0], ref_cube_nb_frames)
+
 # make a dictionary from two list
 def get_dict(key, value):
     '''
