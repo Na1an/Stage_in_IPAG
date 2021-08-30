@@ -240,6 +240,7 @@ for name in reference_cube_names[1:]:
 ind_start = 0
 print("\n>> reference cube - info \n")
 
+# building PCC matrix
 data_ref = []
 reference_cube_names_remove_dup = []
 

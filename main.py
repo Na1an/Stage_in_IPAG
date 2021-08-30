@@ -646,16 +646,16 @@ def SCAL(argv, scale):
     n = nb_fr_ref       
     
     # create outer mask
-    r_in = 118
+    r_in = 25
     r_out = (w/2)
     
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
     #science_target_croped[wl] = science_target_croped[wl] * outer_mask
     
     for s in scalings:
-        for i in range(1, n+1):
+        for i in range(80, 100, 5):
             res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, cube_ref=ref_frames[wl], scaling=s)
-            path = "./K_kilp_ADI_RDI/RDI_only_big_inner/" +s+"/{0:05d}".format(i) + "_with_mask_on_ref.fits"
+            path = "./K_kilp_ADI_RDI/tmp/" +s+"/{0:05d}".format(i) + ".fits"
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>===", i, "of", n,"=== fits writed ===")
@@ -1268,7 +1268,7 @@ def RDI_scores(argv, scale):
         science_target_vip = science_target_croped[wl_target]*outer_mask
         #science_target_croped[3] = science_target_croped[3]*outer_mask
         
-        number_klips = [20, 40, 60]
+        number_klips = [60, 80, 100]
         '''
         for i in range(0, nb_fr_ref, 20):
             number_klips.append(i)
@@ -1283,8 +1283,8 @@ def RDI_scores(argv, scale):
         res_path_real = res_path_fichier_real + where_to_store + "score_" + "{0:03d}".format(score) + "/pos2/"
         print(">>> We will put our result here:", res_path_real)
         '''
-        res_path = "/home/yuchen/Documents/IPAG/Stage_in_IPAG/K_kilp_ADI_RDI/vip_vs_mine/temp_mean/"
-        res_path_s = "/home/yuchen/Documents/IPAG/Stage_in_IPAG/K_kilp_ADI_RDI/vip_vs_mine/spat_mean/"
+        res_path = "/home/yuchen/Documents/IPAG/Stage_in_IPAG/K_kilp_ADI_RDI/tmp"
+        res_path_s = "/home/yuchen/Documents/IPAG/Stage_in_IPAG/K_kilp_ADI_RDI/tmp"
         for i in number_klips:
             
             ###############
@@ -1293,16 +1293,30 @@ def RDI_scores(argv, scale):
 
             # non scale
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling="temp-mean")
-            path = res_path + "{0:05d}".format(i) + ".fits"            
+            path = res_path + "_temp_mean_{0:05d}".format(i) + ".fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
 
             res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling="spat-mean")
-            path = res_path_s + "{0:05d}".format(i) + ".fits"            
+            path = res_path_s + "_spat_mean_{0:05d}".format(i) + ".fits"            
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>> = scaling is spat-mean ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+            
+            # non scale
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling="temp-standard")
+            path = res_path + "_temp_stand_{0:05d}".format(i) + ".fits"            
             hdu = fits.PrimaryHDU(res_tmp)
             hdu.writeto(path)
             print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+
+            res_tmp = vip.pca.pca_fullfr.pca(science_target_vip_raw, -angles, ncomp=i, mask_center_px=r_in, cube_ref=ref_frames_selected*outer_mask, scaling="spat-standard")
+            path = res_path_s + "_spat_stand_{0:05d}".format(i) + ".fits"            
+            hdu = fits.PrimaryHDU(res_tmp)
+            hdu.writeto(path)
+            print(">>> = scaling is None ===", i, "of ", number_klips[-1],"RDI  === fits writed to === path:", path)
+
             ###############
             # raw target #
             ###############

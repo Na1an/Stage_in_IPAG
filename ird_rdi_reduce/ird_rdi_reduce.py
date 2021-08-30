@@ -95,8 +95,6 @@ def get_histogram_of_ref_stars_score(ref_star_scores, ref_cube_nb_frames):
     l = len(ref_cube_nb_frames)
     res = np.zeros(l)
     for i in ref_star_scores:
-        # indice plus 1, then we can deal with it with the length of 
-        i = i
         for n in range(l):
             i = i - ref_cube_nb_frames[n]
             if i<=0:
@@ -418,7 +416,6 @@ if sc_exist:
     print_cube_info(science_header, "science cube header")
     nb_science_wl, nb_science_frames, nx, ny = science_cube.shape
     print(">> science_cube.shape =", science_cube.shape)
-
 
 if sc_f_exist:
     science_cube_fake = fits.getdata(science_cube_path_fake)

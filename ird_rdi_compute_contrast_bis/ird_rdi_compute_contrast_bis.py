@@ -242,7 +242,8 @@ for i in range(len(cube_names_real)):
     pct = [int(e) for e in real_header["D_PCT"].split(' ')] 
     n_corr = [int(e) for e in real_header["D_N_COR"].split(' ')]
     ncomp = [int(e) for e in real_header["D_NCOMP"].split(' ')]
-
+    
+    '''
     for i in range(len(pct)):
         for j in range(len(n_corr)):
             res_final, ctr_all, sn_all, flux_all = {}, [], [], []
@@ -311,7 +312,7 @@ for i in range(len(cube_names_real)):
             df.columns = pd.MultiIndex.from_product([["pct_"+str(pct[i])+"_ncomp_"+str(ncomp[k])+"_pos_"+str(pos)], df.columns])
             df.to_csv(r'ird_rdi_res_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')    
 
-    
+    '''
     for j in range(len(n_corr)):
         for k in range(len(ncomp)):
             res_final, ctr_all, sn_all, flux_all = {}, [], [], []
@@ -337,10 +338,10 @@ for i in range(len(cube_names_real)):
                 res_final.update({str(pct[i]):{'ctr':contrast, 'sn':sn, 'flux':flux}})
             
             # write data to file
-            print("\n>> obj =", obj, "n_corr =", n_corr[j], "ncomp =", ncomp[k])
-            print(">>> contrast =", ctr_all)
-            print(">>> sn =", sn_all)
-            print(">>> flux =", flux_all)
+            print("\nobj =", obj, "n_corr =", n_corr[j], "ncomp =", ncomp[k])
+            print("contrast["+str(k)+"] =", ctr_all)
+            print("sn["+str(k)+"] =", sn_all)
+            print("flux["+str(k)+"] =", flux_all)
             df = pd.DataFrame(data=res_final)
             df.columns = pd.MultiIndex.from_product([["ncorr_"+str(n_corr[j])+"_ncomp_"+str(ncomp[k])+"_pos_"+str(pos)], df.columns])
             df.to_csv(r'ird_rdi_res_contrast_sn_flux.csv', sep='\t', mode='a', encoding='utf-8', na_rep='NaN', float_format='%8.8f')
