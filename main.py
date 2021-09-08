@@ -942,16 +942,22 @@ def RDI_frame(argv, scale):
     
     # take ref_files and target_ref_coords, produce a dictionary
     dict_ref_in_target = get_dict(ref_files, target_ref_coords)
-    print(dict_ref_in_target)
+    dict_ref_in_target = sorted(dict_ref_in_target.items(),key = lambda r:(r[1],r[0]), reverse=True)
+    keys = []
+    values = []
+    for k,v in dict_ref_in_target:
+        keys.append(k)
+        values.append(v)
 
-    plt.bar(dict_ref_in_target.keys(), dict_ref_in_target.values())
-    plt.xticks(rotation=30)
-    plt.title("How many frames are used for the reference stars", fontsize="18")
-    plt.xlabel("Name of reference star used", fontsize="16")
-    plt.ylabel("Number of frames", fontsize="16")
+    #plt.bar(dict_ref_in_target.keys(), dict_ref_in_target.values())
+    plt.bar(keys, values)
+    plt.xticks(rotation=30, fontsize="22")
+    plt.title("Combien d'images sont utilisées pour les étoiles de référence", fontsize="22")
+    #plt.xlabel("Name of reference star used", fontsize="20")
+    plt.ylabel("Nombre d'images", fontsize="20")
     plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
     #plt.show()
-
+    #exit()
     # get angles
     angles = read_file(str(argv[2]), "ROTATION")
 
@@ -963,24 +969,24 @@ def RDI_frame(argv, scale):
     n = nb_fr_ref
     
     # create outer mask
-    r_in = 15
+    r_in = 32
     r_out = 125
     outer_mask, n_pxls = create_outer_mask(w,h,r_out)
     science_target_vip = science_target_croped[wl_target]*outer_mask
     #science_target_croped[3] = science_target_croped[3]*outer_mask
     
     number_klips = []
-    for i in range(0,266,20):
+    for i in range(10,26,5):
         number_klips.append(i)
-    number_klips[0] = 1
+    #number_klips[0] = 1
 
-    res_path = "./K_kilp_ADI_RDI/res_0907_presentation/spat_mean/disk_20pxs/pos1/"
+    res_path = "./K_kilp_ADI_RDI/rdi_with_mask/"
     if(len(argv) >7):
         res_path = str(argv[7]) + "/"
     print(">>> We will put our result here:", res_path)
     
-    scal = None
-    #scal = "spat-mean"
+    #scal = None
+    scal = "spat-mean"
     print(">> scaling =", scal)
 
     for i in number_klips:
@@ -1393,7 +1399,7 @@ def Algo_RDI(target_path, ref_path, scale, wl=0, n_corr=150, score=1, scaling=No
     plt.xlabel("Name of reference star used", fontsize="16")
     plt.ylabel("Number of frames", fontsize="16")
     plt.savefig("./K_kilp_ADI_RDI/ref_frames_histogram"+datetime.datetime.now().strftime('%m-%d_%H_%M_%S')+".png")
-    #plt.show()
+    plt.show()
     # get angles
     angles = read_file(target_path, "ROTATION")
 
@@ -1424,6 +1430,37 @@ def Algo_RDI(target_path, ref_path, scale, wl=0, n_corr=150, score=1, scaling=No
 
     end_time = datetime.datetime.now()
     print("PCA on RDI frame based ", n_corr," take", end_time - start_time)
+
+def RR(target_path):
+    print(">> Algo PCA is working! ")
+    start_time = datetime.datetime.now()
+
+    key_word_target = "MASTER_CUBE-center"
+    print(">>> key word of target is:", key_word_target)
+    
+    # 1. get target
+    print(">>> target_path =", target_path)
+    science_target = read_file(target_path, key_word_target)
+    science_target_croped = crop_frame(science_target, len(science_target[0,0,0]), 0.25)
+    print("Scale =", scale, "\n science target shape =", science_target_croped.shape)
+    science_target_croped = science_target_croped[0,0]
+    x_len, y_len = science_target_croped.shape
+    spat_mean_v = 0
+    for i in range(x_len):
+        for j in range(y_len):
+            spat_mean_v = spat_mean_v + science_target_croped[i,j]
+    spat_mean_v = spat_mean_v/(x_len*y_len)
+    
+    spat_mean_image = np.full((x_len, y_len), spat_mean_v)
+
+    res = np.ones((3, x_len, y_len))
+    
+    res[0] = science_target_croped
+    res[1] = spat_mean_image
+    res[2] = science_target_croped - spat_mean_image
+    path = "res_median.fits"            
+    hdu = fits.PrimaryHDU(res)
+    hdu.writeto(path)
 
 if __name__ == "__main__":
     start_and_end_program(True)
@@ -1566,6 +1603,8 @@ if __name__ == "__main__":
     elif opt == "ALGO_RDI":
         Algo_RDI(str(sys.argv[2]), str(sys.argv[3]), float(sys.argv[4]), res_path=str(sys.argv[5]))
 
+    elif opt == "RR":
+        RR(str(sys.argv[2]))
     else:
         print("No such option")
 
