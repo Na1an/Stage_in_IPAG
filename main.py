@@ -478,7 +478,7 @@ def ADI(argv, scale):
     
     # get science target shape
     wl_ref, nb_fr_ref, w, h = science_target_croped.shape
-    wl = 1
+    wl = 2
     n = nb_fr_ref
     
     # create outer mask
@@ -491,10 +491,10 @@ def ADI(argv, scale):
         #res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=MASK_RADIUS, cube_ref=ref_frames[wl], scaling='temp-mean')
         #res_tmp = vip.pca.pca_local.pca_annular(science_target_croped[wl], -angles, radius_int=118, asize=7, ncomp=i)
         #res_tmp = vip.pca.pca_annular(science_target_croped[wl], -angles, cube_ref=science_target_croped[wl],radius_int=118, asize=7, ncomp=i, scaling='temp-mean')
-        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp= i, mask_center_px=r_in, scaling='temp-mean')
+        res_tmp = vip.pca.pca_fullfr.pca(science_target_croped[wl], -angles, ncomp=i, mask_center_px=r_in, scaling='temp-mean')
 
         #path = "./K_kilp_ADI_RDI/Test_ADI/ADI_Masked" + "{0:05d}".format(i) + ".fits"
-        path = "./K_kilp_ADI_RDI/ADI/fake_disk_close/" + "{0:05d}".format(i) + "_bright.fits"
+        path = "./K_kilp_ADI_RDI/ADI_ADI/" + "{0:05d}".format(i) + "_bright.fits"
         hdu = fits.PrimaryHDU(res_tmp)
         hdu.writeto(path)
         print(">>===", i, "of", n,"=== fits writed ===")
