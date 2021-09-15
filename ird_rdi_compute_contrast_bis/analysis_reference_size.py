@@ -86,7 +86,7 @@ if __name__ == "__main__":
     sns.set(font_scale = 2.0)
     sns.relplot(kind='line',data=data_total)
     #plt.legend(fontsize='20')
-    plt.title("S/N change avec la taille de la bibliothèque de référence, ncorr=200", fontsize = 24)
+    plt.title("S/N change avec la taille de la bibliothèque de référence", fontsize = 24)
     plt.xlabel("Taille de la bibliothèque de référence", fontsize = "22")
     plt.ylabel("S/N, diamètre 4 pixels", fontsize = "22")
     #plt.ylim(0,70)

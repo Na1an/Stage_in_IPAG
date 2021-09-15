@@ -12,6 +12,8 @@ The project will continue to be maintained on github.
 
 * ``` git clone https://github.com/Na1an/Stage_in_IPAG.git```
 
+
+
 ### 2. Environment
 
 ----------
@@ -110,7 +112,7 @@ On the branch '**test**' of cobrex-dc, 4 routines have been implemented and test
 
 During the stage of research, many programs have been created, these programs are listed below. By executing ```main.py```, you can use these options :
 
-* mode **cADI**
+* mode **cADI** : execute the algo Angular Differential Imaging (ADI) 
 
   ```
   python3 RDI.py cADI ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368 0.5
@@ -120,7 +122,7 @@ During the stage of research, many programs have been created, these programs ar
   * **arg2** : path of target object repository
   * **arg3**: scale, default = 0.125
 
-* mode **PCA**
+* mode **PCA** : execute the algo Reference Differential Imaging (RDI)
 
   ```
   python3 RDI.py PCA ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368 ../SPHERE_DC_DATA 0.25
@@ -131,7 +133,7 @@ During the stage of research, many programs have been created, these programs ar
   * **arg3** : reference object repository
   * **arg4**: scale, default = 0.25
 
-* mode **SCAL**
+* mode **SCAL** : execute RDI with 5 different scaling - the package **vip_hci** provide 5 different scalings : [spat-mean, temp-mean, spat-standard, temp-standard, None]
 
   ```python
   python main.py SCAL ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368  ../SPHERE_DC_DATA 0.25                                                                    
@@ -140,9 +142,9 @@ During the stage of research, many programs have been created, these programs ar
   * **arg1** : algo mode. 
   * **arg2** : path of target object repository
   * **arg3** : reference object repository
-  * **arg4**: scale, default = 0.25
+  * **arg4** : scale, default = 0.25
 
-* mode **INJECTION**
+* mode **INJECTION** : inject a planet or a disk, **arg5** provide 2 modes
 
   ```python
   python main.py INJECTION ../SPHERE_DC_DATA/HIP\ 55042_DB_H23_2018-01-28_ird_convert_recenter_dc5_PUBLIC_209733 ../SPHERE_DC_DATA 0.25 PLANETE                                                                            
@@ -154,7 +156,7 @@ During the stage of research, many programs have been created, these programs ar
   * **arg4**: scale, default = 0.25
   * **arg5**: injection mode
 
-* mode **RDI_scores**
+* mode **RDI_scores** : investigate the performance of RDI in different scores
 
   ```python
   python main.py RDI_scores ../SPHERE_DC_DATA/HD_156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368 ../SPHERE_DC_DATA 0.25 200 MASTER_CUBE-center                                                                      
@@ -167,7 +169,7 @@ During the stage of research, many programs have been created, these programs ar
   * **arg5**: nb_best_frames, ncorr
   * **arg6**: keyword of target object
 
-* mode **SAM** : this algo failed
+* mode **SAM** : this algo Spat Annular Mean, didn't give us a better result, so failed
 
   ```python
   python main.py SAM ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368  ../SPHERE_DC_DATA 0.25 3
@@ -179,7 +181,7 @@ During the stage of research, many programs have been created, these programs ar
   * **arg4**: scale, default = 0.25
   * **arg5**: count, the number of we want to chose for the selection
 
-* mode **RDI_frame**
+* mode **RDI_frame** : investigate the performance of RDI in different best frame numbers
 
   ```python
   python main.py RDI_frame ../SPHERE_DC_DATA/HD\ 156384Cf_DB_H23_2017-06-27_ird_convert_recenter_dc5_PUBLIC_208368 /run/media/yuchen/YUCHEN_DISK/super-earths_project/SPHERE_DC_DATA 0.25 200 fake_disk_far ./K_kilp_ADI_RDI/res_0907_presentation/no_scale/far_disk_100pxs/pos1
@@ -192,7 +194,7 @@ During the stage of research, many programs have been created, these programs ar
   * **arg5**: nb_best_frames, ncorr
   * **arg6**: keyword of target object
 
-* mode **RDI_frame_bis**
+* mode **RDI_frame_bis** : investigate the performance of RDI in different best frame numbers
 
   ```python
   python main.py RDI_frame_bis ../SPHERE_DC_DATA/BD-12\ 4523b_DB_H23_2017-07-28_ird_convert_recenter_dc5_PUBLIC_209689 /run/media/yuchen/YUCHEN_DISK/super-earths_project/SPHERE_DC_DATA 0.25 200 Wolf_fake_comp_27px_bis.fits                           
@@ -204,8 +206,43 @@ During the stage of research, many programs have been created, these programs ar
   * **arg4**: scale, default = 0.25
   * **arg5**: nb_best_frames, ncorr
   * **arg6**: keyword of target object
+  
+  
 
-### 7. Contact
+### 5. About *.xml files
+
+---------
+
+For deploying a **new recipe** on the **Cobrex-DC**, there is two *.xml files to care about. **ExecutableRecipe.xml** and **AssociationRule.xml**.
+
+* **ExecutableRecipe.xml**
+
+  * If you check the recipes running on the cobrex server, you will definitely find that there is a file with the same name in each recipe folder: ExecutableRecipe.xml. You can think of it as a necessary configuration file for each recipe. In this file, we need to define **the recipe name, all data types used by the recipe, parameters, parameter data types, output** and **output data types**. 
+
+* **AssociationRule.xml**
+
+  * This file defines some rules to help us extract data from the database. Imagine when a recipe needs to take the data of tens of thousands of stars as input, it would be crazy to select one by one. So at this time, if there is a rule saying that when the optimize button is pressed, the server will automatically find and take all data of type xx as input. Let us cheer the greatness of computers!
+
+  * Note that when you define a new **association rule** for the recipe, you must pay attention to the grammatical format, even if  **<font color='red'>an extra space</font>** is added, the optimize button will not take effect.
+
+  * The association rule of the recipe : ird_rdi_compute_contrast
+
+    ```xml
+    <recipe id="ird_rdi_compute_contrast.*">
+        <frame_type include="IRD_RDI_RES_FAKE_INJECTION">
+            <attribute id="obs_night" restriction="equal"/>
+            <attribute id="object" restriction="equalOrValue"/>
+        </frame_type>
+    </recipe>
+    ```
+
+  * You may find all the association rules here : **/home/spherdwh/workspace/sphere-server/properties/AssociationRules.xml**
+
+    * Many useful examples can be found here, but adding a new association rule requires the help of a cobrex engineer.
+
+    
+
+### 6. Contact
 
 --------
 
