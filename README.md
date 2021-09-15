@@ -225,21 +225,57 @@ For deploying a **new recipe** on the **Cobrex-DC**, there is two *.xml files to
 
   * Note that when you define a new **association rule** for the recipe, you must pay attention to the grammatical format, even if  **<font color='red'>an extra space</font>** is added, the optimize button will not take effect.
 
-  * The association rule of the recipe : ird_rdi_compute_contrast
+  * The Association rules of RDI are all in **RDI.xml**, this file provides an example for the future implementation :
 
     ```xml
+    <recipe id="ird_rdi_build_corr_matrix.*">
+        <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE">
+            <attribute id="inst_filter" restriction="equal"/>
+            <attribute id="coro" restriction="equal"/>
+        </frame_type>
+    </recipe>
+    <recipe id="ird_rdi_reduce.*">
+        <frame_type include="IRD_CORR_MATRIX,IRD_SCIENCE_PARA_ROTATION_CUBE">
+            <attribute id="object" restriction="equal"/>
+            <attribute id="obs_date" restriction="equal"/>
+            <attribute id="exp_time" restriction="equal"/>
+            <attribute id="coro" restriction="equal"/>
+            <attribute id="inst_filter" restriction="equal"/>
+        </frame_type>
+    </recipe>
+    <recipe id="ird_rdi_fake_injection.*">
+        <frame_type include="IRD_SCIENCE_REDUCED_MASTER_CUBE">
+            <attribute id="inst_filter" restriction="equal"/>
+            <attribute id="coro" restriction="equal"/>
+            <attribute id="exp_time" restriction="equal"/>
+            <attribute id="neutral_density" restriction="equal" allowNull="true"/>
+            <attribute id="parent_process_id" use="equal"/>
+        </frame_type>
+        <frame_type include="IRD_SCIENCE_PSF_MASTER_CUBE" limit="1">
+            <attribute id="parent_process_id" restriction="equal"/>
+        </frame_type>
+        <frame_type include="IRD_SCIENCE_PARA_ROTATION_CUBE" limit="1">
+            <attribute id="exp_time" restriction="equal"/>
+            <attribute id="neutral_density" restriction="equal" allowNull="true"/>
+            <attribute id="coro" restriction="equal"/>
+            <attribute id="inst_filter" restriction="equal"/>
+            <attribute id="parent_process_id" restriction="equal"/>
+        </frame_type>
+    </recipe>
     <recipe id="ird_rdi_compute_contrast.*">
         <frame_type include="IRD_RDI_RES_FAKE_INJECTION">
             <attribute id="obs_night" restriction="equal"/>
             <attribute id="object" restriction="equalOrValue"/>
+            <attribute id="inst_filter" restriction="equal"/>
+            <attribute id="coro" restriction="equal"/>
         </frame_type>
     </recipe>
     ```
-
+  
   * You may find all the association rules here : **/home/spherdwh/workspace/sphere-server/properties/AssociationRules.xml**
-
+  
     * Many useful examples can be found here, but adding a new association rule requires the help of a cobrex engineer.
-
+  
     
 
 ### 6. Contact
